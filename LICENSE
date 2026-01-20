@@ -1,0 +1,65 @@
+# Temple & Pilgrimage Crowd Management System
+# Copyright (c) 2026 Temple Crowd Management Team
+# Licensed under MIT License
+
+MIT License
+
+Copyright (c) 2026 Temple Crowd Management Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Third-Party Licenses
+
+This project uses the following third-party libraries:
+
+### YOLOv8 (Ultralytics)
+- License: AGPL-3.0
+- Source: https://github.com/ultralytics/ultralytics
+- Note: Commercial use requires separate licensing from Ultralytics
+
+### React
+- License: MIT
+- Source: https://github.com/facebook/react
+
+### Node.js
+- License: MIT
+- Source: https://github.com/nodejs/node
+
+### Python
+- License: Python Software Foundation License
+- Source: https://www.python.org/
+
+### MongoDB
+- License: Server Side Public License (SSPL)
+- Source: https://www.mongodb.com/
+
+### PyTorch
+- License: BSD-3-Clause
+- Source: https://github.com/pytorch/pytorch
+
+### Prophet (Facebook)
+- License: MIT
+- Source: https://github.com/facebook/prophet
+
+For complete list of dependencies and their licenses, see:
+- backend/package.json
+- frontend/package.json
+- ml-services/*/requirements.txt
