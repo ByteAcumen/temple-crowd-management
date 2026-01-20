@@ -1,7 +1,7 @@
 # 🕉️ Temple & Pilgrimage Crowd Management System
+### *Somnath • Dwarka • Ambaji • Pavagadh*
 
-> **Next-Gen AI Crowd Monitoring for Indian Heritage Sites**  
-> *Somnath • Dwarka • Ambaji • Pavagadh*
+> **AI-Powered Crowd Intelligence & Stampede Prevention for Gujarat's Holiest Sites**
 
 <div align="center">
 
@@ -9,66 +9,59 @@
 [![Stack](https://img.shields.io/badge/Stack-MERN-blue?style=for-the-badge&logo=react)](https://reactjs.org/)
 [![AI Engine](https://img.shields.io/badge/AI-YOLOv8-green?style=for-the-badge&logo=python)](https://github.com/ultralytics/ultralytics)
 [![Maps](https://img.shields.io/badge/Maps-OpenStreetMap-77CT1?style=for-the-badge&logo=openstreetmap)](https://www.openstreetmap.org/)
-[![Status](https://img.shields.io/badge/Status-Active_Development-orange?style=for-the-badge)](#)
 
 </div>
 
 ---
 
-## 📖 Overview
+## 🚨 The Problem
 
-The **Temple Crowd Management System** is a 100% free-to-deploy, open-source platform designed to ensure safety and efficiency at high-traffic pilgrimage sites. By leveraging **Computer Vision** and **Real-Time Data**, it prevents stampedes and optimizes the devotee experience without expensive infrastructure.
+Gujarat's major pilgrimage sites face critical crowd management challenges:
+*   **Somnath & Dwarka**: Massive surges during *Mangala Aarti* and festivals like *Janmashtami* lead to dangerous crush conditions at narrow entry gates.
+*   **Ambaji & Pavagadh**: Hilltop temples with limited path width and ropeway bottlenecks create "trap zones" where stampedes can occur instantly.
+*   **Manual Failure**: Traditional "rope and whistle" crowd control cannot predict rapid density spikes.
 
-### 🚀 Key Philosophies
-- **Zero Cost Deployment**: Built strictly on free-tier and open-source technologies.
-- **Privacy First**: No facial recognition storage; only count and density metrics.
-- **Easy to Run**: Dockerized setup for "One Click" deployment.
+## 💡 The Solution
+
+A **Real-Time AI Command Center** specifically tuned for temple dynamics.
+
+### 1. 👁️ Computer Vision Crowd Counting (YOLOv8)
+*   **How it works**: Connects to existing CCTV feeds at Queue Complexes.
+*   **What it does**: Counts devotees in real-time, estimates density per square meter.
+*   **Application**: Detects "choke points" at the Pavagadh ropeway queue before they become dangerous.
+
+### 2. 🔮 Predictive AI (LSTM)
+*   **How it works**: Analyzes historical footfall data + Festival Calendar.
+*   **What it does**: Predicts crowd surges 4 hours in advance.
+*   **Application**: Warns temple security to open overflow waiting areas *before* the Mangala Aarti rush at Somnath.
+
+### 3. 🎫 Virtual Queuing (MERN Stack)
+*   **How it works**: Devotees book "Darshan Slots" via mobile app.
+*   **What it does**: Distributes the crowd load evenly throughout the day.
+*   **Application**: Reduces the physical line at Dwarkadhish by 60%.
 
 ---
 
-## ✨ Features
-
-| Feature | Tech Stack | Description |
-| :--- | :--- | :--- |
-| **👀 AI Crowd Counting** | **YOLOv8** + **Python** | Real-time people detection from standard CCTV feeds. |
-| **🗺️ Live Heatmaps** | **React** + **Leaflet** | Dynamic density visualization on OpenStreetMap. |
-| **🚨 Smart Alerts** | **Telegram Bot API** | Instant congestion warnings sending directly to security staff phones. |
-| **🔮 Forecasting** | **LSTM** / **Prophet** | Predict crowd surges 7 days in advance. |
-| **📱 Devotee App** | **React Native** | Live darshan wait-times and digital slot booking. |
-
----
-
-## 🏗️ Architecture (Visualized)
+## 🏗️ Architecture
 
 ```mermaid
 graph TD
-    subgraph "AI Edge Layer"
-        CCTV[CCTV Camera] -->|RTSP Stream| YOLO[YOLOv8 Service]
-        YOLO -->|JSON Counts| API
+    subgraph "Temple Grounds (Edge)"
+        CCTV[CCTV Camera] -->|RTSP| AI[Python YOLOv8 Service]
+        AI -->|People Count| Cloud
     end
 
-    subgraph "MERN Core"
-        API[Node/Express API] <--> DB[(MongoDB)]
-        API -->|Socket.io| Dash[React Admin Dashboard]
-        API -->|REST| Mobile[Devotee Mobile App]
+    subgraph "Cloud / Server (MERN)"
+        Cloud[Node.js API] <--> DB[(MongoDB)]
+        Cloud -->|Socket.io| Dash[Admin Dashboard]
+        Cloud -->|Push Notif| App[Devotee App]
     end
 
-    subgraph "Notification Layer"
-        API -->|Webhook| Telegram[Telegram Bot]
+    subgraph "Safety Layer"
+        Cloud -->|Threshold Alert| TG[Telegram Security Bot]
+        Dash -->|Visual Alert| Map[Heatmap Display]
     end
 ```
-
----
-
-## 🛠️ Technology Stack
-
-We chose the **MERN Stack** for its scalability and ubiquitous developer support, paired with Python for robust ML capabilities.
-
-- **Frontend**: React 18, TailwindCSS, DaisyUI, React-Leaflet
-- **Backend**: Node.js, Express, Socket.io
-- **Database**: MongoDB (Community Edition)
-- **AI/ML**: Python 3.9, FastAPI, Ultralytics YOLOv8
-- **Alerts**: Telegram Bot API (Free unlimited notifications)
 
 ---
 
@@ -77,75 +70,36 @@ We chose the **MERN Stack** for its scalability and ubiquitous developer support
 ### Prerequisites
 - **Node.js** v18+
 - **Python** 3.9+
-- **Docker** (Optional, for containerized run)
+- **Docker** (Optional)
 
-### 1. Installation
+### Installation
 
-**Clone the repository**
-```bash
-git clone https://github.com/your-username/temple-crowd-management.git
-cd temple-crowd-management
-```
+1.  **Clone the Repo**
+    ```bash
+    git clone https://github.com/ByteAcumen/temple-crowd-management.git
+    cd temple-crowd-management
+    ```
 
-### 2. Run Locally (The "Easy" Way)
+2.  **Start the Backend (Brain)**
+    ```bash
+    cd backend
+    npm install
+    npm run dev
+    ```
 
-We have separate services for Backend, Frontend, and ML.
-
-**Start Backend**
-```bash
-cd backend
-npm install
-# Create a .env file based on .env.example
-npm run dev
-```
-
-**Start Frontend**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**Start AI Service**
-```bash
-cd ml-services/crowd-detection
-pip install -r requirements.txt
-python src/api.py
-```
+3.  **Start the AI Service (Eyes)**
+    ```bash
+    cd ml-services/crowd-detection
+    pip install -r requirements.txt
+    python src/api.py
+    ```
 
 ---
 
-## 📂 Project Structure
-
-```bash
-temple-crowd-management/
-├── backend/            # Express API & WebSocket Server
-├── frontend/           # React Admin Dashboard
-├── mobile/             # React Native App (Repo)
-├── ml-services/        # Python AI Microservices
-│   ├── crowd-detection # YOLOv8 Inference Engine
-│   └── forecasting     # Predictive Models
-└── docs/               # Documentation
-```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please check the [Issues](https://github.com/your-username/temple-crowd-management/issues) tab.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+## 📜 Legal & Ethical
+*   **Privacy**: This system counts *people*, it does not recognize *faces*. No PII is stored.
+*   **Safety**: Designed as a decision-support tool for human security teams, not an autonomous gate controller.
 
 <div align="center">
-  <sub>Built with ❤️ for Safe Pilgrimages in India</sub>
+  <sub>Dedicated to the safety of millions of pilgrims.</sub>
 </div>
