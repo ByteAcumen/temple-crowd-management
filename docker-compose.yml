@@ -1,0 +1,58 @@
+services:
+  # 1. Database
+  mongo:
+    image: mongo:latest
+    container_name: temple-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - temple-network
+
+  # 2. Redis Cache (Future Proofing)
+  redis:
+    image: redis:alpine
+    container_name: temple-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - temple-network
+
+  # 3. AI Service (The Brain)
+  ai-service:
+    build:
+      context: ./ml-services/demand-forecasting
+      dockerfile: Dockerfile
+    container_name: temple-brain
+    ports:
+      - "8000:8000"
+    networks:
+      - temple-network
+    volumes:
+      - ./ml-services/demand-forecasting/models:/app/models # Live Model Reload fix
+
+  # 4. Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: temple-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/temple_db
+      - AI_SERVICE_URL=http://ai-service:8000
+      - PORT=5000
+    depends_on:
+      - mongo
+      - ai-service
+    networks:
+      - temple-network
+
+networks:
+  temple-network:
+    driver: bridge
+
+volumes:
+  mongo_data:

@@ -1,110 +1,124 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Dict
+import joblib
+import pandas as pd
 import uvicorn
-from datetime import datetime, timedelta
+import os
+import sys
 
-app = FastAPI(
-    title="Crowd Forecasting Service",
-    description="LSTM and Prophet-based crowd forecasting API",
-    version="1.0.0"
-)
+# --- PATH CONFIGURATION (CRITICAL) ---
+# This ensures api.py can find the model in the sibling 'models' folder
+# Get the directory where api.py is located (src)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Go up one level to 'demand-forecasting'
+base_dir = os.path.dirname(current_dir)
+# Define path to the model
+model_path = os.path.join(base_dir, "models", "optimized_temple_brain.pkl")
 
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Initialize App
+app = FastAPI(title="Temple Crowd Prediction AI")
 
-# Models
-class ForecastRequest(BaseModel):
-    temple_id: str
-    days: int = 7
+print(f"📂 Looking for model at: {model_path}")
 
-class ForecastResponse(BaseModel):
-    temple_id: str
-    predictions: List[Dict[str, float]]
-    model_used: str
-    accuracy_metrics: Dict[str, float]
+# Load the Brain
+try:
+    artifacts = joblib.load(model_path)
+    model = artifacts["model"]
+    le_temple = artifacts["le_temple"]
+    le_moon = artifacts["le_moon"]
+    features = artifacts["features"]
+    print("✅ Model Loaded Successfully!")
+except FileNotFoundError:
+    print("❌ ERROR: Model file not found!")
+    print("Please check if 'optimized_temple_brain.pkl' is inside the 'models' folder.")
+    sys.exit(1)
 
-# Health Check
-@app.get("/health")
-async def health_check():
-    return {
-        "status": "OK",
-        "service": "crowd-forecasting",
-        "models": ["LSTM", "Prophet"]
-    }
+# Define Input Schema
+class PredictionRequest(BaseModel):
+    temple_name: str
+    date_str: str
+    temperature: int
+    rain_flag: int
+    moon_phase: str
+    is_weekend: int
 
-# Generate Forecast
-@app.post("/forecast", response_model=ForecastResponse)
-async def forecast_crowd(request: ForecastRequest):
-    """
-    Generate crowd forecast for next N days
-    """
-    try:
-        # TODO: Implement LSTM/Prophet forecasting
-        # For now, return mock predictions
-        predictions = []
-        base_time = datetime.now()
-        
-        for i in range(request.days * 24):  # Hourly predictions
-            predictions.append({
-                "timestamp": (base_time + timedelta(hours=i)).isoformat(),
-                "predicted_count": 800 + (i * 10) % 500,  # Mock data
-                "lower_bound": 700 + (i * 10) % 400,
-                "upper_bound": 900 + (i * 10) % 600
-            })
-        
-        return ForecastResponse(
-            temple_id=request.temple_id,
-            predictions=predictions,
-            model_used="LSTM",
-            accuracy_metrics={
-                "mae": 45.3,
-                "rmse": 92.1,
-                "mape": 12.5
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "temple_name": "Somnath",
+                "date_str": "2025-08-15",
+                "temperature": 30,
+                "rain_flag": 0,
+                "moon_phase": "Normal",
+                "is_weekend": 1
             }
-        )
+        }
+
+@app.post("/predict")
+def predict_crowd(data: PredictionRequest):
+    try:
+        # Preprocessing
+        dt = pd.to_datetime(data.date_str)
+        
+        # Validation
+        if data.temple_name not in le_temple.classes_:
+            raise HTTPException(status_code=400, detail="Unknown Temple")
+        
+        t_encoded = le_temple.transform([data.temple_name])[0]
+        m_encoded = le_moon.transform([data.moon_phase])[0]
+        
+        # Feature Engineering
+        day_of_year = dt.dayofyear
+        is_vacation = 1 if dt.month in [5, 11] else 0
+        is_shravan = 1 if dt.month == 8 else 0
+
+        # EXPLICIT FEATURES LIST (Matces Model Expectation)
+        features_list = [
+            'Temple_Encoded', 'Month', 'Day', 'DayOfWeek', 'DayOfYear',
+            'Is_Weekend', 'Is_Vacation', 'Is_Shravan', 
+            'Moon_Phase_Encoded', 'Temperature_C', 'Rain_Flag'
+        ]
+
+        # Create DataFrame
+        input_df = pd.DataFrame([[
+            t_encoded, dt.month, dt.day, dt.dayofweek, day_of_year,
+            data.is_weekend, is_vacation, is_shravan, 
+            m_encoded, data.temperature, data.rain_flag
+        ]], columns=features_list)
+
+        # DEBUG: Print DataFrame Info
+        print("DEBUG: Model Type:", type(model))
+        print("DEBUG: DataFrame Columns:", input_df.columns.tolist())
+        print("DEBUG: First Row (Raw):", input_df.values[0])
+
+        # Cast to Float
+        input_df = input_df.astype(float)
+        
+        # BYPASS FEATURE Name Check by using Numpy Array
+        # (XGBoost sometimes fails column validation on different versions)
+        prediction = int(model.predict(input_df.values)[0])
+
+        # Business Logic
+        status = "Normal"
+        color = "green"
+        if prediction > 80000:
+            status = "CRITICAL"
+            color = "red"
+        elif prediction > 40000:
+            status = "High"
+            color = "orange"
+
+        return {
+            "temple": data.temple_name,
+            "date": data.date_str,
+            "predicted_visitors": prediction,
+            "crowd_status": status,
+            "color_code": color
+        }
+
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
-# Train Model
-@app.post("/train")
-async def train_model():
-    """
-    Trigger model retraining
-    """
-    # TODO: Implement training pipeline
-    return {
-        "message": "Training started",
-        "status": "in_progress"
-    }
-
-# Get Model Info
-@app.get("/models")
-async def list_models():
-    """
-    List available forecasting models
-    """
-    return {
-        "models": [
-            {
-                "name": "LSTM",
-                "version": "1.0",
-                "accuracy": {"mae": 45.3, "rmse": 92.1}
-            },
-            {
-                "name": "Prophet",
-                "version": "1.0",
-                "accuracy": {"mae": 52.1, "rmse": 105.3}
-            }
-        ]
-    }
-
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8002)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
