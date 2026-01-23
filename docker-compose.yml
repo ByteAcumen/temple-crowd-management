@@ -26,7 +26,7 @@ services:
       dockerfile: Dockerfile
     container_name: temple-brain
     ports:
-      - "8000:8000"
+      - "8002:8000"
     networks:
       - temple-network
     volumes:
@@ -47,6 +47,7 @@ services:
     depends_on:
       - mongo
       - ai-service
+      - redis
     networks:
       - temple-network
 
