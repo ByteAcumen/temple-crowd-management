@@ -1,24 +1,27 @@
 # Use lightweight Node.js Alpine image
 FROM node:18-alpine
 
-# Security: Run as non-root user (node)
-USER node
+# Install curl for healthcheck
+RUN apk add --no-cache curl
 
-# Create app directory with permissions
-RUN mkdir -p /home/node/app
-WORKDIR /home/node/app
+# Create app directory
+WORKDIR /app
 
 # Copy package files (optimize caching)
-COPY --chown=node:node package*.json ./
+COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci --only=production
 
 # Copy application code
-COPY --chown=node:node . .
+COPY . .
 
 # Expose port
 EXPOSE 5000
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:5000 || exit 1
+
 # Start server
-CMD ["npm", "start"]
+CMD ["node", "src/server.js"]

@@ -1,55 +1,110 @@
 services:
-  # 1. Database
+  # 1. MongoDB Database
   mongo:
     image: mongo:latest
     container_name: temple-mongo
+    restart: always
     ports:
       - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=temple_db
     volumes:
       - mongo_data:/data/db
     networks:
       - temple-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # 2. Redis Cache (Future Proofing)
+  # 2. Redis Cache
   redis:
     image: redis:alpine
     container_name: temple-redis
+    restart: always
     ports:
-      - "6380:6379"
+      - "6379:6379"
     networks:
       - temple-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # 3. AI Service (The Brain)
-  ai-service:
+  # 3. ML Crowd Detection Service (YOLOv8)
+  ml-detection:
+    build:
+      context: ./ml-services/crowd-detection
+      dockerfile: Dockerfile
+    container_name: temple-ml-detection
+    restart: always
+    ports:
+      - "8001:8000"
+    networks:
+      - temple-network
+    volumes:
+      - ./ml-services/crowd-detection/models:/app/models
+    environment:
+      - MODEL_PATH=/app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 4. ML Demand Forecasting Service (LSTM)
+  ml-forecasting:
     build:
       context: ./ml-services/demand-forecasting
       dockerfile: Dockerfile
-    container_name: temple-brain
+    container_name: temple-ml-forecasting
+    restart: always
     ports:
       - "8002:8000"
     networks:
       - temple-network
     volumes:
-      - ./ml-services/demand-forecasting/models:/app/models # Live Model Reload fix
+      - ./ml-services/demand-forecasting/models:/app/models
+    environment:
+      - MODEL_PATH=/app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # 4. Backend API
+  # 5. Backend API
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: temple-backend
+    restart: always
     ports:
       - "5000:5000"
     environment:
-      - MONGO_URI=mongodb://mongo:27017/temple_db
-      - AI_SERVICE_URL=http://ai-service:8000
+      - NODE_ENV=production
       - PORT=5000
+      - MONGODB_URI=mongodb://mongo:27017/temple_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your-secret-key-change-in-production
+      - ML_DETECTION_URL=http://ml-detection:8000
+      - ML_FORECASTING_URL=http://ml-forecasting:8000
     depends_on:
-      - mongo
-      - ai-service
-      - redis
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - temple-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   temple-network:
