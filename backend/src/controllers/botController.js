@@ -16,32 +16,34 @@ exports.chat = async (req, res) => {
         let answer = "";
         let source = "static";
 
-        // --- INTELLIGENCE LOGIC ---
+        // --- HYBRID INTELLIGENCE LOGIC ---
 
-        // 1. Live Crowd Status
-        if (lowerQuery.includes('crowd') || lowerQuery.includes('rush') || lowerQuery.includes('status') || lowerQuery.includes('people')) {
-            const crowdData = await getLiveCrowd();
-            answer = `Currently, there are ${crowdData.count} devotees in the temple. The status is ${crowdData.status}.`;
-            source = "live_redis";
-        }
-
-        // 2. Future Prediction (Uses ML Model)
-        else if (lowerQuery.includes('tomorrow') || lowerQuery.includes('predict') || lowerQuery.includes('forecast')) {
-            // Simplified: "tomorrow" logic. In a real bot, we'd extract the date.
+        // 1. Future Prediction (Keep explicit logic for now to fetch forecast)
+        if (lowerQuery.includes('tomorrow') || lowerQuery.includes('predict') || lowerQuery.includes('future')) {
             const tomorrow = getTomorrowDate();
             const aiData = await getAIPrediction(tomorrow);
             answer = `For tomorrow (${tomorrow}), our AI Brain predicts about ${aiData.visitors} visitors. Status: ${aiData.status}.`;
-            source = "ai_model";
+            source = "ai_forecasting_engine";
         }
-
-        // 3. Static Info
-        else if (lowerQuery.includes('time') || lowerQuery.includes('open')) {
-            answer = "The temple is open every day from 6:00 AM to 9:00 PM. Aarti is at 7:00 AM and 7:00 PM.";
-        }
-
-        // 4. Fallback
+        // 2. Everything else -> SEMANTIC RAG (Python)
         else {
-            answer = "I am the TempleBot. Ask me about 'Current Crowd', 'Tomorrow's Prediction', or 'Timings'.";
+            // Fetch Context (Live Crowd)
+            const crowdData = await getLiveCrowd();
+            const liveContext = `Current Devotee Count: ${crowdData.count}. Safety Status: ${crowdData.status}.`;
+
+            // Call Python RAG
+            try {
+                const ragResponse = await axios.post(`${AI_SERVICE_URL}/chat`, {
+                    query: query,
+                    context: liveContext
+                });
+                answer = ragResponse.data.answer;
+                source = "semantic_rag_model";
+            } catch (err) {
+                console.error("RAG Error:", err.message);
+                answer = "My Brain is currently offline 🧠. But I can tell you: " + liveContext;
+                source = "fallback_live";
+            }
         }
 
         res.status(200).json({

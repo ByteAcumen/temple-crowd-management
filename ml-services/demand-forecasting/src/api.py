@@ -5,6 +5,8 @@ import pandas as pd
 import uvicorn
 import os
 import sys
+from sentence_transformers import SentenceTransformer, util
+from typing import Optional
 
 # --- PATH CONFIGURATION (CRITICAL) ---
 # This ensures api.py can find the model in the sibling 'models' folder
@@ -13,7 +15,37 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 # Go up one level to 'demand-forecasting'
 base_dir = os.path.dirname(current_dir)
 # Define path to the model
+# Define path to the model
 model_path = os.path.join(base_dir, "models", "optimized_temple_brain.pkl")
+
+# --- RAG CONFIGURATION ---
+print("🧠 Loading Semantic RAG Model (all-MiniLM-L6-v2)...")
+try:
+    rag_model = SentenceTransformer('all-MiniLM-L6-v2')
+    print("✅ RAG Model Loaded!")
+    
+    # Knowledge Base
+    FAQ_DATA = [
+        {"q": "What are the temple timings?", "a": "The temple opens at 6:00 AM and closes at 10:00 PM. Aarti is at 7:00 AM and 7:00 PM."},
+        {"q": "Can I bring my bag or luggage?", "a": "No, large bags are not allowed inside for security. Please use the cloakroom near Gate 1."},
+        {"q": "Is there a dress code?", "a": "Yes, modest traditional clothing is requested. Shoulders and knees must be covered."},
+        {"q": "How to book a ticket?", "a": "You can book a free Darshan slot via this app. Just go to the 'Book Slot' tab."},
+        {"q": "Is photography allowed?", "a": "Photography is prohibited inside the main sanctum, but allowed in the outer complex."},
+        {"q": "Where is parking?", "a": "Free parking is available 500m from the main entrance near the distinct bus stand."},
+        {"q": "Is there a wheelchair service?", "a": "Yes, wheelchairs are available at the help desk for seniors and differently-abled devotees."},
+        {"q": "Can I donate online?", "a": "Yes, donations can be made securely through the official website or app under 'Donations'."},
+        {"q": "Is it crowded? What is the current status?", "a": "You can see the real-time crowd numbers below."}
+    ]
+    # compute embeddings once
+    faq_questions = [item['q'] for item in FAQ_DATA]
+    faq_embeddings = rag_model.encode(faq_questions, convert_to_tensor=True)
+    print(f"✅ Indexed {len(FAQ_DATA)} FAQs for Semantic Search.")
+
+except Exception as e:
+    print(f"⚠️ Warning: RAG Model failed to load: {e}")
+    rag_model = None
+
+
 
 # Initialize App
 app = FastAPI(title="Temple Crowd Prediction AI")
@@ -119,6 +151,42 @@ def predict_crowd(data: PredictionRequest):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- RAG ENDPOINT ---
+class ChatRequest(BaseModel):
+    query: str
+    context: Optional[str] = ""
+
+@app.post("/chat")
+def chat_bot(data: ChatRequest):
+    if not rag_model:
+        return {"answer": "AI Brain is currently offline. Please try again later."}
+    
+    # 1. Embed Query
+    query_embedding = rag_model.encode(data.query, convert_to_tensor=True)
+    
+    # 2. Semantic Search (Cosine Similarity)
+    # util.cos_sim returns a tensor [[score1, score2, ...]]
+    hits = util.cos_sim(query_embedding, faq_embeddings)[0]
+    
+    # 3. Find Best Match
+    best_score = float(hits.max())
+    best_idx = int(hits.argmax())
+    
+    print(f"🔎 Query: '{data.query}' | Best Match: '{FAQ_DATA[best_idx]['q']}' | Score: {best_score:.4f}")
+    
+    # Threshold for "I don't know"
+    if best_score < 0.35:
+        response_text = "I'm sorry, I don't have information about that specific query. Please ask the help desk."
+    else:
+        response_text = FAQ_DATA[best_idx]['a']
+    
+    # 4. Append Live Context if pertinent
+    if data.context:
+        response_text += f"\n\n(Live Update: {data.context})"
+        
+    return {"answer": response_text, "score": best_score}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

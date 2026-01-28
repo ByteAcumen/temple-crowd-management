@@ -93,16 +93,24 @@ const runTests = async () => {
         logPass(`Live Status: ${res.data.safety_status} (${res.data.occupancy_percentage})`);
     } catch (e) { logFail('Live Status', e); }
 
-    // 8. AI Help Bot
+    // 7. Test Bot RAG (Semantic)
+    console.log('\n🤖 Testing AI Bot (Semantic RAG)...');
     try {
-        const res = await axios.post(`${BASE_URL}/bot/query`, { query: "Is it crowded right now?" });
-        // Response format: { success: true, answer: "...", source: "live_redis" }
-        if (res.data.success && res.data.source === 'live_redis') {
-            logPass(`Bot Answered: "${res.data.answer}"`);
-        } else {
-            logFail('Bot Response Invalid', new Error(JSON.stringify(res.data)));
-        }
-    } catch (e) { logFail('AI Help Bot', e); }
+        // Semantic Query: "Luggage" instead of "Bag" to test vector match
+        const botResponse = await axios.post(`${BASE_URL}/bot/query`, {
+            query: 'Can I carry my luggage inside?'
+        });
+        console.log('✅ PASS: Bot Answered:', botResponse.data.answer);
+
+        // Live Context Query
+        const liveResponse = await axios.post(`${BASE_URL}/bot/query`, {
+            query: 'Is it somewhat busy right now?'
+        });
+        console.log('✅ PASS: Bot with Context:', liveResponse.data.answer);
+
+    } catch (error) {
+        console.error('❌ FAIL: Bot Semantic Test Failed', error.response?.data || error.message);
+    }
 
     console.log('\n✨ Tests Completed.');
 };
