@@ -10,7 +10,6 @@ const axios = require('axios');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
-const connectDB = require('./config/db');
 const bookingRoutes = require('./routes/bookingRoutes');
 const authRoutes = require('./routes/authRoutes');
 const liveRoutes = require('./routes/liveRoutes');
@@ -21,7 +20,6 @@ const PORT = process.env.PORT || 5000;
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://ai-service:8000';
 
 // Initialize
-connectDB(); // Connect to Database
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
@@ -61,8 +59,5 @@ io.on('connection', (socket) => {
     console.log('User Connected:', socket.id);
 });
 
-// Start
-server.listen(PORT, () => {
-    console.log(`🚀 Backend running on port ${PORT}`);
-    console.log(`🔗 AI Service linked at ${AI_SERVICE_URL}`);
-});
+// Export app and server for server.js
+module.exports = { app, server, io };
