@@ -1,8 +1,10 @@
 const Redis = require('ioredis');
 
-// Using service name 'redis' from docker-compose, internal port 6379
-// Host machine uses 6380, but container-to-container uses 6379
-const REDIS_HOST = process.env.REDIS_HOST || 'redis';
+// Smart Redis host detection:
+// - In Docker: use service name 'redis'
+// - Local development: use 'localhost'
+// - Can be overridden with REDIS_HOST env var
+const REDIS_HOST = process.env.REDIS_HOST || (process.env.NODE_ENV === 'production' ? 'redis' : 'localhost');
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
 
 console.log(`🔌 Connecting to Redis at ${REDIS_HOST}:${REDIS_PORT}...`);

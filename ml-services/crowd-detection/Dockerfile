@@ -6,11 +6,11 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+  build-essential \
+  curl \
+  libgl1-mesa-glx \
+  libglib2.0-0 \
+  && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (optimization)
 COPY requirements.txt .
@@ -20,7 +20,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
 COPY src/ src/
-COPY models/ models/
+
+# Create models directory (will be populated by training or mounted volume)
+RUN mkdir -p models
 
 # Expose port
 EXPOSE 8000

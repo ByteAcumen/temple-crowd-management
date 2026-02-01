@@ -6,9 +6,9 @@ WORKDIR /app
 
 # Install system dependencies (for building some python packages)
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+  build-essential \
+  curl \
+  && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (optimization)
 COPY requirements.txt .
@@ -18,7 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
 COPY src/ src/
-COPY models/ models/
+
+# Create models directory (will be populated by training or mounted volume)
+RUN mkdir -p models
 
 # Expose port
 EXPOSE 8000
