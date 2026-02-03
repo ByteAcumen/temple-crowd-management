@@ -8,7 +8,10 @@ The backend API is fully functional with:
 - ✅ User authentication (Register/Login)
 - ✅ JWT token generation
 - ✅ Protected routes
+- ✅ **Temple Management (CRUD operations)**
+- ✅ **Live crowd tracking with traffic light status**
 - ✅ Input validation
+- ✅ Automated testing
 
 ---
 
@@ -61,7 +64,21 @@ docker-compose down
 
 ## 🧪 Testing the API
 
-### Automated Tests
+### 🎯 NEW: Complete Automated Testing
+
+**Test EVERYTHING in one command:**
+
+```powershell
+.\test-all.ps1
+```
+
+This automated script:
+1. ✅ Starts MongoDB + Redis + Backend (Docker)
+2. ✅ Waits for health checks  
+3. ✅ Tests 7 Temple Management endpoints
+4. ✅ Shows detailed pass/fail results
+
+**Test just basic auth/booking:**
 
 ```powershell
 .\test-api.ps1
@@ -72,6 +89,20 @@ This will test:
 2. ✅ User registration
 3. ✅ User login
 4. ✅ Protected route access
+
+**Test Temple Management only:**
+
+```powershell
+.\test-temples.ps1
+```
+
+This will test:
+1. ✅ Create temple (Admin)
+2. ✅ Get all temples (Public)
+3. ✅ Get single temple (Public)
+4. ✅ Update temple (Admin)
+5. ✅ Get live status (Public)
+6. ✅ Filter temples by status
 
 ### Manual API Testing
 
