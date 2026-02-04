@@ -29,7 +29,7 @@ Start-Sleep -Seconds 30
 Write-Host "Container Status:" -ForegroundColor Cyan
 docker ps --filter "name=temple" --format "  {{.Names}}: {{.Status}}"
 
-Write-Host "`n========================================" -ForeroundColor Cyan
+Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host " SYSTEM READY!" -ForegroundColor Cyan
 Write-Host "========================================`n" -ForegroundColor Cyan
 
