@@ -53,7 +53,7 @@ catch {
     }
     
     if ($dockerStarted) {
-        Write-Host "   Waiting for Docker to start (30 seconds)..." -ForegroundColor Gray
+        Write-Host "   Waiting for Docker to start - 30 seconds..." -ForegroundColor Gray
         Start-Sleep -Seconds 30
         
         # Check again
@@ -70,7 +70,7 @@ catch {
             Write-Host "   ✗ ERROR: Could not verify Docker is running" -ForegroundColor Red
             Write-Host "`n   Please:" -ForegroundColor Yellow
             Write-Host "   1. Open Docker Desktop manually" -ForegroundColor White
-            Write-Host "   2. Wait for it to fully start (whale icon in system tray)" -ForegroundColor White
+            Write-Host "   2. Wait for it to fully start - whale icon in system tray" -ForegroundColor White
             Write-Host "   3. Run this script again`n" -ForegroundColor White
             exit 1
         }
@@ -114,7 +114,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host " ✓ SUCCESS! SERVICES STARTING" -ForegroundColor Green
     Write-Host "========================================`n" -ForegroundColor Green
     
-    Write-Host "Waiting for health checks (30 seconds)..." -ForegroundColor Yellow
+    Write-Host "Waiting for health checks - 30 seconds..." -ForegroundColor Yellow
     Write-Host "" 
     
     # Progress bar
