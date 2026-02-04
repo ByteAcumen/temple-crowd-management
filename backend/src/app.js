@@ -58,10 +58,33 @@ app.get('/', (req, res) => {
     });
 });
 
-// Socket.io
+// Socket.io Real-time Configuration
+const SocketEvents = require('./events/socketEvents');
+const socketEvents = new SocketEvents(io);
+
 io.on('connection', (socket) => {
-    console.log('User Connected:', socket.id);
+    console.log(`🔌 Client connected: ${socket.id}`);
+
+    // Join specific temple room
+    socket.on('join:temple', (templeId) => {
+        socket.join(`temple:${templeId}`);
+        console.log(`📍 Client ${socket.id} joined temple: ${templeId}`);
+    });
+
+    // Join admin dashboard room
+    socket.on('join:admin', () => {
+        socket.join('admin:dashboard');
+        console.log(`👨‍💼 Client ${socket.id} joined admin dashboard`);
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`❌ Client disconnected: ${socket.id}`);
+    });
 });
+
+// Make io and socketEvents accessible globally
+app.set('io', io);
+app.set('socketEvents', socketEvents);
 
 // Export app and server for server.js
 module.exports = { app, server, io };

@@ -106,6 +106,23 @@ exports.createBooking = async (req, res) => {
         // Populate temple details
         await newBooking.populate('temple', 'name location capacity');
 
+        // === NOTIFICATIONS & REAL-TIME UPDATES ===
+        try {
+            // Send booking confirmation email (async, don't block response)
+            const notificationService = require('../services/NotificationService');
+            notificationService.sendBookingConfirmation(newBooking, temple)
+                .catch(err => console.error('Email notification failed:', err));
+
+            // Broadcast to admin dashboard via WebSocket
+            const socketEvents = req.app.get('socketEvents');
+            if (socketEvents) {
+                socketEvents.emitBookingCreated(newBooking);
+            }
+        } catch (notifError) {
+            console.error('⚠️ Notification/WebSocket error:', notifError);
+            // Don't fail the booking if notifications fail
+        }
+
         res.status(201).json({
             success: true,
             message: 'Booking created successfully',
@@ -198,6 +215,25 @@ exports.cancelBooking = async (req, res) => {
             booking.payment.status = 'REFUNDED';
             await booking.save();
             console.log(`💰 Refund initiated for booking ${booking.passId}`);
+        }
+
+        // === NOTIFICATIONS & REAL-TIME UPDATES ===
+        try {
+            // Populate temple for notification
+            await booking.populate('temple', 'name location');
+
+            // Send cancellation email (async)
+            const notificationService = require('../services/NotificationService');
+            notificationService.sendCancellationNotification(booking, booking.temple)
+                .catch(err => console.error('Cancellation email failed:', err));
+
+            // Broadcast to admin dashboard
+            const socketEvents = req.app.get('socketEvents');
+            if (socketEvents) {
+                socketEvents.emitBookingCancelled(booking);
+            }
+        } catch (notifError) {
+            console.error('⚠️ Notification error:', notifError);
         }
 
         res.status(200).json({
