@@ -1,424 +1,364 @@
-# 🚀 Quick Start Guide - Temple Crowd Management System
+# Quick Start Guide
 
-## ✅ Everything is Working!
-
-The backend API is fully functional with:
-- ✅ MongoDB database connection
-- ✅ Redis caching
-- ✅ User authentication (Register/Login)
-- ✅ JWT token generation
-- ✅ Protected routes
-- ✅ **Temple Management (CRUD operations)**
-- ✅ **Live crowd tracking with traffic light status**
-- ✅ Input validation
-- ✅ Automated testing
+**Get the Temple Management System running in under 5 minutes!**
 
 ---
 
-## 🎯 Start Everything (Development Mode)
+## Prerequisites
 
-### Option 1: Automated Start (Recommended)
+**Only 1 requirement**:
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) installed
 
-```powershell
-# Start all services (MongoDB, Redis, Backend)
-.\start-all.ps1
-
-# Test the API
-.\test-api.ps1
-
-# Stop all services
-.\stop-all.ps1
-```
-
-### Option 2: Manual Start
-
-```powershell
-# 1. Start MongoDB
-docker run -d --name temple-mongo -p 27017:27017 mongo:latest
-
-# 2. Start Redis
-docker run -d --name temple-redis -p 6379:6379 redis:alpine
-
-# 3. Start Backend
-cd backend
-node .\src\server.js
-```
-
-### Option 3: Docker Compose (Full Stack)
-
-```powershell
-# Start everything with Docker Compose
-.\start-docker.ps1
-
-# OR manually:
-docker-compose up -d
-
-# View logs
-docker-compose logs -f backend
-
-# Stop everything
-docker-compose down
-```
+That's it! Docker handles MongoDB, Redis, and the backend automatically.
 
 ---
 
-## 🧪 Testing the API
+## 🚀 Quick Start (3 Steps)
 
-### 🎯 NEW: Complete Automated Testing
-
-**Test EVERYTHING in one command:**
-
-```powershell
-.\test-all.ps1
+### Step 1: Clone the Repository
+```bash
+git clone <your-repo-url>
+cd temple-crowd-management
 ```
 
-This automated script:
-1. ✅ Starts MongoDB + Redis + Backend (Docker)
-2. ✅ Waits for health checks  
-3. ✅ Tests 7 Temple Management endpoints
-4. ✅ Shows detailed pass/fail results
-
-**Test just basic auth/booking:**
-
+### Step 2: Start Everything!
 ```powershell
-.\test-api.ps1
+# Windows
+.\scripts\start.ps1
+
+# Linux/Mac
+chmod +x scripts/start.sh
+./scripts/start.sh
 ```
 
-This will test:
-1. ✅ Health check endpoint
-2. ✅ User registration
-3. ✅ User login
-4. ✅ Protected route access
+**That's it!** The script will:
+- ✅ Check if Docker is running (start it if needed)
+- ✅ Start MongoDB with health checks
+- ✅ Start Redis with health checks
+- ✅ Start Backend API (waits for DB to be ready)
+- ✅ Show you when everything is ready
 
-**Test Temple Management only:**
+**Wait ~30 seconds** for all health checks to complete.
 
+### Step 3: Verify It Works
 ```powershell
-.\test-temples.ps1
+# Test the system
+.\verify-system.ps1
 ```
 
-This will test:
-1. ✅ Create temple (Admin)
-2. ✅ Get all temples (Public)
-3. ✅ Get single temple (Public)
-4. ✅ Update temple (Admin)
-5. ✅ Get live status (Public)
-6. ✅ Filter temples by status
+**Expected**: ~90% tests passing (some features need data setup)
 
-### Manual API Testing
+---
 
-#### 1. Health Check
+## 📍 Service URLs
+
+Once started, access:
+- **Backend API**: http://localhost:5000
+- **API Docs**: http://localhost:5000/api/v1
+- **MongoDB**: mongodb://localhost:27017
+- **Redis**: redis://localhost:6379
+
+---
+
+## 🛑 Stop Everything
+
 ```powershell
+# Windows
+.\scripts\stop.ps1
+
+# Linux/Mac
+./scripts/stop.sh
+```
+
+This cleanly stops all containers.
+
+---
+
+## ⚙️ Environment Variables (Optional)
+
+**By default**: Everything works with Docker's built-in configuration.
+
+**If you need to customize** (SMTP, Twilio, etc.):
+
+1. **Create `.env` in backend folder** (only if needed):
+```bash
+cp .env.example backend/.env
+```
+
+2. **Edit backend/.env**:
+```env
+# Email (Optional - for notifications)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+
+# SMS (Optional - for notifications)
+TWILIO_ACCOUNT_SID=your_sid
+TWILIO_AUTH_TOKEN=your_token
+TWILIO_PHONE_NUMBER=+1234567890
+```
+
+3. **Restart backend**:
+```powershell
+docker-compose -f docker-compose.dev.yml restart backend
+```
+
+**Note**: MongoDB and Redis URLs are automatically configured by Docker. Don't change them!
+
+---
+
+## 🧪 Running Tests
+
+### Full System Test (Recommended)
+```powershell
+.\verify-system.ps1
+```
+
+Tests all 27 features:
+- Authentication & Authorization
+- Temple Management
+- Booking System
+- Live Crowd Tracking
+- Admin Dashboard
+- WebSocket Events
+
+### First Time Running Tests?
+
+**If tests fail because of duplicate data**:
+```powershell
+# Clear the database
+docker exec temple-mongodb-dev mongosh temple-management --eval "db.dropDatabase()"
+
+# Run tests again
+.\verify-system.ps1
+```
+
+**Expected first-time success rate**: 90%+
+
+---
+
+## 🔧 Troubleshooting
+
+### "Docker is not running"
+**Fix**:
+1. Open Docker Desktop
+2. Wait for it to start (whale icon in system tray)
+3. Run `.\scripts\start.ps1` again
+
+### "Port 27017 already in use"
+**Fix**:
+```powershell
+# Stop all Docker containers
+docker stop $(docker ps -aq)
+
+# Start fresh
+.\scripts\start.ps1
+```
+
+### "Backend not responding"
+**Fix**:
+```powershell
+# Check backend logs
+docker-compose -f docker-compose.dev.yml logs backend
+
+# Restart backend
+docker-compose -f docker-compose.dev.yml restart backend
+
+# Wait 10 seconds, then test
 curl http://localhost:5000
 ```
 
-**Response:**
-```json
-{
-  "service": "Temple Booking API",
-  "status": "Healthy",
-  "ai_link": "http://ai-service:8000"
-}
-```
+### "MongoDB connection error"
+**Symptoms**: Backend logs show "ECONNREFUSED" or "connection error"
 
-#### 2. Register User
+**Fix**:
 ```powershell
-curl -X POST http://localhost:5000/api/v1/auth/register `
-  -H "Content-Type: application/json" `
-  -d '{
-    "name": "John Doe",
-    "email": "john@example.com",
-    "password": "password123",
-    "role": "user"
-  }'
+# Restart all services
+.\scripts\stop.ps1
+.\scripts\start.ps1
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": "697a0c8831a50fa30b3d99c4",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "role": "user"
-  }
-}
-```
+### "Tests getting 400 errors on registration"
+**Cause**: Users already exist in database from previous tests
 
-#### 3. Login User
+**Fix**:
 ```powershell
-curl -X POST http://localhost:5000/api/v1/auth/login `
-  -H "Content-Type: application/json" `
-  -d '{
-    "email": "john@example.com",
-    "password": "password123"
-  }'
+# Clear users collection
+docker exec temple-mongodb-dev mongosh temple-management --eval "db.users.drop()"
+
+# Or clear entire database
+docker exec temple-mongodb-dev mongosh temple-management --eval "db.dropDatabase()"
+
+# Run tests again
+.\verify-system.ps1
 ```
 
-**Response:** Same as registration
-
-#### 4. Get Current User (Protected)
+### Check Container Status
 ```powershell
-$token = "YOUR_JWT_TOKEN_HERE"
-curl -X GET http://localhost:5000/api/v1/auth/me `
-  -H "Authorization: Bearer $token"
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "697a0c8831a50fa30b3d99c4",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "role": "user",
-    "createdAt": "2026-01-28T..."
-  }
-}
-```
-
----
-
-## 📊 Service Status
-
-### Check Running Services
-
-```powershell
-# Check Docker containers
+# See which containers are running
 docker ps
 
-# Check backend port
-netstat -ano | findstr :5000
-
-# Check MongoDB
-docker logs temple-mongo
-
-# Check Redis
-docker logs temple-redis
+# Should show 3 containers:
+# - temple-mongodb-dev (healthy)
+# - temple-redis-dev (healthy)
+# - temple-backend-dev (healthy)
 ```
 
-### Access Points
-
-| Service | URL | Status |
-|---------|-----|--------|
-| Backend API | http://localhost:5000 | ✅ Working |
-| MongoDB | mongodb://localhost:27017 | ✅ Working |
-| Redis | redis://localhost:6379 | ✅ Working |
-| API Docs | http://localhost:5000/api/v1 | ✅ Working |
-
----
-
-## 🐛 Troubleshooting
-
-### Backend won't start
-
+### View Container Logs
 ```powershell
-# Check if MongoDB is running
-docker ps | findstr mongo
+# Backend logs
+docker-compose -f docker-compose.dev.yml logs backend
 
-# If not running, start it
-docker start temple-mongo
+# MongoDB logs
+docker-compose -f docker-compose.dev.yml logs mongodb
 
-# Check logs
-docker logs temple-mongo
+# Redis logs
+docker-compose -f docker-compose.dev.yml logs redis
+
+# All logs (follow mode)
+docker-compose -f docker-compose.dev.yml logs -f
 ```
 
-### Port 5000 already in use
+---
 
+## 📚 Next Steps
+
+### Learn the API
+Check out the documentation in `docs/`:
+- [Temple API](docs/TEMPLE_API.md) - Temple CRUD operations
+- [Booking API](docs/BOOKING_API.md) - Booking management
+- [Live Tracking API](docs/LIVE_TRACKING_API.md) - Entry/Exit tracking
+- [Admin API](docs/ADMIN_API.md) - Dashboard & analytics
+- [WebSocket Events](docs/WEBSOCKET_EVENTS.md) - Real-time updates
+
+### Test Individual Features
 ```powershell
-# Find process using port 5000
-netstat -ano | findstr :5000
+# Create a test user
+$body = @{
+    name = "Test User"
+    email = "test@example.com"
+    password = "Test@123"
+    role = "user"
+} | ConvertTo-Json
 
-# Kill the process (replace PID)
-Stop-Process -Id <PID> -Force
+Invoke-RestMethod -Uri "http://localhost:5000/api/v1/auth/register" -Method POST -Body $body -ContentType "application/json"
 ```
 
-### MongoDB connection error
+### Develop with Hot Reload
+The backend has **hot reload** enabled - any code changes automatically restart the server!
 
-```powershell
-# Restart MongoDB
-docker restart temple-mongo
-
-# OR remove and recreate
-docker rm -f temple-mongo
-docker run -d --name temple-mongo -p 27017:27017 mongo:latest
-```
-
-### Redis connection errors
-
-These are OK if you're not using Redis features yet. To fix:
-
-```powershell
-# Start Redis
-docker start temple-redis
-
-# OR create new
-docker run -d --name temple-redis -p 6379:6379 redis:alpine
-```
+1. Edit files in `backend/src/`
+2. Save
+3. Wait 2-3 seconds
+4. Changes are live!
 
 ---
 
-## 📁 Project Structure
+## 🎯 Common Development Tasks
 
-```
-temple-crowd-management/
-├── backend/                 # Node.js Express API
-│   ├── src/
-│   │   ├── app.js          # Express app setup
-│   │   ├── server.js       # Server entry point
-│   │   ├── models/         # MongoDB models
-│   │   │   └── User.js     # ✅ User model with bcrypt
-│   │   ├── controllers/    # Route handlers
-│   │   │   └── authController.js  # ✅ Register/Login
-│   │   ├── routes/         # API routes
-│   │   │   └── authRoutes.js      # ✅ Auth endpoints
-│   │   ├── middleware/     # Express middleware
-│   │   │   └── auth.js     # ✅ JWT protection
-│   │   └── config/         # Configuration
-│   │       ├── db.js       # MongoDB connection
-│   │       └── redis.js    # Redis connection
-│   ├── .env                # Environment variables
-│   └── package.json        # Dependencies
-├── ml-services/            # AI/ML services (WIP)
-├── frontend/               # React app (WIP)
-├── docker-compose.yml      # Docker orchestration
-├── start-all.ps1           # ✅ Start everything
-├── test-api.ps1            # ✅ API test suite
-└── stop-all.ps1            # ✅ Stop all services
-```
-
----
-
-## 🎯 What's Implemented
-
-### Backend API (40% Complete)
-
-✅ **Working:**
-- User authentication (register/login)
-- JWT token generation
-- Password hashing with bcrypt
-- Protected routes with JWT middleware
-- MongoDB integration
-- Redis integration
-- Input validation
-- Error handling
-- Security headers (helmet, cors, rate-limiting)
-
-⏳ **Pending:**
-- Temple management endpoints
-- Booking system endpoints
-- Live crowd monitoring endpoints
-- Admin dashboard endpoints
-- Chatbot endpoints
-
-### ML Services (20% Complete)
-
-✅ **Working:**
-- FastAPI framework setup
-- API endpoint structure
-
-⏳ **Pending:**
-- YOLOv8 person detection
-- LSTM crowd forecasting
-- Model training
-- Real-time video processing
-
-### Frontend (10% Complete)
-
-✅ **Working:**
-- React project structure
-- Dependencies configured
-
-⏳ **Pending:**
-- UI components
-- Authentication pages
-- Dashboard
-- Booking interface
-
----
-
-## 📝 Next Steps
-
-### Week 1 - Backend Development
-1. Implement Temple model
-2. Create temple CRUD endpoints
-3. Implement Booking model
-4. Create booking endpoints
-5. Add admin authorization
-
-### Week 2 - ML Integration
-1. Download YOLOv8 weights
-2. Implement person detection
-3. Train LSTM model
-4. Connect ML APIs to backend
-
-### Week 3 - Frontend Development
-1. Build login/register pages
-2. Create dashboard layout
-3. Implement booking interface
-4. Add real-time crowd display
-
----
-
-## 🔗 Useful Links
-
-- **GitHub Repository:** https://github.com/ByteAcumen/temple-crowd-management.git
-- **Project Plan:** [PROJECT_PLAN.md](PROJECT_PLAN.md)
-- **Architecture:** [ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Testing Guide:** [TESTING_GUIDE.md](TESTING_GUIDE.md)
-- **Startup Guide:** [START_HERE.md](START_HERE.md)
-
----
-
-## 💡 Development Tips
-
-### Hot Reload
-
-```powershell
-# Backend with nodemon
+### Add New Packages
+```bash
 cd backend
-npm run dev
+npm install package-name
+
+# Rebuild Docker image
+docker-compose -f docker-compose.dev.yml up -d --build
 ```
 
-### View MongoDB Data
+### Access MongoDB Directly
+```bash
+# Open MongoDB shell
+docker exec -it temple-mongodb-dev mongosh temple-management
 
-```powershell
-# Connect to MongoDB
-docker exec -it temple-mongo mongosh
-
-# Use database
-use temple_crowd_management
-
-# View users
-db.users.find().pretty()
+# Run queries
+db.users.find()
+db.temples.find()
+db.bookings.find()
 ```
 
-### View Redis Data
+### Access Redis Directly
+```bash
+# Open Redis CLI
+docker exec -it temple-redis-dev redis-cli
 
-```powershell
-# Connect to Redis
-docker exec -it temple-redis redis-cli
-
-# View all keys
+# Check data
 KEYS *
+GET temple:live:temple_id
+```
 
-# Get a key
-GET keyname
+### Reset Everything
+```powershell
+# Stop and remove all containers + volumes
+docker-compose -f docker-compose.dev.yml down -v
+
+# Start fresh
+.\scripts\start.ps1
 ```
 
 ---
 
-## ✅ Success Checklist
+## ⚡ Performance Tips
 
-- [x] MongoDB running
-- [x] Redis running
-- [x] Backend API running
-- [x] User registration working
-- [x] User login working
-- [x] JWT authentication working
-- [x] Protected routes secured
-- [x] All tests passing
+### First Time Startup
+- **First run**: ~2-3 minutes (downloading images)
+- **Subsequent runs**: ~30 seconds (images cached)
 
-**Status: 🎉 Core authentication system is fully functional!**
+### Running Status
+- MongoDB: ~10-15 MB RAM
+- Redis: ~5-10 MB RAM
+- Backend: ~50-100 MB RAM
+
+**Total**: ~100 MB RAM (very lightweight!)
+
+---
+
+## 🚨 Important Notes
+
+### DO NOT:
+- ❌ Edit `docker-compose.dev.yml` unless you know what you're doing
+- ❌ Change MongoDB or Redis URLs in .env (Docker handles this)
+- ❌ Commit `.env` files to git (they're in .gitignore)
+
+### DO:
+- ✅ Use `.\scripts\start.ps1` to start
+- ✅ Use `.\scripts\stop.ps1` to stop
+- ✅ Check logs if something fails
+- ✅ Clear database if tests fail with "duplicate" errors
+- ✅ Ask for help in Discord/Slack if stuck
+
+---
+
+## 📞 Getting Help
+
+**Issues?**
+1. Check [Troubleshooting](#-troubleshooting) section above
+2. Check backend logs: `docker-compose -f docker-compose.dev.yml logs backend`
+3. Open an issue on GitHub
+4. Ask in team Discord/Slack
+
+**System Info for Bug Reports**:
+```powershell
+# Get versions
+docker --version
+node --version
+npm --version
+
+# Get container status
+docker ps -a
+
+# Get backend logs (last 50 lines)
+docker-compose -f docker-compose.dev.yml logs --tail=50 backend
+```
+
+---
+
+## 🎉 You're Ready!
+
+Your Temple Management System is now running!
+
+- 🟢 MongoDB: Healthy
+- 🟢 Redis: Healthy
+- 🟢 Backend: Running at http://localhost:5000
+
+**Happy coding! 🚀**
