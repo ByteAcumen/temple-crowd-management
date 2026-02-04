@@ -82,6 +82,7 @@ exports.recordEntry = async (req, res) => {
             success: true,
             message: 'Entry recorded successfully',
             data: {
+                count: result.live_count, // For test compatibility
                 booking: {
                     id: booking._id,
                     passId: booking.passId,
@@ -151,6 +152,7 @@ exports.recordExit = async (req, res) => {
             success: true,
             message: 'Exit recorded successfully',
             data: {
+                count: result.live_count, // For test compatibility
                 booking: {
                     id: booking._id,
                     passId: booking.passId,
@@ -200,6 +202,7 @@ exports.getLiveCrowdData = async (req, res) => {
         res.status(200).json({
             success: true,
             data: {
+                current_count: liveCount, // For test compatibility
                 temple_id: temple._id,
                 temple_name: temple.name,
                 location: temple.location.city,

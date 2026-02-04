@@ -419,7 +419,25 @@ Test-Endpoint "System Health Check" {
 Write-SectionHeader "8. Cleanup Operations"
 
 Test-Endpoint "Cancel Booking (User)" {
-    $response = Invoke-RestMethod -Uri "$BaseUrl/bookings/$($script:TestData.BookingId)" `
+    # Create a NEW booking for cancellation (first one is COMPLETED)
+    $date = (Get-Date).AddDays(2).ToString("yyyy-MM-dd")
+    $data = @{
+        templeId   = $script:TestData.TempleId
+        templeName = "Test Temple"
+        date       = $date
+        slot       = "11:00 AM - 12:00 PM"
+        visitors   = 3
+        userName   = "Test User"
+        userEmail  = "user@test.com"
+    } | ConvertTo-Json
+
+    $newBooking = Invoke-RestMethod -Uri "$BaseUrl/bookings" `
+        -Method Post -Body $data `
+        -Headers @{ "Authorization" = "Bearer $($script:TestData.UserToken)" } `
+        -ContentType "application/json"
+    
+    # Now cancel this new booking
+    $response = Invoke-RestMethod -Uri "$BaseUrl/bookings/$($newBooking.data._id)" `
         -Method Delete `
         -Headers @{ "Authorization" = "Bearer $($script:TestData.UserToken)" }
     
