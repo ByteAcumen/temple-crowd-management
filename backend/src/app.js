@@ -10,6 +10,9 @@ const axios = require('axios');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
+const logger = require('./config/logger');
+const { errorHandler, notFound } = require('./middleware/errorHandler');
+
 const bookingRoutes = require('./routes/bookingRoutes');
 const authRoutes = require('./routes/authRoutes');
 const liveRoutes = require('./routes/liveRoutes');
@@ -30,9 +33,9 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(helmet());
 app.use(compression()); // Compress all responses
 app.use(cors());
-app.use(cors());
-app.use(express.json());
-app.use(morgan('dev'));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(morgan('combined', { stream: logger.stream })); // HTTP request logging
 
 // Rate Limiting (Security)
 const limiter = rateLimit({
@@ -63,28 +66,34 @@ const SocketEvents = require('./events/socketEvents');
 const socketEvents = new SocketEvents(io);
 
 io.on('connection', (socket) => {
-    console.log(`🔌 Client connected: ${socket.id}`);
+    logger.info(`Client connected: ${socket.id}`);
 
     // Join specific temple room
     socket.on('join:temple', (templeId) => {
         socket.join(`temple:${templeId}`);
-        console.log(`📍 Client ${socket.id} joined temple: ${templeId}`);
+        logger.info(`Client ${socket.id} joined temple: ${templeId}`);
     });
 
     // Join admin dashboard room
     socket.on('join:admin', () => {
         socket.join('admin:dashboard');
-        console.log(`👨‍💼 Client ${socket.id} joined admin dashboard`);
+        logger.info(`Client ${socket.id} joined admin  dashboard`);
     });
 
     socket.on('disconnect', () => {
-        console.log(`❌ Client disconnected: ${socket.id}`);
+        logger.info(`Client disconnected: ${socket.id}`);
     });
 });
 
 // Make io and socketEvents accessible globally
 app.set('io', io);
 app.set('socketEvents', socketEvents);
+
+// 404 handler - must be after all routes
+app.use(notFound);
+
+// Global error handler - must be last
+app.use(errorHandler);
 
 // Export app and server for server.js
 module.exports = { app, server, io };
