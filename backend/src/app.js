@@ -15,6 +15,7 @@ const authRoutes = require('./routes/authRoutes');
 const liveRoutes = require('./routes/liveRoutes');
 const botRoutes = require('./routes/botRoutes');
 const templeRoutes = require('./routes/templeRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Config
 const PORT = process.env.PORT || 5000;
@@ -46,6 +47,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/live', liveRoutes);
 app.use('/api/v1/bot', botRoutes);
 app.use('/api/v1/temples', templeRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // Health Check
 app.get('/', (req, res) => {
