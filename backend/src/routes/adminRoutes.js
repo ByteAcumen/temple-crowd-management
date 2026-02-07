@@ -5,6 +5,7 @@ const {
     getAnalytics,
     getTempleReport,
     getUserManagement,
+    createUser,
     getBookingManagement,
     getSystemHealth
 } = require('../controllers/adminController');
@@ -30,8 +31,11 @@ router.get('/health', getSystemHealth);
 // Temple Reports
 router.get('/temples/:id/report', getTempleReport);
 
-// Management
+// User Management (Admin can create gatekeeper/admin accounts)
 router.get('/users', getUserManagement);
+router.post('/users', createUser);
+
+// Booking Management
 router.get('/bookings', getBookingManagement);
 
 module.exports = router;

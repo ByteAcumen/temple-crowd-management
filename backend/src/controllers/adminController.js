@@ -346,6 +346,84 @@ exports.getUserManagement = async (req, res) => {
     }
 };
 
+// @desc    Create User (Admin can create Gatekeeper/Admin accounts)
+// @route   POST /api/v1/admin/users
+// @access  Private (Admin only)
+exports.createUser = async (req, res) => {
+    try {
+        const { name, email, password, role } = req.body;
+
+        // Validate required fields
+        if (!name || !email || !password || !role) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide name, email, password, and role'
+            });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide a valid email address'
+            });
+        }
+
+        // Validate password strength
+        if (password.length < 8) {
+            return res.status(400).json({
+                success: false,
+                error: 'Password must be at least 8 characters'
+            });
+        }
+
+        // Validate role
+        const allowedRoles = ['user', 'gatekeeper', 'admin'];
+        if (!allowedRoles.includes(role)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Role must be user, gatekeeper, or admin'
+            });
+        }
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                error: 'User with this email already exists'
+            });
+        }
+
+        // Create user (password hashing handled by User model pre-save hook)
+        const user = await User.create({
+            name,
+            email,
+            password,
+            role
+        });
+
+        res.status(201).json({
+            success: true,
+            message: `${role.charAt(0).toUpperCase() + role.slice(1)} account created successfully`,
+            data: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error creating user:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to create user'
+        });
+    }
+};
+
 // @desc    Get All Bookings (Booking Management)
 // @route   GET /api/v1/admin/bookings
 // @access  Private (Admin only)

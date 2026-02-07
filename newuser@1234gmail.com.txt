@@ -1,0 +1,5 @@
+newuser@1234gmail.com
+Newuser@123
+
+Admin	admin@temple.com	Admin@123456
+Gatekeeper	gatekeeper@temple.com	Gate@12345

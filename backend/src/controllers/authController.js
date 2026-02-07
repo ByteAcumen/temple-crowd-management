@@ -1,20 +1,47 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { logAuthAttempt } = require('../middleware/auditLogger');
 
-// @desc    Register user
+// Password complexity regex: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+// @desc    Register user (Public - only 'user' role allowed)
 // @route   POST /api/v1/auth/register
 // @access  Public
 exports.register = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        let { name, email, password, role } = req.body;
+        if (email) email = email.toLowerCase();
+        console.log(`📝 Register attempt: ${email} (Role: ${role || 'user'})`);
 
-        // Create user
+        // SECURITY: Password complexity validation
+        if (!PASSWORD_REGEX.test(password)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Password must be at least 8 characters with uppercase, lowercase, number, and special character (@$!%*?&)'
+            });
+        }
+
+        // SECURITY: Block privileged role registration from public API
+        // Only 'user' role can self-register. Admin/Gatekeeper accounts
+        // must be created by an admin via /api/v1/admin/users endpoint
+        if (role && role !== 'user') {
+            return res.status(403).json({
+                success: false,
+                error: 'You cannot register as admin or gatekeeper. Contact system administrator.'
+            });
+        }
+
+        // Create user with 'user' role only
         const user = await User.create({
             name,
             email,
             password,
-            role // In production, we should restrict who can register as admin
+            role: 'user' // Force 'user' role for public registration
         });
+
+        // Audit log
+        logAuthAttempt(true, email, req.ip, user._id);
 
         sendTokenResponse(user, 200, res);
     } catch (error) {
@@ -27,7 +54,9 @@ exports.register = async (req, res) => {
 // @access  Public
 exports.login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        let { email, password } = req.body;
+        if (email) email = email.toLowerCase();
+        console.log(`🔐 Login attempt: ${email}`);
 
         // Validate email & password
         if (!email || !password) {
@@ -38,6 +67,7 @@ exports.login = async (req, res) => {
         const user = await User.findOne({ email }).select('+password');
 
         if (!user) {
+            logAuthAttempt(false, email, req.ip);
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }
 
@@ -45,8 +75,12 @@ exports.login = async (req, res) => {
         const isMatch = await user.matchPassword(password);
 
         if (!isMatch) {
+            logAuthAttempt(false, email, req.ip);
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }
+
+        // Audit log success
+        logAuthAttempt(true, email, req.ip, user._id);
 
         sendTokenResponse(user, 200, res);
     } catch (error) {

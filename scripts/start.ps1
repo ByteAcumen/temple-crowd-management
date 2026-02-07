@@ -5,7 +5,7 @@ Write-Host "========================================`n" -ForegroundColor Cyan
 
 # Clean up old containers
 Write-Host "[1/2] Cleaning up old containers..." -ForegroundColor Yellow
-docker-compose -f docker-compose.dev.yml down -v 2>&1 | Out-Null
+docker-compose -f docker-compose.dev.yml down 2>&1 | Out-Null
 Write-Host "   Done!" -ForegroundColor Green
 
 # Start all services

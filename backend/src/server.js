@@ -7,10 +7,13 @@ const PORT = process.env.PORT || 5000;
 // MongoDB Connection
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/temple_db';
+    logger.info(`Connecting to MongoDB at ${mongoUri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')}...`);
+    await mongoose.connect(mongoUri);
     logger.info('MongoDB connected successfully');
   } catch (error) {
     logger.error('MongoDB connection error:', error.message);
+    logger.error('Make sure MongoDB is running or set MONGO_URI in .env');
     process.exit(1);
   }
 };

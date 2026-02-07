@@ -9,7 +9,7 @@ services:
     volumes:
       - mongodb_data:/data/db
     environment:
-      - MONGO_INIT DB_DATABASE=temple-management
+      - MONGO_INITDB_DATABASE=temple_db
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
@@ -41,8 +41,8 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=5000
-      - MONGO_URI=mongodb://mongodb:27017/temple-management
-      - MONGODB_URI=mongodb://mongodb:27017/temple-management
+      - MONGO_URI=mongodb://mongodb:27017/temple_db
+      - MONGODB_URI=mongodb://mongodb:27017/temple_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_URL=redis://redis:6379
@@ -56,7 +56,7 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
-    command: npm run dev
+    command: node src/server.js
     restart: unless-stopped
     networks:
       - temple-network
