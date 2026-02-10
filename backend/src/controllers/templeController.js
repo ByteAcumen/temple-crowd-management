@@ -1,4 +1,5 @@
 const Temple = require('../models/Temple');
+const crowdTracker = require('../services/CrowdTracker');
 
 /**
  * TEMPLE CONTROLLER
@@ -138,6 +139,7 @@ exports.getAllTemples = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('❌ getAllTemples Error:', error);
         res.status(500).json({
             success: false,
             error: 'Error fetching temples'
@@ -334,18 +336,18 @@ exports.getTempleLiveStatus = async (req, res) => {
             });
         }
 
-        // Calculate percentage and status
-        const liveCount = temple.live_count || 0;
-        const totalCapacity = temple.capacity.total;
-        const percentage = ((liveCount / totalCapacity) * 100).toFixed(1);
+        const totalCapacity = typeof temple.capacity === 'number'
+            ? temple.capacity
+            : (temple.capacity?.total || 1000);
+        const thresholdCritical = temple.capacity?.threshold_critical ?? 95;
+        const thresholdWarning = temple.capacity?.threshold_warning ?? 85;
 
-        // Determine traffic light status
+        const liveCount = await crowdTracker.getCurrentCount(req.params.id);
+        const percentage = totalCapacity > 0 ? ((liveCount / totalCapacity) * 100).toFixed(1) : 0;
+
         let status = 'GREEN';
-        if (percentage >= temple.capacity.threshold_critical) {
-            status = 'RED';
-        } else if (percentage >= temple.capacity.threshold_warning) {
-            status = 'ORANGE';
-        }
+        if (percentage >= thresholdCritical) status = 'RED';
+        else if (percentage >= thresholdWarning) status = 'ORANGE';
 
         res.status(200).json({
             success: true,

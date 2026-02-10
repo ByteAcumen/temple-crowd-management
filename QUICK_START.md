@@ -1,364 +1,136 @@
-# Quick Start Guide
+# 🚀 Quick Start Guide
 
-**Get the Temple Management System running in under 5 minutes!**
+**Get the Temple Crowd Management System running in under 2 minutes!**
 
----
-
-## Prerequisites
-
-**Only 1 requirement**:
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) installed
-
-That's it! Docker handles MongoDB, Redis, and the backend automatically.
+This guide automates the entire setup using Docker. No manual database installation required.
 
 ---
 
-## 🚀 Quick Start (3 Steps)
+## ✅ Prerequisites
 
-### Step 1: Clone the Repository
-```bash
+1.  **[Docker Desktop](https://www.docker.com/products/docker-desktop)** (Must be installed and running)
+2.  **[Node.js](https://nodejs.org/)** (v18+ for Frontend)
+3.  **Git**
+
+That's it! MongoDB, Redis, and AI Services are handled automatically.
+
+---
+
+## 🏃 One-Click Startup (Windows)
+
+We have automated the entire backend ecosystem (API, Database, AI Models) into a single script.
+
+### Step 1: Clone & Setup
+```powershell
 git clone <your-repo-url>
 cd temple-crowd-management
+# No .env needed - Docker uses built-in config
 ```
 
-### Step 2: Start Everything!
+### Step 2: Start Backend Ecosystem 🐳
+Run one of these commands:
+
 ```powershell
-# Windows
-.\scripts\start.ps1
+# Option A: Minimal (mongo + redis + backend - most reliable)
+.\run-docker.ps1
 
-# Linux/Mac
-chmod +x scripts/start.sh
-./scripts/start.sh
+# Option B: Full stack (includes ML services)
+.\start_backend.ps1
 ```
 
-**That's it!** The script will:
-- ✅ Check if Docker is running (start it if needed)
-- ✅ Start MongoDB with health checks
-- ✅ Start Redis with health checks
-- ✅ Start Backend API (waits for DB to be ready)
-- ✅ Show you when everything is ready
+**Wait for the green success message:**
+> ✅ All backend services are healthy.
+> 📡 API: http://localhost:5000/api/v1
 
-**Wait ~30 seconds** for all health checks to complete.
+### Step 3: Start Frontend 💻
+Open a **new terminal window** (keep the backend running in the first one):
 
-### Step 3: Verify It Works
 ```powershell
-# Test the system
-.\verify-system.ps1
+cd frontend
+npm install  # First time only
+npm run dev
 ```
 
-**Expected**: ~90% tests passing (some features need data setup)
+Server running at: **http://localhost:3000**
 
 ---
 
-## 📍 Service URLs
+## 🔑 Default Credentials
 
-Once started, access:
-- **Backend API**: http://localhost:5000
-- **API Docs**: http://localhost:5000/api/v1
-- **MongoDB**: mongodb://localhost:27017
-- **Redis**: redis://localhost:6379
+Use these accounts to log in:
+
+| Role | Email | Password | Access Level |
+|------|-------|----------|--------------|
+| **Super Admin** 👑 | `admin@temple.com` | `Admin@123456` | Full Control, Dashboard, Analytics |
+| **Gatekeeper** 👮 | `gatekeeper@temple.com` | `Gate@12345` | Scan QR, Track Entry/Exit |
+| **Devotee** 🙏 | `user@temple.com` | `User@12345` | Book Slots, View History |
 
 ---
 
-## 🛑 Stop Everything
+## 🧪 Verify Installation
+
+To check if all 27 system features (Auth, Booking, AI, Crowd Tracking) are working correctly, run the full test suite:
 
 ```powershell
-# Windows
-.\scripts\stop.ps1
-
-# Linux/Mac
-./scripts/stop.sh
+powershell -ExecutionPolicy Bypass -File .\verify-system.ps1
 ```
 
-This cleanly stops all containers.
+**Expected Result:** ~90%+ tests passing (some need specific data).
 
 ---
 
-## ⚙️ Environment Variables (Optional)
+## 🔧 Backend Testing & Crowd Simulation
 
-**By default**: Everything works with Docker's built-in configuration.
+### Temples Showing as Offline?
+Temple status (OPEN/CLOSED) is based on operating hours. To force all temples OPEN for dev/demo:
 
-**If you need to customize** (SMTP, Twilio, etc.):
-
-1. **Create `.env` in backend folder** (only if needed):
 ```bash
-cp .env.example backend/.env
+# Add to .env
+FORCE_TEMPLES_OPEN=true
 ```
 
-2. **Edit backend/.env**:
-```env
-# Email (Optional - for notifications)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
+Or run the sync + crowd simulation script:
 
-# SMS (Optional - for notifications)
-TWILIO_ACCOUNT_SID=your_sid
-TWILIO_AUTH_TOKEN=your_token
-TWILIO_PHONE_NUMBER=+1234567890
-```
-
-3. **Restart backend**:
 ```powershell
-docker-compose -f docker-compose.dev.yml restart backend
+cd backend
+node scripts/simulate_crowd.js --open    # Force all temples OPEN
+node scripts/simulate_crowd.js           # Simulate 10-80% crowd
+node scripts/simulate_crowd.js --high    # Simulate 70-95% (triggers ORANGE/RED alerts)
+node scripts/simulate_crowd.js --reset   # Reset all counts to 0
 ```
 
-**Note**: MongoDB and Redis URLs are automatically configured by Docker. Don't change them!
+### No Graphs on Dashboard?
+Analytics graphs show booking trends and revenue. If no bookings exist, the API returns sample data so charts render. Seed bookings:
+
+```powershell
+cd backend
+node scripts/seed_simulation.js --force
+```
+
+### How Crowd Reacts
+- **GREEN**: < 85% capacity
+- **ORANGE**: 85–95% (warning)
+- **RED**: 95%+ (critical)
+- Live counts come from Redis; entry/exit scans update in real-time.
 
 ---
 
-## 🧪 Running Tests
-
-### Full System Test (Recommended)
-```powershell
-.\verify-system.ps1
-```
-
-Tests all 27 features:
-- Authentication & Authorization
-- Temple Management
-- Booking System
-- Live Crowd Tracking
-- Admin Dashboard
-- WebSocket Events
-
-### First Time Running Tests?
-
-**If tests fail because of duplicate data**:
-```powershell
-# Clear the database
-docker exec temple-mongodb-dev mongosh temple-management --eval "db.dropDatabase()"
-
-# Run tests again
-.\verify-system.ps1
-```
-
-**Expected first-time success rate**: 90%+
-
----
-
-## 🔧 Troubleshooting
+## 🛠️ Troubleshooting
 
 ### "Docker is not running"
-**Fix**:
-1. Open Docker Desktop
-2. Wait for it to start (whale icon in system tray)
-3. Run `.\scripts\start.ps1` again
+**Fix:** Open Docker Desktop and wait for the whale icon to stop animating.
 
-### "Port 27017 already in use"
-**Fix**:
-```powershell
-# Stop all Docker containers
-docker stop $(docker ps -aq)
+### "Port 5000 already in use"
+**Fix:** The `start_backend.ps1` script automatically finds and kills rogue processes on port 5000. Just run it again!
 
-# Start fresh
-.\scripts\start.ps1
-```
+### "MongoDB connection failed"
+**Fix:** Ensure you are NOT running a local MongoDB instance separately. The system expects to use the Docker container.
 
-### "Backend not responding"
-**Fix**:
-```powershell
-# Check backend logs
-docker-compose -f docker-compose.dev.yml logs backend
-
-# Restart backend
-docker-compose -f docker-compose.dev.yml restart backend
-
-# Wait 10 seconds, then test
-curl http://localhost:5000
-```
-
-### "MongoDB connection error"
-**Symptoms**: Backend logs show "ECONNREFUSED" or "connection error"
-
-**Fix**:
-```powershell
-# Restart all services
-.\scripts\stop.ps1
-.\scripts\start.ps1
-```
-
-### "Tests getting 400 errors on registration"
-**Cause**: Users already exist in database from previous tests
-
-**Fix**:
-```powershell
-# Clear users collection
-docker exec temple-mongodb-dev mongosh temple-management --eval "db.users.drop()"
-
-# Or clear entire database
-docker exec temple-mongodb-dev mongosh temple-management --eval "db.dropDatabase()"
-
-# Run tests again
-.\verify-system.ps1
-```
-
-### Check Container Status
-```powershell
-# See which containers are running
-docker ps
-
-# Should show 3 containers:
-# - temple-mongodb-dev (healthy)
-# - temple-redis-dev (healthy)
-# - temple-backend-dev (healthy)
-```
-
-### View Container Logs
-```powershell
-# Backend logs
-docker-compose -f docker-compose.dev.yml logs backend
-
-# MongoDB logs
-docker-compose -f docker-compose.dev.yml logs mongodb
-
-# Redis logs
-docker-compose -f docker-compose.dev.yml logs redis
-
-# All logs (follow mode)
-docker-compose -f docker-compose.dev.yml logs -f
-```
+### Frontend shows "Network Error"
+**Fix:** Ensure the backend is running (Step 2) and healthy before starting the frontend.
 
 ---
 
-## 📚 Next Steps
-
-### Learn the API
-Check out the documentation in `docs/`:
-- [Temple API](docs/TEMPLE_API.md) - Temple CRUD operations
-- [Booking API](docs/BOOKING_API.md) - Booking management
-- [Live Tracking API](docs/LIVE_TRACKING_API.md) - Entry/Exit tracking
-- [Admin API](docs/ADMIN_API.md) - Dashboard & analytics
-- [WebSocket Events](docs/WEBSOCKET_EVENTS.md) - Real-time updates
-
-### Test Individual Features
-```powershell
-# Create a test user
-$body = @{
-    name = "Test User"
-    email = "test@example.com"
-    password = "Test@123"
-    role = "user"
-} | ConvertTo-Json
-
-Invoke-RestMethod -Uri "http://localhost:5000/api/v1/auth/register" -Method POST -Body $body -ContentType "application/json"
-```
-
-### Develop with Hot Reload
-The backend has **hot reload** enabled - any code changes automatically restart the server!
-
-1. Edit files in `backend/src/`
-2. Save
-3. Wait 2-3 seconds
-4. Changes are live!
-
----
-
-## 🎯 Common Development Tasks
-
-### Add New Packages
-```bash
-cd backend
-npm install package-name
-
-# Rebuild Docker image
-docker-compose -f docker-compose.dev.yml up -d --build
-```
-
-### Access MongoDB Directly
-```bash
-# Open MongoDB shell
-docker exec -it temple-mongodb-dev mongosh temple-management
-
-# Run queries
-db.users.find()
-db.temples.find()
-db.bookings.find()
-```
-
-### Access Redis Directly
-```bash
-# Open Redis CLI
-docker exec -it temple-redis-dev redis-cli
-
-# Check data
-KEYS *
-GET temple:live:temple_id
-```
-
-### Reset Everything
-```powershell
-# Stop and remove all containers + volumes
-docker-compose -f docker-compose.dev.yml down -v
-
-# Start fresh
-.\scripts\start.ps1
-```
-
----
-
-## ⚡ Performance Tips
-
-### First Time Startup
-- **First run**: ~2-3 minutes (downloading images)
-- **Subsequent runs**: ~30 seconds (images cached)
-
-### Running Status
-- MongoDB: ~10-15 MB RAM
-- Redis: ~5-10 MB RAM
-- Backend: ~50-100 MB RAM
-
-**Total**: ~100 MB RAM (very lightweight!)
-
----
-
-## 🚨 Important Notes
-
-### DO NOT:
-- ❌ Edit `docker-compose.dev.yml` unless you know what you're doing
-- ❌ Change MongoDB or Redis URLs in .env (Docker handles this)
-- ❌ Commit `.env` files to git (they're in .gitignore)
-
-### DO:
-- ✅ Use `.\scripts\start.ps1` to start
-- ✅ Use `.\scripts\stop.ps1` to stop
-- ✅ Check logs if something fails
-- ✅ Clear database if tests fail with "duplicate" errors
-- ✅ Ask for help in Discord/Slack if stuck
-
----
-
-## 📞 Getting Help
-
-**Issues?**
-1. Check [Troubleshooting](#-troubleshooting) section above
-2. Check backend logs: `docker-compose -f docker-compose.dev.yml logs backend`
-3. Open an issue on GitHub
-4. Ask in team Discord/Slack
-
-**System Info for Bug Reports**:
-```powershell
-# Get versions
-docker --version
-node --version
-npm --version
-
-# Get container status
-docker ps -a
-
-# Get backend logs (last 50 lines)
-docker-compose -f docker-compose.dev.yml logs --tail=50 backend
-```
-
----
-
-## 🎉 You're Ready!
-
-Your Temple Management System is now running!
-
-- 🟢 MongoDB: Healthy
-- 🟢 Redis: Healthy
-- 🟢 Backend: Running at http://localhost:5000
-
-**Happy coding! 🚀**
+## 📚 Documentation
+- [Architecture Overview](README.md)
+- [API Documentation](docs/)

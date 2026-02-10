@@ -4,6 +4,7 @@
 // Premium Design with Advanced Animations
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 export default function HomePage() {
@@ -23,9 +24,11 @@ export default function HomePage() {
                     {/* Logo with Image */}
                     <Link href="/" className="flex items-center gap-3 cursor-pointer group">
                         <div className="relative">
-                            <img
+                            <Image
                                 src="/temple-logo.png"
                                 alt="Temple Smart E-Pass Logo"
+                                width={48}
+                                height={48}
                                 className="w-12 h-12 rounded-xl object-contain transition-transform group-hover:scale-110"
                             />
                             {/* Glow Effect */}
@@ -109,10 +112,12 @@ export default function HomePage() {
             <section className="relative pt-32 pb-20 min-h-screen flex items-center overflow-hidden">
                 {/* Background Image with Overlay - High Quality Unsplash Temple */}
                 <div className="absolute inset-0 z-0">
-                    <img
+                    <Image
                         src="https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=1920&q=80"
                         alt="Majestic South Indian Temple at Golden Hour"
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        priority
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/60"></div>
                     {/* Animated gradient overlay */}
@@ -180,9 +185,11 @@ export default function HomePage() {
                         {/* Mobile/Tablet: Show E-Pass mockup image */}
                         <div className="lg:hidden flex justify-center animate-fade-in-up delay-200">
                             <div className="relative">
-                                <img
+                                <Image
                                     src="/epass-mockup.png"
                                     alt="Temple E-Pass Digital Pass Preview"
+                                    width={384}
+                                    height={600}
                                     className="w-full max-w-xs sm:max-w-sm rounded-2xl shadow-2xl"
                                 />
                                 <div className="absolute -bottom-4 -right-4 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
@@ -606,10 +613,12 @@ export default function HomePage() {
             <section className="py-24 relative overflow-hidden">
                 {/* Temple Background Image */}
                 <div className="absolute inset-0">
-                    <img
+                    <Image
                         src="https://images.unsplash.com/photo-1621427642869-0f968d7d9e48?w=1920&q=80"
                         alt="Temple Silhouette"
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        priority
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-orange-600/95 via-orange-500/90 to-red-500/95"></div>
                 </div>
@@ -641,9 +650,11 @@ export default function HomePage() {
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-8 pb-8 border-b border-slate-800">
                         <div className="flex items-center gap-4">
-                            <img
+                            <Image
                                 src="/temple-logo.png"
                                 alt="Temple Smart Logo"
+                                width={56}
+                                height={56}
                                 className="w-14 h-14 rounded-xl object-contain"
                             />
                             <div>

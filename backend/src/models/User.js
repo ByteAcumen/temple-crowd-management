@@ -22,6 +22,16 @@ const UserSchema = new mongoose.Schema({
         enum: ['user', 'gatekeeper', 'admin'],
         default: 'user'
     },
+    // Super Admin can access all temples and manage other admins
+    isSuperAdmin: {
+        type: Boolean,
+        default: false
+    },
+    // Temple Admin can only access assigned temples (empty = no access unless super admin)
+    assignedTemples: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Temple'
+    }],
     password: {
         type: String,
         required: [true, 'Please add a password'],
@@ -37,7 +47,7 @@ const UserSchema = new mongoose.Schema({
 // Encrypt password using bcrypt
 UserSchema.pre('save', async function (next) {
     if (!this.isModified('password')) {
-        next();
+        return next();
     }
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);

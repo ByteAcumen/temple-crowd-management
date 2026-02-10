@@ -19,7 +19,8 @@ const ADMIN_USER = {
     name: process.env.ADMIN_NAME || 'System Administrator',
     email: process.env.ADMIN_EMAIL || 'admin@temple.com',
     password: process.env.ADMIN_PASSWORD || 'Admin@123456',
-    role: 'admin'
+    role: 'admin',
+    isSuperAdmin: true
 };
 
 async function seedAdmin() {

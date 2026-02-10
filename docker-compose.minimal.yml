@@ -1,0 +1,71 @@
+# Minimal backend - MongoDB + Redis + Backend only (no ML)
+# Use: docker compose -f docker-compose.minimal.yml up -d --build
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: temple-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=temple_db
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - temple-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  redis:
+    image: redis:7-alpine
+    container_name: temple-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - temple-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: temple-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://mongo:27017/temple_db
+      - MONGODB_URI=mongodb://mongo:27017/temple_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=temple_crowd_jwt_secret_change_in_production
+      - JWT_EXPIRE=30d
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - temple-net
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  temple-net:
+    driver: bridge

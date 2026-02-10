@@ -101,7 +101,7 @@ const bookingSchema = new mongoose.Schema({
 });
 
 // Performance Indexes (CRITICAL for fast queries)
-bookingSchema.index({ passId: 1 }); // Fast QR lookup
+// Note: passId already has unique index from schema definition
 bookingSchema.index({ userId: 1, date: -1 }); // Fast user booking history
 bookingSchema.index({ temple: 1, date: 1, slot: 1 }); // Fast slot availability check
 bookingSchema.index({ userEmail: 1, date: -1 }); // Fast email lookup

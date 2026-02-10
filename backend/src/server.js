@@ -1,15 +1,25 @@
 const { app, server, io } = require('./app');
 const mongoose = require('mongoose');
 const logger = require('./config/logger');
+const templeStatusService = require('./services/TempleStatusService');
+const crowdTracker = require('./services/CrowdTracker');
 
 const PORT = process.env.PORT || 5000;
+
+console.log('🚀 Server starting...');
+console.log('📂 __filename:', __filename);
+console.log('📂 CWD:', process.cwd());
 
 // MongoDB Connection
 const connectDB = async () => {
   try {
     const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/temple_db';
     logger.info(`Connecting to MongoDB at ${mongoUri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')}...`);
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(mongoUri, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
     logger.info('MongoDB connected successfully');
   } catch (error) {
     logger.error('MongoDB connection error:', error.message);
@@ -22,7 +32,14 @@ const connectDB = async () => {
 const startServer = async () => {
   await connectDB();
 
-  server.listen(PORT, () => {
+  // Start automated temple status scheduler (checks every 5 min)
+  templeStatusService.startScheduler();
+  logger.info('🕐 Temple Status Scheduler initialized');
+
+  // Sync Redis from MongoDB (in case Redis was restarted)
+  await crowdTracker.initializeAllCounts();
+
+  server.listen(PORT, '0.0.0.0', () => {
     logger.info(`Server running on port ${PORT}`);
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
     logger.info(`API: http://localhost:${PORT}/api/v1`);

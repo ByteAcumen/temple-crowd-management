@@ -7,7 +7,10 @@ const {
     getUserManagement,
     createUser,
     getBookingManagement,
-    getSystemHealth
+    getSystemHealth,
+    getAdminUsers,
+    updateUserTemples,
+    deleteUser
 } = require('../controllers/adminController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -17,6 +20,8 @@ const { protect, authorize } = require('../middleware/auth');
  * 
  * All routes protected with admin-only authorization
  * Provides statistics, analytics, and management capabilities
+ * 
+ * Super Admin routes are marked with (Super Admin) - require isSuperAdmin: true
  */
 
 // Protect all admin routes
@@ -34,6 +39,11 @@ router.get('/temples/:id/report', getTempleReport);
 // User Management (Admin can create gatekeeper/admin accounts)
 router.get('/users', getUserManagement);
 router.post('/users', createUser);
+
+// Super Admin Only - Admin Management
+router.get('/admins', getAdminUsers);                    // List all admins (Super Admin)
+router.put('/users/:id/temples', updateUserTemples);     // Assign temples (Super Admin)
+router.delete('/users/:id', deleteUser);                 // Delete user (Super Admin)
 
 // Booking Management
 router.get('/bookings', getBookingManagement);

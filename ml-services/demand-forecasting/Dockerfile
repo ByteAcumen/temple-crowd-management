@@ -4,17 +4,14 @@ FROM python:3.9-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (for building some python packages)
-RUN apt-get update && apt-get install -y \
-  build-essential \
-  curl \
-  && rm -rf /var/lib/apt/lists/*
+# System dependencies removed for lightweight mock service
 
 # Copy requirements first (optimization)
 COPY requirements.txt .
 
-# Install Dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install curl for healthcheck and dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
 COPY src/ src/

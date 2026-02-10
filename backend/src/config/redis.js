@@ -13,9 +13,10 @@ const redis = new Redis({
     host: REDIS_HOST,
     port: REDIS_PORT,
     maxRetriesPerRequest: 3,
+    connectTimeout: 10000,
     retryStrategy(times) {
-        const delay = Math.min(times * 50, 2000);
-        return delay;
+        if (times > 10) return null;
+        return Math.min(times * 100, 2000);
     }
 });
 

@@ -14,6 +14,63 @@ const Temple = require('../models/Temple');
  * - Real-time traffic light status (GREEN/ORANGE/RED)
  */
 
+// @desc    Get All Temples Live Status (Dashboard Overview)
+// @route   GET /api/v1/live
+// @access  Public
+// Returns ALL temples (OPEN + CLOSED) so dashboard always shows data; status indicates if open
+exports.getAllLiveData = async (req, res) => {
+    try {
+        // Get ALL temples (not just OPEN) - so we always show crowd data for all
+        const temples = await Temple.find({}).select('name location capacity status');
+
+        // Get live count for each temple from Redis
+        const templeStats = await Promise.all(
+            temples.map(async (temple) => {
+                const liveCount = await crowdTracker.getCurrentCount(temple._id.toString());
+                const thresholds = await crowdTracker.checkThresholds(temple._id.toString(), liveCount);
+                const cap = typeof temple.capacity === 'number' ? temple.capacity : (temple.capacity?.total || 1000);
+
+                return {
+                    temple_id: temple._id,
+                    temple_name: temple.name,
+                    location: (temple.location && typeof temple.location === 'object' ? temple.location.city : null) || 'Unknown',
+                    live_count: liveCount,
+                    capacity: cap,
+                    capacity_percentage: thresholds.percentage,
+                    traffic_status: thresholds.status,
+                    status: temple.status || 'OPEN',
+                    available_space: cap - liveCount
+                };
+            })
+        );
+
+        // Summary stats
+        const totalVisitors = templeStats.reduce((acc, t) => acc + t.live_count, 0);
+        const totalCapacity = templeStats.reduce((acc, t) => acc + t.capacity, 0);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                temples: templeStats,
+                summary: {
+                    total_temples: templeStats.length,
+                    total_visitors: totalVisitors,
+                    total_capacity: totalCapacity,
+                    overall_percentage: totalCapacity > 0 ? Math.round((totalVisitors / totalCapacity) * 100) : 0
+                },
+                last_updated: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting all live data:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch live data'
+        });
+    }
+};
+
 // @desc    Record Temple Entry (Gatekeeper scans entry QR)
 // @route   POST /api/v1/live/entry
 // @access  Private (Gatekeeper/Admin)

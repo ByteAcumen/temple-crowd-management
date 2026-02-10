@@ -120,6 +120,211 @@ const templeSchema = new mongoose.Schema({
         default: 'OPEN'
     },
 
+    // OPERATING HOURS - Flexible timing system
+    operatingHours: {
+        // Regular weekday hours
+        regular: {
+            opens: { type: String, default: '06:00' },   // 24-hour format
+            closes: { type: String, default: '21:00' }
+        },
+        // Weekend hours (if different)
+        weekend: {
+            opens: { type: String, default: '05:00' },
+            closes: { type: String, default: '22:00' }
+        },
+        // Special dates with custom hours
+        specialDays: [{
+            date: Date,
+            name: String,        // e.g., "Diwali", "Ram Navami"
+            opens: String,
+            closes: String,
+            isClosed: { type: Boolean, default: false }
+        }]
+    },
+
+    // FEE STRUCTURE
+    fees: {
+        general: { type: Number, default: 0 },           // Free entry
+        specialDarshan: { type: Number, default: 300 },  // Skip the line
+        vipEntry: { type: Number, default: 500 },        // Premium access
+        foreigners: { type: Number, default: 0 },        // Foreign tourists
+        prasad: { type: Number, default: 50 },           // Offering
+        photography: { type: Number, default: 100 }      // Camera fee
+    },
+
+    // TEMPLE INFORMATION
+    description: {
+        type: String,
+        trim: true,
+        maxlength: [2000, 'Description cannot exceed 2000 characters']
+    },
+
+    deity: {
+        type: String,
+        trim: true  // Main deity: "Lord Shiva", "Lord Vishnu", etc.
+    },
+
+    significance: {
+        type: String,
+        trim: true,
+        maxlength: [1000, 'Significance cannot exceed 1000 characters']
+    },
+
+    // FACILITIES AVAILABLE
+    facilities: {
+        parking: { type: Boolean, default: true },
+        wheelchairAccess: { type: Boolean, default: false },
+        cloakroom: { type: Boolean, default: true },
+        prasadCounter: { type: Boolean, default: true },
+        shoeStand: { type: Boolean, default: true },
+        drinkingWater: { type: Boolean, default: true },
+        restrooms: { type: Boolean, default: true },
+        accommodation: { type: Boolean, default: false },
+        freeFood: { type: Boolean, default: false }       // Langar/Annadanam
+    },
+
+    // IMAGE URL (for gradients, we use temple name mapping in frontend)
+    imageUrl: {
+        type: String,
+        trim: true
+    },
+
+    // GALLERY - Multiple temple images
+    gallery: [{
+        url: { type: String, required: true },
+        caption: String,
+        type: { type: String, enum: ['exterior', 'interior', 'deity', 'event', 'panorama'], default: 'exterior' },
+        isPrimary: { type: Boolean, default: false }
+    }],
+
+    // PRASAD MENU - Different prasad options with prices
+    prasadMenu: [{
+        name: { type: String, required: true },    // "Laddu", "Tirupati Laddu", "Panchamrit"
+        description: String,
+        price: { type: Number, required: true },
+        isAvailable: { type: Boolean, default: true },
+        isVegetarian: { type: Boolean, default: true },
+        servingSize: String,                        // "1 piece", "250g", "1 plate"
+        specialOccasion: String                     // "Daily", "Festival only", "Weekends"
+    }],
+
+    // DONATION OPTIONS
+    donations: {
+        enabled: { type: Boolean, default: true },
+        minimumAmount: { type: Number, default: 11 },
+        options: [{
+            name: String,                           // "General Donation", "Annadanam", "Temple Renovation"
+            description: String,
+            suggestedAmounts: [Number],             // [101, 501, 1001, 5001]
+            purpose: String
+        }],
+        bankDetails: {
+            accountName: String,
+            accountNumber: String,
+            ifscCode: String,
+            bankName: String,
+            upiId: String
+        },
+        taxExemption: { type: Boolean, default: true },
+        section80G: { type: Boolean, default: true }
+    },
+
+    // SPECIAL SERVICES / SEVAS
+    specialServices: [{
+        name: { type: String, required: true },     // "Abhishekam", "Archana", "Homam"
+        description: String,
+        price: { type: Number, required: true },
+        duration: String,                           // "30 mins", "1 hour"
+        timings: [String],                          // ["06:00", "12:00", "18:00"]
+        daysAvailable: [String],                    // ["Monday", "Friday", "AllDays"]
+        maxParticipants: { type: Number, default: 1 },
+        requiresBooking: { type: Boolean, default: true },
+        advanceBookingDays: { type: Number, default: 7 }
+    }],
+
+    // ANNUAL EVENTS / FESTIVALS
+    annualEvents: [{
+        name: { type: String, required: true },     // "Maha Shivaratri", "Brahmotsavam"
+        description: String,
+        startDate: String,                          // "February" or specific date
+        endDate: String,
+        duration: String,                           // "1 day", "9 days"
+        expectedCrowd: { type: String, enum: ['low', 'medium', 'high', 'extreme'] },
+        specialActivities: [String]
+    }],
+
+    // TEMPLE HISTORY
+    history: {
+        foundedYear: String,                        // "800 AD", "1801"
+        founder: String,
+        architecturalStyle: String,                 // "Dravidian", "Nagara", "Vesara"
+        historicalEvents: [String],
+        renovations: [{
+            year: String,
+            description: String
+        }]
+    },
+
+    // RULES & GUIDELINES
+    rules: {
+        dressCode: {
+            men: String,                            // "Traditional dhoti or formal wear"
+            women: String                           // "Saree or salwar kameez"
+        },
+        restrictions: [String],                     // ["No leather items", "No mobiles"]
+        photography: {
+            allowed: { type: Boolean, default: false },
+            restrictions: String                    // "Only in outer areas"
+        },
+        timingsNote: String                         // "Temple closes during afternoon"
+    },
+
+    // NEARBY ATTRACTIONS
+    nearbyAttractions: [{
+        name: String,
+        type: { type: String, enum: ['temple', 'monument', 'nature', 'market', 'restaurant'] },
+        distance: String,                           // "2 km", "500 m"
+        description: String
+    }],
+
+    // HOW TO REACH
+    howToReach: {
+        nearestAirport: { name: String, distance: String },
+        nearestRailway: { name: String, distance: String },
+        nearestBusStop: { name: String, distance: String },
+        localTransport: [String]                    // ["Auto", "Bus", "Taxi"]
+    },
+
+    // SOCIAL MEDIA & ONLINE PRESENCE
+    socialMedia: {
+        facebook: String,
+        instagram: String,
+        twitter: String,
+        youtube: String
+    },
+
+    // LIVE DARSHAN / STREAMING
+    liveDarshan: {
+        enabled: { type: Boolean, default: false },
+        streamUrl: String,
+        timings: [String]
+    },
+
+    // ACCOMMODATION OPTIONS
+    accommodationDetails: [{
+        name: String,                               // "Temple Guest House", "Dharamshala"
+        type: { type: String, enum: ['guest_house', 'dharamshala', 'hotel', 'cottage'] },
+        priceRange: { min: Number, max: Number },
+        contact: String,
+        amenities: [String]
+    }],
+
+    // RATINGS & REVIEWS (for future)
+    ratings: {
+        average: { type: Number, default: 0, min: 0, max: 5 },
+        count: { type: Number, default: 0 }
+    },
+
     // TIMESTAMPS (automatically managed)
     createdAt: {
         type: Date,

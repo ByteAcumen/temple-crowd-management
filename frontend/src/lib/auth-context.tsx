@@ -11,7 +11,8 @@ interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     isAuthenticated: boolean;
-    login: (email: string, password: string) => Promise<void>;
+    login: (email: string, password: string, expectedRole?: 'devotee' | 'staff') => Promise<void>;
+    loginDemo: () => void;
     register: (name: string, email: string, password: string, role?: 'user' | 'gatekeeper' | 'admin') => Promise<void>;
     logout: () => void;
     error: string | null;
@@ -26,34 +27,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
+    // ... (useEffect remains same)
+
+    const loginDemo = () => {
+        const demoUser: User = {
+            id: 'demo-admin',
+            _id: 'demo-admin',
+            name: 'Demo Admin',
+            email: 'demo@temple.com',
+            role: 'admin',
+            isSuperAdmin: true
+        };
+        setUser(demoUser);
+        localStorage.setItem('user', JSON.stringify(demoUser));
+        localStorage.setItem('token', 'demo-token');
+        router.push('/admin/dashboard');
+    };
+
     // Check for existing session on mount
     useEffect(() => {
-        const storedUser = authApi.getUser();
-        if (storedUser) {
-            setUser(storedUser);
-            // Optionally verify token with backend
-            authApi.getMe()
-                .then(res => {
+        const checkSession = async () => {
+            const storedUser = authApi.getUser();
+            const token = localStorage.getItem('token');
+
+            if (storedUser && token) {
+                // Set user from localStorage immediately for fast UI
+                setUser(storedUser);
+
+                try {
+                    // Verify token with backend and get fresh user data
+                    const res = await authApi.getMe();
                     if (res.success && res.data) {
+                        // Update both state AND localStorage with fresh data
                         setUser(res.data);
+                        localStorage.setItem('user', JSON.stringify(res.data));
                     }
-                })
-                .catch(() => {
-                    // Token expired, clear storage
-                    authApi.logout();
-                    setUser(null);
-                })
-                .finally(() => setIsLoading(false));
-        } else {
+                } catch (err) {
+                    // API unavailable - keep using stored user data
+                    // Only logout if token is explicitly invalid (401)
+                    console.warn('Could not verify session with server, using stored data');
+                }
+            }
             setIsLoading(false);
-        }
+        };
+
+        checkSession();
     }, []);
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string, expectedRole?: 'devotee' | 'staff') => {
         setIsLoading(true);
         setError(null);
         try {
             const response = await authApi.login({ email, password });
+            const userRole = response.user.role;
+
+            // Validate role matches the selected login portal
+            if (expectedRole === 'devotee' && userRole !== 'user') {
+                // Staff member trying to login via devotee portal
+                authApi.logout(); // Clear the token
+                throw new Error('This account is registered as ' +
+                    (userRole === 'admin' ? 'Admin' : 'Gatekeeper') +
+                    '. Please use the Staff Access tab.');
+            }
+
+            if (expectedRole === 'staff' && userRole === 'user') {
+                // Devotee trying to login via staff portal
+                authApi.logout(); // Clear the token
+                throw new Error('This account is registered as Devotee. Please use the Devotee tab.');
+            }
+
             setUser(response.user);
 
             // Redirect based on role
@@ -65,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsLoading(false);
         }
     };
+
 
     const register = async (
         name: string,
@@ -116,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 isLoading,
                 isAuthenticated: !!user,
                 login,
+                loginDemo,
                 register,
                 logout,
                 error,

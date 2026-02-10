@@ -1,8 +1,9 @@
-const redis = require('../config/redis');
 const axios = require('axios');
+const Temple = require('../models/Temple');
+const crowdTracker = require('../services/CrowdTracker');
 
 // Constants
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://ai-service:8000';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || process.env.ML_FORECASTING_URL || 'http://localhost:8002';
 
 // @desc    Process User Query
 // @route   POST /api/v1/bot/query
@@ -58,15 +59,25 @@ exports.chat = async (req, res) => {
     }
 };
 
-// Helper: Get Live Data
+// Helper: Get Live Data (aggregate from all temples via CrowdTracker)
 async function getLiveCrowd() {
-    const countStr = await redis.get('temple_crowd_count');
-    const count = parseInt(countStr) || 0;
-    let status = 'Relaxed 🟢';
-    if (count > 15000) status = 'CRITICAL 🔴';
-    else if (count > 10000) status = 'Busy 🟠';
-
-    return { count, status };
+    try {
+        const temples = await Temple.find({ status: 'OPEN' }).select('_id capacity');
+        let totalCount = 0;
+        let totalCapacity = 0;
+        for (const temple of temples) {
+            const count = await crowdTracker.getCurrentCount(temple._id.toString());
+            totalCount += count;
+            totalCapacity += temple.capacity?.total || 0;
+        }
+        const percentage = totalCapacity > 0 ? (totalCount / totalCapacity) * 100 : 0;
+        let status = 'Relaxed 🟢';
+        if (percentage >= 95) status = 'CRITICAL 🔴';
+        else if (percentage >= 85) status = 'Busy 🟠';
+        return { count: totalCount, status };
+    } catch {
+        return { count: 0, status: 'Relaxed 🟢' };
+    }
 }
 
 // Helper: Get AI Prediction

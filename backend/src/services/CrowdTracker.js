@@ -130,9 +130,26 @@ class CrowdTracker {
     }
 
     /**
+     * Get total live count across all temples (for admin stats)
+     */
+    async getTotalLiveCount() {
+        try {
+            const temples = await Temple.find({}).select('_id');
+            let total = 0;
+            for (const t of temples) {
+                total += await this.getCurrentCount(t._id.toString());
+            }
+            return total;
+        } catch (error) {
+            console.error('❌ Error getting total count:', error);
+            return 0;
+        }
+    }
+
+    /**
      * Get Current Live Count
      * Super fast Redis read for dashboard
-     * 
+     *
      * @param {String} templeId - MongoDB Temple ID
      * @returns {Number} Current people count
      */
@@ -163,12 +180,17 @@ class CrowdTracker {
                 return { percentage: 0, status: 'UNKNOWN', alert: null };
             }
 
-            const percentage = (currentCount / temple.capacity.total) * 100;
+            const totalCap = typeof temple.capacity === 'number'
+                ? temple.capacity
+                : (temple.capacity?.total || 1000);
+            const thresholdWarning = temple.capacity?.threshold_warning ?? 85;
+            const thresholdCritical = temple.capacity?.threshold_critical ?? 95;
+            const percentage = totalCap > 0 ? (currentCount / totalCap) * 100 : 0;
             let status = 'GREEN';
             let alert = null;
 
             // CRITICAL: 95%+ capacity (RED - STOP NEW ENTRIES!)
-            if (percentage >= temple.capacity.threshold_critical) {
+            if (percentage >= thresholdCritical) {
                 status = 'RED';
                 alert = {
                     level: 'CRITICAL',
@@ -183,7 +205,7 @@ class CrowdTracker {
                 // await this.sendNotification(templeId, alert);
             }
             // WARNING: 85-94% capacity (ORANGE - WARN ADMINS)
-            else if (percentage >= temple.capacity.threshold_warning) {
+            else if (percentage >= thresholdWarning) {
                 status = 'ORANGE';
                 alert = {
                     level: 'WARNING',
@@ -226,6 +248,24 @@ class CrowdTracker {
             }
         } catch (error) {
             console.error('❌ Error initializing count:', error);
+        }
+    }
+
+    /**
+     * Initialize Redis counts for ALL temples from MongoDB (run on server startup)
+     * Ensures Redis has correct data after Redis restart
+     */
+    async initializeAllCounts() {
+        try {
+            const temples = await Temple.find({}).select('_id name live_count');
+            for (const temple of temples) {
+                const countKey = `temple:${temple._id}:live_count`;
+                const count = temple.live_count || 0;
+                await redis.set(countKey, count);
+            }
+            console.log(`✅ Redis synced: ${temples.length} temple(s) initialized from MongoDB`);
+        } catch (error) {
+            console.error('❌ Error initializing Redis from MongoDB:', error.message);
         }
     }
 

@@ -4,6 +4,7 @@
 // Multi-role registration with step wizard
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, FormEvent } from 'react';
 import { useAuth } from '@/lib/auth-context';
 
@@ -49,7 +50,7 @@ export default function RegisterPage() {
         uppercase: /[A-Z]/.test(formData.password),
         lowercase: /[a-z]/.test(formData.password),
         number: /[0-9]/.test(formData.password),
-        special: /[@$!%*?&]/.test(formData.password),
+        special: /[\W_]/.test(formData.password), // Matches backend: any special char
     };
     const isPasswordValid = Object.values(passwordChecks).every(Boolean);
     const passwordsMatch = formData.password === formData.confirmPassword;
@@ -103,8 +104,10 @@ export default function RegisterPage() {
         try {
             await register(cleanName, cleanEmail, formData.password, formData.role);
             // Redirect happens automatically in auth context based on role
-        } catch (err: any) {
-            setFormError(err.message || 'Registration failed. Please try again.');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Registration failed';
+            // Detailed debugging for user
+            setFormError(`DEBUG: ${message} | ${JSON.stringify(err)}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -170,7 +173,8 @@ export default function RegisterPage() {
                     {/* Mobile Logo */}
                     <div className="lg:hidden text-center mb-8">
                         <Link href="/" className="inline-flex items-center gap-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
+                            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center relative overflow-hidden">
+                                {/* Using SVG icon instead of image for better performance/quality here */}
                                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                 </svg>
@@ -366,7 +370,9 @@ export default function RegisterPage() {
                                             {[
                                                 { check: passwordChecks.length, text: 'At least 8 characters' },
                                                 { check: passwordChecks.uppercase, text: 'One uppercase letter' },
+                                                { check: passwordChecks.lowercase, text: 'One lowercase letter' },
                                                 { check: passwordChecks.number, text: 'One number' },
+                                                { check: passwordChecks.special, text: 'One special character (!@#$%^&*)' },
                                             ].map((req, i) => (
                                                 <div key={i} className="flex items-center gap-2 text-sm">
                                                     <div className={`w-4 h-4 rounded-full flex items-center justify-center ${req.check ? 'bg-green-500' : 'bg-slate-200'

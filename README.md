@@ -8,120 +8,54 @@ Prevents dangerous overcrowding through real-time tracking, intelligent bookings
 
 ---
 
-## 🚀 **ONE COMMAND START** (New!)
+## 🚀 Quick Start (Automated)
 
+The system now includes **self-healing automation scripts** for Windows.
+
+### 1-Click Startup
 ```powershell
-# Windows
-.\scripts\start.ps1
-
-# Linux/Mac
-./scripts/start.sh
+.\start.ps1
 ```
+**What this does:**
+- 🧹 **Cleans Ports**: Kills rogue Node/Mongo processes freeing ports 5000/27017/6379
+- 🐳 **Starts Docker**: Launches MongoDB, Redis, and Backend with named volumes
+- 🧪 **Auto-Testing**: Runs `load_test.js` to verify 18/18 endpoints are healthy
+- 🔄 **Auto-Recovery**: Restarts backend automatically if health checks fail
 
-That's it! This automatically:
-- Starts Docker (if needed)
-- Starts MongoDB with health checks
-- Starts Redis with health checks
-- Starts Backend API (after dependencies ready)
+### Graceful Shutdown
+```powershell
+.\stop.ps1
+```
+**Why use this?**
+- Ensures **No Data Loss** (triggers SIGTERM for meaningful shutdown)
+- Preserves MongoDB/Redis data in named volumes (`temple-mongo-data`)
+
+### Data Backup
+```powershell
+.\backup.ps1
+```
+- Creates timestamped snapshots of your database in `.\backups`
 
 ---
 
-## ✨ Features
+## 🏗️ Architecture Updates
 
-### Core Features
-- 🏛️ **Temple Management** - Full CRUD operations with admin control
-- 📅 **Smart Booking System** - Slot-based bookings with **overbooking prevention**
-- 👥 **Live Crowd Tracking** - Real-time entry/exit with Redis atomic counters
-- 📊 **Admin Dashboard** - Statistics, analytics, and insights
-- 🔔 **Notifications** - Email/SMS alerts for bookings and capacity warnings
-- ⚡ **Real-time Updates** - WebSocket broadcasts for live data
-- 🎫 **QR Code System** - Digital passes for contactless entry
+### Data Persistence
+- **MongoDB**: Stores Users, Temples, Bookings (Volume: `temple-mongo-data`)
+- **Redis**: Stores Live Counts, Active Sessions (Volume: `temple-redis-data`)
+  - *Persistence Enabled*: AOF + RDB ensures live counts survive restarts
 
-### Security
-- 🔐 JWT Authentication
-- 👮 Role-Based Access Control (Admin/Gatekeeper/User)
-- 🛡️ Password hashing with bcrypt
-- 🚫 Rate limiting & DDoS protection
-- 🔒 Protected routes and authorization
-
-### Technology
-- **Backend**: Node.js + Express.js
-- **Database**: MongoDB (persistence) + Redis (real-time)
-- **Real-time**: Socket.IO (WebSocket)
-- **Deployment**: Docker with health checks
-
----
-
-## 📁 Project Structure
-
-```
-temple-crowd-management/
-├── README.md                    # This file
-├── QUICK_START.md               # Quick reference guide
-├── TESTING.md                   # Testing documentation
-├── docs/                        # API Documentation
-│   ├── TEMPLE_API.md
-│   ├── LIVE_TRACKING_API.md
-│   ├── BOOKING_API.md
-│   ├── ADMIN_API.md
-│   └── WEBSOCKET_EVENTS.md
-├── scripts/                     # Automation scripts
-│   ├── start.ps1               # ONE COMMAND START (Windows)
-│   ├── start.sh                # ONE COMMAND START (Linux/Mac)
-│   ├── stop.ps1                # Stop all services
-│   └── setup.ps1               # Initial setup
-├── backend/                     # Backend API
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── middleware/
-│   │   ├── services/
-│   │   └── events/
-│   └── Dockerfile
-├── ml-services/                 # AI/ML prediction services
-├── verify-system.ps1            # Comprehensive test suite (27 tests)
-├── docker-compose.yml           # Production Docker config
-└── docker-compose.dev.yml       # Development Docker config (with health checks)
-```
-
----
-
-## 🏁 Quick Start
-
-### Prerequisites
-- **Docker Desktop** (Windows/Mac/Linux)
-- That's it! Docker handles everything else
-
-### Installation
-
-**1. Clone the repository**
-```bash
-git clone https://github.com/yourusername/temple-crowd-management.git
-cd temple-crowd-management
-```
-
-**2. Create environment file**
-```bash
-cp .env.example backend/.env
-```
-
-**3. Start everything!**
-```powershell
-# Windows
-.\scripts\start.ps1
-
-# Linux/Mac
-chmod +x scripts/start.sh
-./scripts/start.sh
-```
-
-**4. Test the system**
-```powershell
-.\verify-system.ps1
-```
-
-Done! The API is running at `http://localhost:5000`
+### Security Layer
+- **Rate Limiting**: 5-Tier System
+  - `Auth`: 30 req/15min (Brute force protection)
+  - `Live`: 200 req/min (Real-time updates)
+  - `Temples`: 500 req/15min (Public data)
+  - `Admin`: 1000 req/15min (Dashboard)
+  - `General`: 1000 req/15min
+- **Hardening**:
+  - Non-root container user (`nodejs:1001`)
+  - Helmet.js Security Headers
+  - Input Sanitization (XSS, NoSQL Injection)
 
 ---
 
@@ -167,9 +101,18 @@ All API documentation is in the `docs/` folder:
 - Secure password hashing (bcrypt)
 
 ### Authorization (RBAC)
-- **Admin** - Full system access
-- **Gatekeeper** - Entry/Exit management
-- **User** - Bookings only
+| Role | Access Level |
+|------|-------------|
+| **Super Admin** | Full system access, manage all temples and admins |
+| **Temple Admin** | Manage only assigned temples |
+| **Gatekeeper** | Entry/Exit management at assigned temples |
+| **User** | Book passes and view own bookings |
+
+### First-Time Super Admin Setup
+```bash
+cd backend
+node scripts/promote-superadmin.js
+```
 
 ### Protection
 - Rate limiting (100 req/15min)

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
+    getAllLiveData,
     recordEntry,
     recordExit,
     getLiveCrowdData,
@@ -24,7 +25,10 @@ const { protect, authorize } = require('../middleware/auth');
  * - POST /reset/:templeId - Emergency reset count
  */
 
-// PUBLIC: Get live crowd data for dashboard display
+// PUBLIC: Get all temples live status (dashboard overview)
+router.get('/', getAllLiveData);
+
+// PUBLIC: Get live crowd data for specific temple
 router.get('/:templeId', getLiveCrowdData);
 
 // GATEKEEPER/ADMIN: Entry/Exit operations

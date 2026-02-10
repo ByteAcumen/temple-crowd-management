@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Temple Smart E-Pass Frontend
 
-## Getting Started
+Modern, responsive Next.js frontend for the Temple Crowd Management System.
 
-First, run the development server:
+## 🚀 Quick Start
 
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+frontend/
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── (auth)/         # Auth pages (login, register)
+│   │   ├── admin/          # Admin dashboard
+│   │   ├── dashboard/      # User dashboard
+│   │   ├── gatekeeper/     # Gatekeeper scanner
+│   │   └── live/           # Live crowd monitoring
+│   ├── components/         # Reusable components
+│   ├── lib/               # API client, auth context
+│   └── hooks/             # Custom React hooks
+└── public/               # Static assets
+```
 
-## Learn More
+## 👥 User Roles
 
-To learn more about Next.js, take a look at the following resources:
+| Role | Pages |
+|------|-------|
+| **User** | `/dashboard`, `/temples`, `/bookings` |
+| **Gatekeeper** | `/gatekeeper/scan` |
+| **Temple Admin** | `/admin/dashboard` (assigned temples only) |
+| **Super Admin** | `/admin/*` (full access + `/admin/users`) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔒 Protected Routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Routes are protected via `ProtectedRoute` component:
 
-## Deploy on Vercel
+```tsx
+<ProtectedRoute allowedRoles={['admin']}>
+  <AdminDashboard />
+</ProtectedRoute>
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🐳 Docker
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+# Build production image
+docker build -t temple-frontend .
+
+# Run container
+docker run -p 3000:3000 temple-frontend
+```
+
+## 🎨 Tech Stack
+
+- **Next.js 15** (App Router)
+- **React 19**
+- **Tailwind CSS v4**
+- **Framer Motion** (animations)
+- **html5-qrcode** (QR scanning)
+
+## 📝 Environment
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
+```

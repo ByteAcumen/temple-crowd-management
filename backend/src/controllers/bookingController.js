@@ -17,7 +17,17 @@ const axios = require('axios');
 // @access  Public
 exports.createBooking = async (req, res) => {
     try {
-        const { templeId, templeName, date, slot, visitors, userName, userEmail, temperature, rain_flag } = req.body;
+        const { templeId, templeName, date, slot, visitors, payment, specialPuja, temperature, rain_flag } = req.body;
+
+        let { userName, userEmail } = req.body;
+
+        // Fallback to authenticated user details if missing
+        if (!userEmail && req.user) {
+            userEmail = req.user.email;
+        }
+        if (!userName && req.user) {
+            userName = req.user.name;
+        }
 
         // --- 1. VALIDATE TEMPLE EXISTS ---
         const temple = await Temple.findById(templeId);
@@ -100,6 +110,7 @@ exports.createBooking = async (req, res) => {
             visitors,
             userName,
             userEmail,
+            payment: payment || undefined, // Pass payment if provided
             userId: req.user ? req.user._id : null // Link to user if authenticated
         });
 
@@ -145,11 +156,12 @@ exports.createBooking = async (req, res) => {
 
 // @desc    Get user bookings
 // @route   GET /api/v1/bookings
-// @access  Public
+// @access  Private
 exports.getMyBookings = async (req, res) => {
     try {
-        const { email } = req.query;
-        if (!email) return res.status(400).json({ error: 'Email query param required' });
+        // Use email from query or fall back to logged-in user's email
+        const email = req.query.email || (req.user && req.user.email);
+        if (!email) return res.status(400).json({ error: 'Email query param required or user must be logged in' });
 
         const bookings = await Booking.find({ userEmail: email })
             .populate('temple', 'name location')
@@ -325,7 +337,9 @@ exports.getBookingByPassId = async (req, res) => {
             data: {
                 booking_id: booking._id,
                 pass_id: booking.passId,
-                temple: booking.temple.name,
+                passId: booking.passId,
+                temple: booking.temple?.name || booking.templeName,
+                temple_name: booking.temple?.name || booking.templeName,
                 user_name: booking.userName,
                 user_email: booking.userEmail,
                 date: booking.date,

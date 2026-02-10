@@ -1,0 +1,9 @@
+{
+    "ignore": [
+        "*.test.js",
+        "fixtures/*",
+        "scripts/*",
+        "dump.rdb",
+        "*.log"
+    ]
+}

@@ -1,271 +1,287 @@
 'use client';
 
-// Temple Smart E-Pass - Admin Dashboard
-// Manage temples, view analytics, control access
+// Temple Smart E-Pass - Super Admin Dashboard
+// Premium Professional Design with Advanced Animations
+// Glassmorphism, Charts, Images & Smooth Scrolling
 
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { ProtectedRoute } from '@/lib/protected-route';
 import { useEffect, useState } from 'react';
-import { templesApi, Temple } from '@/lib/api';
+import { templesApi, adminApi, liveApi, Temple, Booking } from '@/lib/api';
+import { motion, AnimatePresence, useScroll } from 'framer-motion';
+import { BackendStatusBar } from '@/components/admin/BackendStatusBar';
+import AdminLayout from '@/components/admin/AdminLayout';
+import DashboardCharts from '@/components/admin/DashboardCharts';
+import RecentActivity from '@/components/admin/RecentActivity';
+import LiveStatusCard from '@/components/admin/LiveStatusCard';
+import { StatCard } from '@/components/admin/StatCard';
 
-function AdminDashboardContent() {
-    const { user, logout, isLoading } = useAuth();
-    const [temples, setTemples] = useState<Temple[]>([]);
-    const [loadingTemples, setLoadingTemples] = useState(true);
+// Animation Variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.2
+        }
+    }
+};
+
+export default function AdminDashboardContent() {
+    const { user } = useAuth();
+    const { scrollYProgress } = useScroll();
+
+    const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         totalTemples: 0,
         totalBookings: 0,
-        activeGatekeepers: 0,
+        totalUsers: 0,
         currentCrowd: 0,
+        todayVisits: 0,
+        totalRevenue: 0,
     });
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                const response = await templesApi.getAll();
-                if (response.success) {
-                    setTemples(response.data);
-                    setStats(prev => ({
-                        ...prev,
-                        totalTemples: response.count,
-                        currentCrowd: response.data.reduce((sum: number, t: Temple) => sum + (t.currentOccupancy || 0), 0),
-                    }));
-                }
-            } catch (err) {
-                console.error('Failed to fetch temples:', err);
-            } finally {
-                setLoadingTemples(false);
+    // Chart & Activity Data
+    const [chartData, setChartData] = useState<{
+        dailyTrends: { _id: string; count: number }[];
+        revenueByTemple: { _id: string; revenue: number; bookings: number }[];
+    }>({ dailyTrends: [], revenueByTemple: [] });
+
+    const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
+    const [topTemples, setTopTemples] = useState<Temple[]>([]);
+
+    const [apiError, setApiError] = useState<string | null>(null);
+    const [demoMode, setDemoMode] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState<Date | undefined>(undefined);
+
+    // Fetch Data
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            setApiError(null);
+            setDemoMode(false);
+
+            // 1. Stats
+            const statsRes = await adminApi.getStats();
+            const statsData = statsRes.success && statsRes.data ? statsRes.data : null;
+
+            // 2. Analytics (Charts)
+            const today = new Date();
+            const lastMonth = new Date();
+            lastMonth.setDate(today.getDate() - 30);
+
+            const analyticsRes = await adminApi.getAnalytics({
+                startDate: lastMonth.toISOString().split('T')[0],
+                endDate: today.toISOString().split('T')[0]
+            });
+            const analytics = analyticsRes.success && analyticsRes.data ? analyticsRes.data : null;
+
+            // 3. Live Crowd & Temples
+            const [templesRes, liveRes] = await Promise.all([
+                templesApi.getAll(),
+                liveApi.getCrowdData()
+            ]);
+
+            // Merge Live Data
+            let templesData = templesRes.data || [];
+            if (liveRes.success && liveRes.data) {
+                const raw = liveRes.data;
+                const liveMap: Record<string, number> = {};
+                // Handle different response structures safely
+                const liveTemples = (typeof raw === 'object' && !Array.isArray(raw) && 'temples' in raw)
+                    ? (raw as any).temples
+                    : (Array.isArray(raw) ? raw : []);
+
+                liveTemples.forEach((t: any) => {
+                    const id = t.temple_id || t._id;
+                    if (id) liveMap[id] = t.live_count || 0;
+                });
+
+                templesData = templesData.map(t => ({
+                    ...t,
+                    live_count: liveMap[t._id] ?? t.live_count ?? 0
+                }));
             }
+
+            // Sort by live count for "Busiest Temples"
+            setTopTemples(templesData.sort((a, b) => (b.live_count || 0) - (a.live_count || 0)).slice(0, 3));
+
+            // 4. Recent Bookings
+            const bookingsRes = await adminApi.getBookings({ limit: 5 });
+            setRecentBookings(bookingsRes.data || []);
+
+            // Set State
+            if (statsData) {
+                setStats({
+                    totalTemples: statsData.overview?.total_temples ?? templesData.length,
+                    totalBookings: statsData.overview?.total_bookings ?? 0,
+                    totalUsers: statsData.overview?.total_users ?? 0,
+                    currentCrowd: statsData.crowd?.current_live_count ?? 0,
+                    todayVisits: statsData.bookings?.today ?? 0,
+                    totalRevenue: statsData.overview?.total_revenue ?? 0,
+                });
+            }
+
+            if (analytics) {
+                setChartData({
+                    dailyTrends: analytics.daily_trends || [],
+                    revenueByTemple: analytics.revenue_by_temple || []
+                });
+            }
+
+            setLastUpdated(new Date());
+
+        } catch (error: unknown) {
+            console.error('Dashboard fetch error:', error);
+            setDemoMode(true);
+            setApiError(error instanceof Error ? error.message : 'Backend unreachable');
+
+            // DEMO DATA GENERATION
+            setStats({
+                totalTemples: 5,
+                totalBookings: 1250,
+                totalUsers: 840,
+                currentCrowd: 12450,
+                todayVisits: 320,
+                totalRevenue: 450000,
+            });
+
+            setChartData({
+                dailyTrends: Array.from({ length: 7 }, (_, i) => ({
+                    _id: new Date(Date.now() - (6 - i) * 86400000).toISOString().split('T')[0],
+                    count: Math.floor(50 + Math.random() * 200)
+                })),
+                revenueByTemple: [
+                    { _id: 'Somnath', revenue: 150000, bookings: 120 },
+                    { _id: 'Kashi', revenue: 120000, bookings: 90 },
+                    { _id: 'Tirupati', revenue: 90000, bookings: 80 }
+                ]
+            });
+
+            setRecentBookings([
+                { _id: '1', user: 'Amit Kumar', temple: { name: 'Somnath' }, status: 'CONFIRMED', visitors: 4, createdAt: new Date().toISOString() } as any,
+                { _id: '2', user: 'Priya Singh', temple: { name: 'Kashi' }, status: 'COMPLETED', visitors: 2, createdAt: new Date(Date.now() - 3600000).toISOString() } as any,
+            ]);
+        } finally {
+            setLoading(false);
         }
-        fetchData();
-    }, []);
+    };
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-900">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-orange-800 border-t-orange-500 rounded-full animate-spin"></div>
-                    <p className="text-slate-400">Loading admin panel...</p>
-                </div>
-            </div>
-        );
-    }
+    useEffect(() => {
+        if (user?.role === 'admin' || user?.isSuperAdmin) {
+            fetchData();
+        }
+    }, [user]);
 
-    // Check if user is admin
-    if (user?.role !== 'admin') {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-900">
-                <div className="text-center">
-                    <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
-                    <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
-                    <p className="text-slate-400 mb-6">You don&apos;t have permission to access the admin panel.</p>
-                    <Link href="/dashboard" className="btn-primary">
-                        Go to Dashboard
-                    </Link>
-                </div>
-            </div>
-        );
-    }
+    if (user?.role !== 'admin' && !user?.isSuperAdmin) return null;
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            {/* Admin Sidebar + Main Content */}
-            <div className="flex">
-                {/* Sidebar */}
-                <aside className="w-64 bg-slate-800 min-h-screen border-r border-slate-700 hidden lg:flex lg:flex-col">
-                    <div className="p-6 border-b border-slate-700">
-                        <Link href="/" className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16" />
-                                </svg>
-                            </div>
-                            <div>
-                                <span className="font-bold text-white block">Temple Smart</span>
-                                <span className="text-xs text-orange-400">Admin Panel</span>
-                            </div>
+        <AdminLayout title="Dashboard" subtitle="Overview & Real-time Statistics">
+            {/* Scroll Progress */}
+            <motion.div
+                className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 origin-left z-50 shadow-lg shadow-orange-500/50"
+                style={{ scaleX: scrollYProgress }}
+            />
+
+            {/* Welcome Banner */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-500 via-red-600 to-orange-500 bg-size-200 animate-gradient-shift text-white p-8 lg:p-10 shadow-xl shadow-orange-500/20"
+            >
+                <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <h2 className="text-3xl md:text-4xl font-black mb-2">Namaste, {user?.name?.split(' ')[0]}! 🙏</h2>
+                        <p className="text-orange-100 max-w-xl text-lg">
+                            System is <span className="font-bold text-white">active</span>.
+                            Live crowd at <span className="font-bold text-white">{(stats.currentCrowd).toLocaleString()}</span> visitors.
+                        </p>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="flex gap-3">
+                        <Link href="/admin/bookings?action=new" className="px-6 py-3 bg-white text-orange-600 font-bold rounded-xl shadow-lg shadow-orange-900/10 hover:shadow-orange-900/20 hover:bg-orange-50 transition-all active:scale-95 flex items-center gap-2">
+                            <span>📅</span> New Booking
+                        </Link>
+                        <Link href="/admin/live" className="px-6 py-3 bg-white/10 text-white font-bold rounded-xl border border-white/20 hover:bg-white/20 transition-all backdrop-blur-md flex items-center gap-2">
+                            <span>📡</span> Live Monitor
                         </Link>
                     </div>
+                </div>
+            </motion.div>
 
-                    <nav className="p-4 space-y-2">
-                        {[
-                            { name: 'Dashboard', href: '/admin/dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', active: true },
-                            { name: 'Temples', href: '/admin/temples', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5' },
-                            { name: 'Bookings', href: '/admin/bookings', icon: 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z' },
-                            { name: 'Analytics', href: '/admin/analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-                            { name: 'Users', href: '/admin/users', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
-                            { name: 'Live Monitor', href: '/live', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
-                        ].map((item) => (
-                            <Link
-                                key={item.name}
-                                href={item.href}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${item.active
-                                    ? 'bg-orange-500/20 text-orange-400'
-                                    : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'
-                                    }`}
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
-                                </svg>
-                                <span className="font-medium">{item.name}</span>
-                            </Link>
-                        ))}
-                    </nav>
-
-                    {/* Spacer to push user profile to bottom */}
-                    <div className="flex-1" />
-
-                    {/* User Profile */}
-                    <div className="p-4 border-t border-slate-700 mt-auto">
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-700/50">
-                            <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                                <span className="text-orange-400 font-bold">{user?.name?.charAt(0)}</span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-                                <p className="text-xs text-slate-400 capitalize">{user?.role}</p>
-                            </div>
-                            <button onClick={logout} className="text-slate-400 hover:text-red-400 transition-colors p-2">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </aside>
-
-                {/* Main Content */}
-                <main className="flex-1 min-h-screen">
-                    {/* Top Bar */}
-                    <header className="bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
-                            <p className="text-slate-400 text-sm">Overview and management controls</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-xl">
-                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                <span className="text-green-400 text-sm font-medium">System Online</span>
-                            </div>
-                        </div>
-                    </header>
-
-                    <div className="p-6">
-                        {/* Stats Grid */}
-                        <div className="grid md:grid-cols-4 gap-6 mb-8">
-                            {[
-                                { label: 'Total Temples', value: stats.totalTemples, icon: '🛕', color: 'from-blue-500 to-blue-600' },
-                                { label: 'Total Bookings', value: '12,453', icon: '🎫', color: 'from-orange-500 to-red-500' },
-                                { label: 'Active Gatekeepers', value: '24', icon: '👤', color: 'from-green-500 to-emerald-500' },
-                                { label: 'Current Crowd', value: stats.currentCrowd.toLocaleString(), icon: '👥', color: 'from-purple-500 to-pink-500' },
-                            ].map((stat, i) => (
-                                <div key={i} className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <span className="text-3xl">{stat.icon}</span>
-                                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} opacity-20`}></div>
-                                    </div>
-                                    <p className="text-3xl font-bold text-white mb-1">{stat.value}</p>
-                                    <p className="text-slate-400 text-sm">{stat.label}</p>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Temples List */}
-                        <div className="bg-slate-800 rounded-2xl border border-slate-700">
-                            <div className="p-6 border-b border-slate-700 flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Temple Management</h2>
-                                    <p className="text-slate-400 text-sm">Manage temples and their settings</p>
-                                </div>
-                                <button className="btn-primary text-sm py-2">
-                                    + Add Temple
-                                </button>
-                            </div>
-
-                            {loadingTemples ? (
-                                <div className="p-12 text-center">
-                                    <div className="w-10 h-10 border-4 border-orange-800 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
-                                    <p className="text-slate-400">Loading temples...</p>
-                                </div>
-                            ) : temples.length === 0 ? (
-                                <div className="p-12 text-center">
-                                    <p className="text-slate-400">No temples found. Add your first temple to get started.</p>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="text-left text-slate-400 text-sm border-b border-slate-700">
-                                                <th className="px-6 py-4 font-medium">Temple</th>
-                                                <th className="px-6 py-4 font-medium">Location</th>
-                                                <th className="px-6 py-4 font-medium">Capacity</th>
-                                                <th className="px-6 py-4 font-medium">Current</th>
-                                                <th className="px-6 py-4 font-medium">Status</th>
-                                                <th className="px-6 py-4 font-medium">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-700">
-                                            {temples.map((temple) => (
-                                                <tr key={temple._id} className="hover:bg-slate-700/50 transition-colors">
-                                                    <td className="px-6 py-4">
-                                                        <span className="font-medium text-white">{temple.name}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-400">
-                                                        {typeof temple.location === 'object'
-                                                            ? `${temple.location?.city || ''}, ${temple.location?.state || ''}`
-                                                            : temple.location}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-400">{temple.capacity?.toLocaleString()}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="text-orange-400 font-medium">
-                                                            {temple.currentOccupancy?.toLocaleString() || 0}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${temple.status === 'OPEN'
-                                                            ? 'bg-green-500/20 text-green-400'
-                                                            : 'bg-red-500/20 text-red-400'
-                                                            }`}>
-                                                            {temple.status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-2">
-                                                            <button className="p-2 text-slate-400 hover:text-white hover:bg-slate-600 rounded-lg transition-colors">
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                                </svg>
-                                                            </button>
-                                                            <button className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                </svg>
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </main>
+            {/* Status Bar */}
+            <div className="flex justify-end mb-6">
+                <BackendStatusBar
+                    status={loading ? 'loading' : demoMode ? 'demo' : 'connected'}
+                    lastUpdated={lastUpdated}
+                    onRetry={fetchData}
+                />
             </div>
-        </div>
-    );
-}
 
-export default function AdminDashboard() {
-    return (
-        <ProtectedRoute allowedRoles={['admin']}>
-            <AdminDashboardContent />
-        </ProtectedRoute>
+            {/* Stats Grid */}
+            <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+            >
+                <StatCard
+                    icon="🎫"
+                    label="Total Bookings"
+                    value={stats.totalBookings}
+                    subtext={`+${stats.todayVisits} today`}
+                    color="blue"
+                    delay={0}
+                    trend={{ value: "12%", positive: true }}
+                />
+                <StatCard
+                    icon="💰"
+                    label="Total Revenue"
+                    value={`₹${(stats.totalRevenue / 1000).toFixed(1)}k`}
+                    subtext="All temples"
+                    color="green"
+                    delay={0.1}
+                    trend={{ value: "8%", positive: true }}
+                />
+                <StatCard
+                    icon="👥"
+                    label="Live Crowd"
+                    value={stats.currentCrowd}
+                    subtext="Active visitors"
+                    color="red"
+                    delay={0.2}
+                    trend={{ value: "High", positive: stats.currentCrowd < 50000 }} // Positive if not overcrowding
+                />
+                <StatCard
+                    icon="🏛️"
+                    label="Active Temples"
+                    value={stats.totalTemples}
+                    subtext="System wide"
+                    color="orange"
+                    delay={0.3}
+                />
+            </motion.div>
+
+            {/* Charts & Graphs */}
+            <div className="mb-8">
+                <DashboardCharts dailyTrends={chartData.dailyTrends} revenueByTemple={chartData.revenueByTemple} />
+            </div>
+
+            {/* Bottom Grid: Recent Activity & Busiest Temples */}
+            <div className="grid lg:grid-cols-3 gap-6">
+                {/* Recent Activity (2/3 width) */}
+                <div className="lg:col-span-2 h-[450px]">
+                    <RecentActivity bookings={recentBookings} />
+                </div>
+
+                {/* Busiest Temples (1/3 width) */}
+                <div className="h-full flex flex-col gap-4">
+                    <LiveStatusCard topTemples={topTemples} />
+                </div>
+            </div>
+        </AdminLayout>
     );
 }

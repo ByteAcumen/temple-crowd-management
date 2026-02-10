@@ -11,7 +11,8 @@ const hpp = require('hpp');
 const http = require('http');
 const axios = require('axios');
 const { Server } = require('socket.io');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const logger = require('./config/logger');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -61,7 +62,12 @@ app.use(hpp()); // Prevent HTTP Parameter Pollution
 
 // CORS Configuration - Allow credentials with specific origins
 const corsOptions = {
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001'
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -71,24 +77,69 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('combined', { stream: logger.stream })); // HTTP request logging
 
-// Rate Limiting (General)
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
+// ============================================
+// TIERED RATE LIMITING (Performance Optimized)
+// ============================================
+
+// Skip rate limiting in development mode when TEST_MODE is enabled
+const skipInTestMode = (req) => {
+    return process.env.NODE_ENV === 'development';
+};
+
+// General Rate Limiter (relaxed for dashboard operations)
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // Increased to 1000 requests per 15 min for heavy dashboard use
     standardHeaders: true,
     legacyHeaders: false,
+    message: { success: false, error: 'Too many requests. Please try again later.' },
+    skip: skipInTestMode,
 });
-app.use(limiter);
+app.use(generalLimiter);
 
 // Auth Rate Limiting (Strict - Brute Force Protection)
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 login/register requests per windowMs
+    max: 1000, // RELAXED for testing (was 30)
     message: { success: false, error: 'Too many login attempts, please try again after 15 minutes' },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: skipInTestMode,
 });
+
+// Live/Simulation Rate Limiter (high frequency for real-time ops)
+const liveLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute window
+    max: 200, // 200 requests per minute for simulations
+    message: { success: false, error: 'Rate limit exceeded. Please slow down simulation.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: skipInTestMode,
+});
+
+// Temple Read Rate Limiter (public data, high traffic)
+const templeLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 500, // Higher for public reads
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: skipInTestMode,
+});
+
+// Admin Rate Limiter (authenticated admins need more requests)
+const adminLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 1000, // Admins need more for dashboard operations
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: skipInTestMode,
+});
+
+// Apply route-specific limiters BEFORE mounting routes
 app.use('/api/v1/auth', authLimiter);
+app.use('/api/v1/live', liveLimiter);
+app.use('/api/v1/temples', templeLimiter);
+app.use('/api/v1/admin', adminLimiter);
 
 // Mount Routes
 app.use('/api/v1/bookings', bookingRoutes);

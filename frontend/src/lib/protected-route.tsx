@@ -10,9 +10,23 @@ interface ProtectedRouteProps {
 }
 
 /**
+ * Get the correct dashboard path based on user role
+ */
+function getDashboardByRole(role: string): string {
+    switch (role) {
+        case 'admin':
+            return '/admin/dashboard';
+        case 'gatekeeper':
+            return '/gatekeeper/scan';
+        default:
+            return '/dashboard';
+    }
+}
+
+/**
  * Protected Route Wrapper
  * Redirects unauthenticated users to login
- * Redirects unauthorized users to their appropriate dashboard
+ * Redirects users to their correct dashboard if they don't have access
  */
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
     const { user, isLoading } = useAuth();
@@ -26,9 +40,10 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
                 return;
             }
 
-            // If user role is not allowed, redirect to unauthorized page
+            // If user role is not allowed, redirect to their correct dashboard
             if (allowedRoles && !allowedRoles.includes(user.role as any)) {
-                router.push('/unauthorized');
+                const correctDashboard = getDashboardByRole(user.role);
+                router.push(correctDashboard);
             }
         }
     }, [user, isLoading, router, allowedRoles]);
@@ -36,10 +51,10 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     // Show loading spinner while checking auth
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-900 to-slate-800">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
-                    <p className="text-slate-600">Verifying authentication...</p>
+                    <div className="w-14 h-14 border-4 border-slate-700 border-t-orange-500 rounded-full animate-spin"></div>
+                    <p className="text-slate-400 text-sm">Loading...</p>
                 </div>
             </div>
         );
@@ -55,3 +70,4 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     // User is authenticated and authorized
     return <>{children}</>;
 }
+
