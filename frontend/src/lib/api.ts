@@ -402,6 +402,11 @@ export const liveApi = {
         return apiRequest(`/live/${templeId}/entries`);
     },
 
+    // Get daily stats (Total entries/exits today)
+    getDailyStats: async (templeId: string): Promise<any> => {
+        return apiRequest(`/live/${templeId}/stats`);
+    },
+
     // Get predictions for all temples
     getPredictions: async (): Promise<any> => {
         return apiRequest('/live/predictions');
@@ -528,7 +533,7 @@ export const adminApi = {
     },
 };
 
-export default {
+const api = {
     auth: authApi,
     temples: templesApi,
     bookings: bookingsApi,
@@ -536,3 +541,5 @@ export default {
     bot: botApi,
     admin: adminApi,
 };
+
+export default api;

@@ -6,7 +6,8 @@ const {
     recordExit,
     getLiveCrowdData,
     resetTempleCount,
-    getCurrentEntries
+    getCurrentEntries,
+    getDailyStats
 } = require('../controllers/liveController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -20,6 +21,7 @@ const { protect, authorize } = require('../middleware/auth');
  * - POST /entry - Record temple entry (QR scan)
  * - POST /exit - Record temple exit (QR scan)
  * - GET /:templeId/entries - See who's inside
+ * - GET /:templeId/stats - Get daily entry/exit totals
  * 
  * ADMIN ROUTES:
  * - POST /reset/:templeId - Emergency reset count
@@ -35,6 +37,7 @@ router.get('/:templeId', getLiveCrowdData);
 router.post('/entry', protect, authorize('gatekeeper', 'admin'), recordEntry);
 router.post('/exit', protect, authorize('gatekeeper', 'admin'), recordExit);
 router.get('/:templeId/entries', protect, authorize('gatekeeper', 'admin'), getCurrentEntries);
+router.get('/:templeId/stats', protect, authorize('gatekeeper', 'admin'), getDailyStats);
 
 // ADMIN ONLY: Reset count
 router.post('/reset/:templeId', protect, authorize('admin'), resetTempleCount);

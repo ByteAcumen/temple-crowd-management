@@ -360,3 +360,66 @@ exports.getCurrentEntries = async (req, res) => {
         });
     }
 };
+
+// @desc    Get Daily Stats (Total Entries/Exits Today)
+// @route   GET /api/v1/live/:templeId/stats
+// @access  Private (Gatekeeper/Admin)
+exports.getDailyStats = async (req, res) => {
+    try {
+        const { templeId } = req.params;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const temple = await Temple.findById(templeId);
+        if (!temple) {
+            return res.status(404).json({ success: false, error: 'Temple not found' });
+        }
+
+        // Live count from Redis
+        const liveCount = await crowdTracker.getCurrentCount(templeId);
+
+        // Database aggregation for today's stats
+        const stats = await Booking.aggregate([
+            {
+                $match: {
+                    temple: temple._id,
+                    $or: [
+                        { entryTime: { $gte: today, $lt: tomorrow } },
+                        { exitTime: { $gte: today, $lt: tomorrow } }
+                    ]
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalEntries: {
+                        $sum: { $cond: [{ $ifNull: ['$entryTime', false] }, 1, 0] }
+                    },
+                    totalExits: {
+                        $sum: { $cond: [{ $ifNull: ['$exitTime', false] }, 1, 0] }
+                    }
+                }
+            }
+        ]);
+
+        const result = stats[0] || { totalEntries: 0, totalExits: 0 };
+
+        res.status(200).json({
+            success: true,
+            data: {
+                temple_name: temple.name,
+                live_count: liveCount,
+                today_entries: result.totalEntries,
+                today_exits: result.totalExits,
+                timestamp: new Date()
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting daily stats:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch daily stats' });
+    }
+};
