@@ -11,9 +11,10 @@ interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     isAuthenticated: boolean;
-    login: (email: string, password: string, expectedRole?: 'devotee' | 'staff') => Promise<void>;
+    login: (email: string, password: string, expectedRole?: 'devotee' | 'staff', redirectPath?: string) => Promise<void>;
     loginDemo: () => void;
     register: (name: string, email: string, password: string, role?: 'user' | 'gatekeeper' | 'admin') => Promise<void>;
+    updateProfile: (data: { name?: string; email?: string; phone?: string; city?: string; state?: string }) => Promise<void>;
     logout: () => void;
     error: string | null;
     clearError: () => void;
@@ -74,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         checkSession();
     }, []);
 
-    const login = async (email: string, password: string, expectedRole?: 'devotee' | 'staff') => {
+    const login = async (email: string, password: string, expectedRole?: 'devotee' | 'staff', redirectPath?: string) => {
         setIsLoading(true);
         setError(null);
         try {
@@ -98,8 +99,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             setUser(response.user);
 
-            // Redirect based on role
-            redirectByRole(response.user.role);
+            // Redirect based on role or custom path
+            if (redirectPath) {
+                router.push(redirectPath);
+            } else {
+                redirectByRole(response.user.role);
+            }
         } catch (err: any) {
             setError(err.message || 'Login failed');
             throw err;
@@ -125,6 +130,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             redirectByRole(response.user.role);
         } catch (err: any) {
             setError(err.message || 'Registration failed');
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const updateProfile = async (data: { name?: string; email?: string; phone?: string; city?: string; state?: string }) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await authApi.updateProfile(data);
+            if (response.success && response.data) {
+                const updatedUser = { ...user, ...response.data } as User;
+                setUser(updatedUser);
+                localStorage.setItem('user', JSON.stringify(updatedUser)); // Update local storage
+            }
+        } catch (err: any) {
+            setError(err.message || 'Profile update failed');
             throw err;
         } finally {
             setIsLoading(false);
@@ -161,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 login,
                 loginDemo,
                 register,
+                updateProfile,
                 logout,
                 error,
                 clearError,

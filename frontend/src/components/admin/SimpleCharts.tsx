@@ -68,18 +68,13 @@ interface DonutChartProps {
 
 export function DonutChart({ data, size = 160 }: DonutChartProps) {
     const total = data.reduce((sum, item) => sum + item.value, 0);
-    let cumulative = 0;
-
     return (
         <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
             <svg viewBox="0 0 100 100" className="rotate-[-90deg]">
                 {data.map((item, index) => {
-                    const startPercent = (cumulative / total) * 100;
-                    const endPercent = ((cumulative + item.value) / total) * 100;
+                    const cumulativeBefore = data.slice(0, index).reduce((sum, s) => sum + s.value, 0);
                     const strokeDasharray = `${(item.value / total) * 100} 100`;
-                    const strokeDashoffset = -cumulative / total * 100;
-
-                    cumulative += item.value;
+                    const strokeDashoffset = -cumulativeBefore / total * 100;
 
                     return (
                         <circle
@@ -88,10 +83,7 @@ export function DonutChart({ data, size = 160 }: DonutChartProps) {
                             cy="50"
                             r="40"
                             fill="transparent"
-                            stroke={item.color} // You'd need hex codes here for SVG stroke, Tailwind classes won't work directly efficiently without mapping. Assuming we pass hex or map it.
-                            // For simplicity, let's assume we pass CSS variable-like classes or use inline styles if color is hex.
-                            // To make this work with Tailwind classes like 'bg-orange-500', we need a map. 
-                            // Better: pass hex colors.
+                            stroke={item.color}
                             strokeWidth="10"
                             strokeDasharray={strokeDasharray}
                             strokeDashoffset={strokeDashoffset}

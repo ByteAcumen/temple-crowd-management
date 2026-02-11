@@ -12,6 +12,9 @@ export interface User {
     role: 'user' | 'gatekeeper' | 'admin';
     isSuperAdmin?: boolean;
     assignedTemples?: string[] | Temple[];
+    phone?: string;
+    city?: string;
+    state?: string;
 }
 
 export interface AuthResponse {
@@ -174,6 +177,14 @@ export const authApi = {
         return apiRequest('/auth/me');
     },
 
+    // Update profile
+    updateProfile: async (data: { name?: string; email?: string; phone?: string; city?: string; state?: string }): Promise<{ success: boolean; data: User }> => {
+        return apiRequest('/auth/updatedetails', {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
     // Logout
     logout: () => {
         localStorage.removeItem('token');
@@ -204,10 +215,11 @@ export interface Temple {
     deity?: string;
     significance?: string;
     imageUrl?: string;
+    images?: string[];
     location: {
         address?: string;
-        city: string;
-        state: string;
+        city?: string;
+        state?: string;
         coordinates?: { latitude: number; longitude: number };
     } | string;
     capacity: {
@@ -224,23 +236,23 @@ export interface Temple {
         weekend?: { opens: string; closes: string };
     };
     fees?: {
-        general: number;
-        specialDarshan: number;
-        vipEntry: number;
-        foreigners: number;
-        prasad: number;
-        photography: number;
+        general?: number;
+        specialDarshan?: number;
+        vipEntry?: number;
+        foreigners?: number;
+        prasad?: number;
+        photography?: number;
     };
     facilities?: {
-        parking: boolean;
-        wheelchairAccess: boolean;
-        cloakroom: boolean;
-        prasadCounter: boolean;
-        shoeStand: boolean;
-        drinkingWater: boolean;
-        restrooms: boolean;
-        accommodation: boolean;
-        freeFood: boolean;
+        parking?: boolean;
+        wheelchairAccess?: boolean;
+        cloakroom?: boolean;
+        prasadCounter?: boolean;
+        shoeStand?: boolean;
+        drinkingWater?: boolean;
+        restrooms?: boolean;
+        accommodation?: boolean;
+        freeFood?: boolean;
     };
     prasadMenu?: Array<{
         name: string;
@@ -402,6 +414,11 @@ export const liveApi = {
         return apiRequest(`/live/${templeId}/entries`);
     },
 
+    // Get live crowd data (alias for consistent hook usage)
+    getLiveCrowdData: async (templeId: string): Promise<any> => {
+        return apiRequest(`/live/${templeId}/entries`);
+    },
+
     // Get daily stats (Total entries/exits today)
     getDailyStats: async (templeId: string): Promise<any> => {
         return apiRequest(`/live/${templeId}/stats`);
@@ -533,6 +550,41 @@ export const adminApi = {
     },
 };
 
+// ============ WEATHER API ============
+
+export const weatherApi = {
+    // Get weather for temple location
+    getForTemple: async (templeId: string): Promise<{ success: boolean; data: any }> => {
+        // In a real app, this might call a backend proxy to hide API keys
+        // For now, we'll implement a client-side service pattern or call a backend endpoint if created
+        // Let's assume we use the client-side service we just created, but wrap it for consistency
+        try {
+            // Fetch temple location first
+            const templeRes = await templesApi.getById(templeId);
+            if (!templeRes.success || !templeRes.data.location) {
+                throw new Error("Location data unavailable");
+            }
+
+            const loc = templeRes.data.location;
+            let lat = 20.5937, lng = 78.9629; // Default India
+
+            if (typeof loc === 'object' && loc.coordinates) {
+                lat = loc.coordinates.latitude;
+                lng = loc.coordinates.longitude;
+            }
+
+            // distinct import to avoid circular dependency if we used the service directly here
+            // keep api.ts pure HTTP if possible, but for this mock we return a structure
+            return {
+                success: true,
+                data: { lat, lng } // The UI component will use the weatherService with these coords
+            };
+        } catch (e) {
+            return { success: false, data: null };
+        }
+    }
+};
+
 const api = {
     auth: authApi,
     temples: templesApi,
@@ -540,6 +592,7 @@ const api = {
     live: liveApi,
     bot: botApi,
     admin: adminApi,
+    weather: weatherApi,
 };
 
 export default api;

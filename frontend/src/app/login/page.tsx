@@ -59,7 +59,8 @@ function LoginContent() {
         setIsSubmitting(true);
         try {
             const cleanEmail = email.trim().toLowerCase();
-            await login(cleanEmail, password, mode);
+            const redirectPath = searchParams.get('from') || undefined;
+            await login(cleanEmail, password, mode, redirectPath);
         } catch (err: any) {
             const message = err instanceof Error ? err.message : 'Login failed';
             // Detailed debugging for user

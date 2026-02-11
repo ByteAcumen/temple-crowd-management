@@ -34,8 +34,8 @@ export default function TempleFormModal({ isOpen, onClose, onSave, initialData, 
                 ...initialData,
                 location: typeof initialData.location === 'string'
                     ? { city: initialData.location, state: '', coordinates: { latitude: 0, longitude: 0 } }
-                    : initialData.location,
-                capacity: typeof initialData.capacity === 'object' ? initialData.capacity.total : initialData.capacity
+                    : initialData.location || { city: '', state: '', coordinates: { latitude: 0, longitude: 0 } },
+                capacity: typeof initialData.capacity === 'object' ? initialData.capacity.total : initialData.capacity || 1000
             });
         } else {
             // Reset form for create mode
@@ -58,24 +58,33 @@ export default function TempleFormModal({ isOpen, onClose, onSave, initialData, 
         onSave(formData);
     };
 
-    const updateLocation = (field: string, value: any) => {
+    const updateLocation = (field: string, value: unknown) => {
         setFormData(prev => ({
             ...prev,
-            location: { ...(prev.location as any), [field]: value }
+            location: {
+                ...(typeof prev.location === 'object' ? prev.location : {}),
+                [field]: value
+            }
         }));
     };
 
     const updateFacilities = (field: string, value: boolean) => {
         setFormData(prev => ({
             ...prev,
-            facilities: { ...(prev.facilities as any), [field]: value }
+            facilities: {
+                ...(prev.facilities || {}),
+                [field]: value
+            }
         }));
     };
 
     const updateFees = (field: string, value: number) => {
         setFormData(prev => ({
             ...prev,
-            fees: { ...(prev.fees as any), [field]: value }
+            fees: {
+                ...(prev.fees || {}),
+                [field]: value
+            }
         }));
     };
 
@@ -134,7 +143,7 @@ export default function TempleFormModal({ isOpen, onClose, onSave, initialData, 
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Max Capacity *</label>
-                                        <input type="number" required value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })}
+                                        <input type="number" required value={typeof formData.capacity === 'number' ? formData.capacity : (formData.capacity?.total || 1000)} onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })}
                                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
                                     </div>
                                     <div className="col-span-2">
@@ -151,27 +160,27 @@ export default function TempleFormModal({ isOpen, onClose, onSave, initialData, 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">City *</label>
-                                        <input required value={(formData.location as any)?.city} onChange={e => updateLocation('city', e.target.value)}
+                                        <input required value={typeof formData.location === 'object' ? formData.location.city : ''} onChange={e => updateLocation('city', e.target.value)}
                                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" />
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">State *</label>
-                                        <input required value={(formData.location as any)?.state} onChange={e => updateLocation('state', e.target.value)}
+                                        <input required value={typeof formData.location === 'object' ? formData.location.state : ''} onChange={e => updateLocation('state', e.target.value)}
                                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" />
                                     </div>
                                     <div className="col-span-2">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Full Address</label>
-                                        <textarea rows={2} value={(formData.location as any)?.address} onChange={e => updateLocation('address', e.target.value)}
+                                        <textarea rows={2} value={typeof formData.location === 'object' ? formData.location.address || '' : ''} onChange={e => updateLocation('address', e.target.value)}
                                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none" placeholder="Street address..." />
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Latitude</label>
-                                        <input type="number" step="any" value={(formData.location as any)?.coordinates?.latitude} onChange={e => updateLocation('coordinates', { ...(formData.location as any).coordinates, latitude: Number(e.target.value) })}
+                                        <input type="number" step="any" value={typeof formData.location === 'object' ? formData.location.coordinates?.latitude || '' : ''} onChange={e => updateLocation('coordinates', { ...(typeof formData.location === 'object' ? formData.location.coordinates : {}), latitude: Number(e.target.value) })}
                                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="e.g. 25.3176" />
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Longitude</label>
-                                        <input type="number" step="any" value={(formData.location as any)?.coordinates?.longitude} onChange={e => updateLocation('coordinates', { ...(formData.location as any).coordinates, longitude: Number(e.target.value) })}
+                                        <input type="number" step="any" value={typeof formData.location === 'object' ? formData.location.coordinates?.longitude || '' : ''} onChange={e => updateLocation('coordinates', { ...(typeof formData.location === 'object' ? formData.location.coordinates : {}), longitude: Number(e.target.value) })}
                                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="e.g. 82.9739" />
                                     </div>
                                 </div>
@@ -209,9 +218,9 @@ export default function TempleFormModal({ isOpen, onClose, onSave, initialData, 
                                             { key: 'prasadCounter', label: 'Prasad Counter', icon: '🍬' },
                                             { key: 'shoeStand', label: 'Shoe Stand', icon: '👞' },
                                         ].map(item => (
-                                            <label key={item.key} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${(formData.facilities as any)?.[item.key] ? 'border-green-500 bg-green-50/50' : 'border-slate-200 hover:bg-slate-50'
+                                            <label key={item.key} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${formData.facilities?.[item.key as keyof typeof formData.facilities] ? 'border-green-500 bg-green-50/50' : 'border-slate-200 hover:bg-slate-50'
                                                 }`}>
-                                                <input type="checkbox" checked={(formData.facilities as any)?.[item.key] || false}
+                                                <input type="checkbox" checked={!!formData.facilities?.[item.key as keyof typeof formData.facilities]}
                                                     onChange={e => updateFacilities(item.key, e.target.checked)} className="w-5 h-5 accent-green-600 rounded" />
                                                 <span className="text-xl">{item.icon}</span>
                                                 <span className="text-sm font-bold text-slate-700">{item.label}</span>

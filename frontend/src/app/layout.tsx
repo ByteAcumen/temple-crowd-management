@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { ChatbotWidget } from "@/components/ui/chatbot-widget";
 
 const dmSans = DM_Sans({
     subsets: ["latin"],
@@ -24,6 +25,7 @@ export default function RootLayout({
             <body className={`${dmSans.variable} ${dmSans.className}`}>
                 <Providers>
                     {children}
+                    <ChatbotWidget />
                 </Providers>
             </body>
         </html>

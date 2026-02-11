@@ -17,6 +17,18 @@ const UserSchema = new mongoose.Schema({
             'Please add a valid email'
         ]
     },
+    phone: {
+        type: String,
+        required: false
+    },
+    city: {
+        type: String,
+        required: false
+    },
+    state: {
+        type: String,
+        required: false
+    },
     role: {
         type: String,
         enum: ['user', 'gatekeeper', 'admin'],

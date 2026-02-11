@@ -1,0 +1,1205 @@
+
+> frontend@0.1.0 lint
+> eslint
+
+
+D:\temple-crowd-management\frontend\next.config.ts
+  1:15  warning  'NextConfig' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\temple-crowd-management\frontend\src\app\(app)\temples\[id]\page.tsx
+   51:22  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  102:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  246:77  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\(app)\temples\page.tsx
+    6:8   warning  'Link' is defined but never used          @typescript-eslint/no-unused-vars
+    7:20  warning  'useEffect' is defined but never used     @typescript-eslint/no-unused-vars
+    8:10  warning  'templesApi' is defined but never used    @typescript-eslint/no-unused-vars
+    8:22  warning  'Temple' is defined but never used        @typescript-eslint/no-unused-vars
+   23:53  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   45:34  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   46:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  118:82  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  185:59  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\(app)\tickets\page.tsx
+  61:86  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\temple-crowd-management\frontend\src\app\admin\analytics\page.tsx
+   28:5   warning  'LineChart' is defined but never used     @typescript-eslint/no-unused-vars
+   29:5   warning  'Line' is defined but never used          @typescript-eslint/no-unused-vars
+  333:64  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\admin\bookings\page.tsx
+  151:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\admin\dashboard\page.tsx
+   11:18   warning  'AnimatePresence' is defined but never used    @typescript-eslint/no-unused-vars
+   54:12   warning  'apiError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   93:31   error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+   96:41   error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  163:153  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  164:172  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\admin\live\page.tsx
+   49:13  warning  'predict' is assigned a value but never used                                                                         @typescript-eslint/no-unused-vars
+   50:67  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   52:58  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   78:47  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   97:8   warning  React Hook useEffect has a missing dependency: 'selectedTempleId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  116:47  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  166:18  warning  'err' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+  244:73  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  479:59  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\admin\temples\[id]\edit\page.tsx
+   8:10  warning  'useAuth' is defined but never used       @typescript-eslint/no-unused-vars
+  23:52  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  45:42  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\admin\temples\[id]\page.tsx
+  26:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\admin\temples\new\page.tsx
+   8:10  warning  'useAuth' is defined but never used       @typescript-eslint/no-unused-vars
+  20:42  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  32:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\admin\temples\page.tsx
+    7:8   warning  'Link' is defined but never used          @typescript-eslint/no-unused-vars
+   10:31  warning  'useCallback' is defined but never used   @typescript-eslint/no-unused-vars
+  138:22  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  183:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\admin\testing\page.tsx
+   24:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   29:88  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   54:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   56:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   57:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   60:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   82:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  116:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  139:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  150:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  160:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  172:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  186:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\admin\users\page.tsx
+   41:15  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   42:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  383:69  warning  'index' is defined but never used         @typescript-eslint/no-unused-vars
+  430:95  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  606:43  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  607:75  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\booking\page.tsx
+  59:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\gatekeeper\scan\page.tsx
+   51:12  warning  'lastUpdated' is assigned a value but never used                                                                 @typescript-eslint/no-unused-vars
+   96:31  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  142:8   warning  React Hook useEffect has a missing dependency: 'startCamera'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+  188:8   warning  React Hook useCallback has a missing dependency: 'handleScan'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  268:23  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\login\page.tsx
+  64:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\app\register\page.tsx
+    7:8   warning  'Image' is defined but never used              @typescript-eslint/no-unused-vars
+  118:11  warning  'roleInfo' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\temple-crowd-management\frontend\src\app\unauthorized\page.tsx
+  30:32  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\temple-crowd-management\frontend\src\components\admin\AdminLayout.tsx
+  146:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\temple-crowd-management\frontend\src\components\admin\BackendStatusBar.tsx
+  17:5  warning  'label' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\temple-crowd-management\frontend\src\components\admin\CommandPalette.tsx
+   45:13  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\temple-crowd-management\frontend\src\components\admin\CommandPalette.tsx:45:13
+  43 |         if (isOpen) {
+  44 |             setTimeout(() => inputRef.current?.focus(), 100);
+> 45 |             setQuery('');
+     |             ^^^^^^^^ Avoid calling setState() directly within an effect
+  46 |             setSelectedIndex(0);
+  47 |         }
+  48 |     }, [isOpen]);  react-hooks/set-state-in-effect
+   94:8   warning  React Hook useEffect has a missing dependency: 'onClose'. Either include it or remove the dependency array. If 'onClose' changes too often, find the parent component that defines it and wrap that definition in useCallback                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             react-hooks/exhaustive-deps
+  164:59  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react/no-unescaped-entities
+  164:67  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react/no-unescaped-entities
+
+D:\temple-crowd-management\frontend\src\components\admin\DashboardCharts.tsx
+  124:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\components\admin\LiveStatusCard.tsx
+  50:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\components\admin\SimpleCharts.tsx
+  10:34  warning  'maxHeight' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  77:27  warning  'startPercent' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  78:27  warning  'endPercent' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  82:21  error    Error: Cannot reassign variable after render completes
+
+Reassigning `cumulative` after render has completed can cause inconsistent behavior on subsequent renders. Consider using state instead.
+
+D:\temple-crowd-management\frontend\src\components\admin\SimpleCharts.tsx:82:21
+  80 |                     const strokeDashoffset = -cumulative / total * 100;
+  81 |
+> 82 |                     cumulative += item.value;
+     |                     ^^^^^^^^^^ Cannot reassign `cumulative` after render completes
+  83 |
+  84 |                     return (
+  85 |                         <circle  react-hooks/immutability
+
+D:\temple-crowd-management\frontend\src\components\admin\SimulationControls.tsx
+   44:8   warning  React Hook useEffect has a missing dependency: 'loadTemples'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+   53:8   warning  React Hook useEffect has a missing dependency: 'loadBookings'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   66:23  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+   91:23  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  131:23  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  170:29  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  176:21  warning  'errorCount' is assigned a value but never used                                                                  @typescript-eslint/no-unused-vars
+
+D:\temple-crowd-management\frontend\src\components\admin\StatCard.tsx
+  29:78  warning  'bgLight' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\temple-crowd-management\frontend\src\components\admin\SystemHealth.tsx
+  8:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx
+    3:31   warning  'useRef' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+    8:19   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    9:22   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   96:13   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:96:13
+  94 |     useEffect(() => {
+  95 |         if (initialData) {
+> 96 |             setFormData(prev => ({
+     |             ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  97 |                 ...prev,
+  98 |                 name: initialData.name || '',
+  99 |                 description: initialData.description || '',                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      react-hooks/set-state-in-effect
+  148:68   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  172:65   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  185:115  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  200:59   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  254:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:254:34
+  252 |                         >
+  253 |                             <div className="grid md:grid-cols-2 gap-6">
+> 254 |                                 <Input label="Temple Name *" value={formData.name} onChange={(v: string) => setFormData(p => ({ ...p, name: v }))} required placeholder="e.g. Kashi Vishwanath Temple" className="md:col-span-2" />
+      |                                  ^^^^^ This component is created during render
+  255 |                                 <Input label="Main Deity" value={formData.deity} onChange={(v: string) => setFormData(p => ({ ...p, deity: v }))} placeholder="e.g. Lord Shiva (Jyotirlinga)" />
+  256 |                                 <Input label="Status" value={formData.status} onChange={(v: string) => setFormData(p => ({ ...p, status: v }))} placeholder="OPEN / CLOSED" />
+  257 |                             </div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/static-components
+  255:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:255:34
+  253 |                             <div className="grid md:grid-cols-2 gap-6">
+  254 |                                 <Input label="Temple Name *" value={formData.name} onChange={(v: string) => setFormData(p => ({ ...p, name: v }))} required placeholder="e.g. Kashi Vishwanath Temple" className="md:col-span-2" />
+> 255 |                                 <Input label="Main Deity" value={formData.deity} onChange={(v: string) => setFormData(p => ({ ...p, deity: v }))} placeholder="e.g. Lord Shiva (Jyotirlinga)" />
+      |                                  ^^^^^ This component is created during render
+  256 |                                 <Input label="Status" value={formData.status} onChange={(v: string) => setFormData(p => ({ ...p, status: v }))} placeholder="OPEN / CLOSED" />
+  257 |                             </div>
+  258 |
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            react-hooks/static-components
+  256:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:256:34
+  254 |                                 <Input label="Temple Name *" value={formData.name} onChange={(v: string) => setFormData(p => ({ ...p, name: v }))} required placeholder="e.g. Kashi Vishwanath Temple" className="md:col-span-2" />
+  255 |                                 <Input label="Main Deity" value={formData.deity} onChange={(v: string) => setFormData(p => ({ ...p, deity: v }))} placeholder="e.g. Lord Shiva (Jyotirlinga)" />
+> 256 |                                 <Input label="Status" value={formData.status} onChange={(v: string) => setFormData(p => ({ ...p, status: v }))} placeholder="OPEN / CLOSED" />
+      |                                  ^^^^^ This component is created during render
+  257 |                             </div>
+  258 |
+  259 |                             <div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/static-components
+  281:30   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:281:30
+  279 |                             </div>
+  280 |
+> 281 |                             <Input label="Image URL" value={formData.imageUrl} onChange={(v: string) => setFormData(p => ({ ...p, imageUrl: v }))} placeholder="https://example.com/temple.jpg" />
+      |                              ^^^^^ This component is created during render
+  282 |
+  283 |                             {/* Location */}
+  284 |                             <div className="pt-4 border-t border-slate-100">
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               react-hooks/static-components
+  289:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:289:38
+  287 |                                 </h3>
+  288 |                                 <div className="grid md:grid-cols-2 gap-4">
+> 289 |                                     <Input label="Address" value={formData.location.address} onChange={(v: string) => setFormData(p => ({ ...p, location: { ...p.location, address: v } }))} className="md:col-span-2" placeholder="Street address" />
+      |                                      ^^^^^ This component is created during render
+  290 |                                     <Input label="City *" value={formData.location.city} onChange={(v: string) => setFormData(p => ({ ...p, location: { ...p.location, city: v } }))} required placeholder="City" />
+  291 |                                     <Input label="State *" value={formData.location.state} onChange={(v: string) => setFormData(p => ({ ...p, location: { ...p.location, state: v } }))} required placeholder="State" />
+  292 |                                 </div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react-hooks/static-components
+  290:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:290:38
+  288 |                                 <div className="grid md:grid-cols-2 gap-4">
+  289 |                                     <Input label="Address" value={formData.location.address} onChange={(v: string) => setFormData(p => ({ ...p, location: { ...p.location, address: v } }))} className="md:col-span-2" placeholder="Street address" />
+> 290 |                                     <Input label="City *" value={formData.location.city} onChange={(v: string) => setFormData(p => ({ ...p, location: { ...p.location, city: v } }))} required placeholder="City" />
+      |                                      ^^^^^ This component is created during render
+  291 |                                     <Input label="State *" value={formData.location.state} onChange={(v: string) => setFormData(p => ({ ...p, location: { ...p.location, state: v } }))} required placeholder="State" />
+  292 |                                 </div>
+  293 |                             </div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            react-hooks/static-components
+  291:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:291:38
+  289 |                                     <Input label="Address" value={formData.location.address} onChange={(v: string) => setFormData(p => ({ ...p, location: { ...p.location, address: v } }))} className="md:col-span-2" placeholder="Street address" />
+  290 |                                     <Input label="City *" value={formData.location.city} onChange={(v: string) => setFormData(p => ({ ...p, location: { ...p.location, city: v } }))} required placeholder="City" />
+> 291 |                                     <Input label="State *" value={formData.location.state} onChange={(v: string) => setFormData(p => ({ ...p, location: { ...p.location, state: v } }))} required placeholder="State" />
+      |                                      ^^^^^ This component is created during render
+  292 |                                 </div>
+  293 |                             </div>
+  294 |
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/static-components
+  301:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:301:38
+  299 |                                 </h3>
+  300 |                                 <div className="grid md:grid-cols-3 gap-4">
+> 301 |                                     <Input label="Max Capacity *" type="number" value={formData.capacity.total} onChange={handleCapacityChange} required />
+      |                                      ^^^^^ This component is created during render
+  302 |                                     <div>
+  303 |                                         <label className="block text-slate-700 text-sm font-semibold mb-2">Opens (Weekday)</label>
+  304 |                                         <input type="time" value={formData.operatingHours.regular.opens} onChange={e => setFormData(p => ({ ...p, operatingHours: { ...p.operatingHours, regular: { ...p.operatingHours.regular, opens: e.target.value } } }))} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl" />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                react-hooks/static-components
+  312:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:312:38
+  310 |                                 </div>
+  311 |                                 <div className="grid md:grid-cols-3 gap-4 mt-4">
+> 312 |                                     <Input label="Per Slot Capacity" type="number" value={formData.capacity.per_slot} onChange={(v: number) => setFormData(p => ({ ...p, capacity: { ...p.capacity, per_slot: v } }))} />
+      |                                      ^^^^^ This component is created during render
+  313 |                                     <div>
+  314 |                                         <label className="block text-slate-700 text-sm font-semibold mb-2">Opens (Weekend)</label>
+  315 |                                         <input type="time" value={formData.operatingHours.weekend.opens} onChange={e => setFormData(p => ({ ...p, operatingHours: { ...p.operatingHours, weekend: { ...p.operatingHours.weekend, opens: e.target.value } } }))} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl" />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            react-hooks/static-components
+  330:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:330:38
+  328 |                                 </h3>
+  329 |                                 <div className="grid md:grid-cols-3 gap-4">
+> 330 |                                     <Input label="Phone" value={formData.contact.phone} onChange={(v: string) => setFormData(p => ({ ...p, contact: { ...p.contact, phone: v } }))} placeholder="+91-XXX-XXXX" />
+      |                                      ^^^^^ This component is created during render
+  331 |                                     <Input label="Email" value={formData.contact.email} onChange={(v: string) => setFormData(p => ({ ...p, contact: { ...p.contact, email: v } }))} type="email" placeholder="temple@example.org" />
+  332 |                                     <Input label="Website" value={formData.contact.website} onChange={(v: string) => setFormData(p => ({ ...p, contact: { ...p.contact, website: v } }))} placeholder="https://..." />
+  333 |                                 </div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                react-hooks/static-components
+  331:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:331:38
+  329 |                                 <div className="grid md:grid-cols-3 gap-4">
+  330 |                                     <Input label="Phone" value={formData.contact.phone} onChange={(v: string) => setFormData(p => ({ ...p, contact: { ...p.contact, phone: v } }))} placeholder="+91-XXX-XXXX" />
+> 331 |                                     <Input label="Email" value={formData.contact.email} onChange={(v: string) => setFormData(p => ({ ...p, contact: { ...p.contact, email: v } }))} type="email" placeholder="temple@example.org" />
+      |                                      ^^^^^ This component is created during render
+  332 |                                     <Input label="Website" value={formData.contact.website} onChange={(v: string) => setFormData(p => ({ ...p, contact: { ...p.contact, website: v } }))} placeholder="https://..." />
+  333 |                                 </div>
+  334 |                             </div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   react-hooks/static-components
+  332:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:332:38
+  330 |                                     <Input label="Phone" value={formData.contact.phone} onChange={(v: string) => setFormData(p => ({ ...p, contact: { ...p.contact, phone: v } }))} placeholder="+91-XXX-XXXX" />
+  331 |                                     <Input label="Email" value={formData.contact.email} onChange={(v: string) => setFormData(p => ({ ...p, contact: { ...p.contact, email: v } }))} type="email" placeholder="temple@example.org" />
+> 332 |                                     <Input label="Website" value={formData.contact.website} onChange={(v: string) => setFormData(p => ({ ...p, contact: { ...p.contact, website: v } }))} placeholder="https://..." />
+      |                                      ^^^^^ This component is created during render
+  333 |                                 </div>
+  334 |                             </div>
+  335 |                         </motion.div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react-hooks/static-components
+  351:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:351:34
+  349 |                             </h3>
+  350 |                             <div className="grid md:grid-cols-3 gap-4">
+> 351 |                                 <Input label="General Entry (???)" type="number" value={formData.fees.general} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, general: v } }))} />
+      |                                  ^^^^^ This component is created during render
+  352 |                                 <Input label="Special Darshan (???)" type="number" value={formData.fees.specialDarshan} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, specialDarshan: v } }))} />
+  353 |                                 <Input label="VIP Entry (???)" type="number" value={formData.fees.vipEntry} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, vipEntry: v } }))} />
+  354 |                                 <Input label="Foreigners (???)" type="number" value={formData.fees.foreigners} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, foreigners: v } }))} />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                react-hooks/static-components
+  352:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:352:34
+  350 |                             <div className="grid md:grid-cols-3 gap-4">
+  351 |                                 <Input label="General Entry (???)" type="number" value={formData.fees.general} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, general: v } }))} />
+> 352 |                                 <Input label="Special Darshan (???)" type="number" value={formData.fees.specialDarshan} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, specialDarshan: v } }))} />
+      |                                  ^^^^^ This component is created during render
+  353 |                                 <Input label="VIP Entry (???)" type="number" value={formData.fees.vipEntry} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, vipEntry: v } }))} />
+  354 |                                 <Input label="Foreigners (???)" type="number" value={formData.fees.foreigners} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, foreigners: v } }))} />
+  355 |                                 <Input label="Prasad (???)" type="number" value={formData.fees.prasad} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, prasad: v } }))} />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   react-hooks/static-components
+  353:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:353:34
+  351 |                                 <Input label="General Entry (???)" type="number" value={formData.fees.general} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, general: v } }))} />
+  352 |                                 <Input label="Special Darshan (???)" type="number" value={formData.fees.specialDarshan} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, specialDarshan: v } }))} />
+> 353 |                                 <Input label="VIP Entry (???)" type="number" value={formData.fees.vipEntry} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, vipEntry: v } }))} />
+      |                                  ^^^^^ This component is created during render
+  354 |                                 <Input label="Foreigners (???)" type="number" value={formData.fees.foreigners} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, foreigners: v } }))} />
+  355 |                                 <Input label="Prasad (???)" type="number" value={formData.fees.prasad} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, prasad: v } }))} />
+  356 |                                 <Input label="Photography (???)" type="number" value={formData.fees.photography} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, photography: v } }))} />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             react-hooks/static-components
+  354:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:354:34
+  352 |                                 <Input label="Special Darshan (???)" type="number" value={formData.fees.specialDarshan} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, specialDarshan: v } }))} />
+  353 |                                 <Input label="VIP Entry (???)" type="number" value={formData.fees.vipEntry} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, vipEntry: v } }))} />
+> 354 |                                 <Input label="Foreigners (???)" type="number" value={formData.fees.foreigners} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, foreigners: v } }))} />
+      |                                  ^^^^^ This component is created during render
+  355 |                                 <Input label="Prasad (???)" type="number" value={formData.fees.prasad} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, prasad: v } }))} />
+  356 |                                 <Input label="Photography (???)" type="number" value={formData.fees.photography} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, photography: v } }))} />
+  357 |                             </div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/static-components
+  355:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:355:34
+  353 |                                 <Input label="VIP Entry (???)" type="number" value={formData.fees.vipEntry} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, vipEntry: v } }))} />
+  354 |                                 <Input label="Foreigners (???)" type="number" value={formData.fees.foreigners} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, foreigners: v } }))} />
+> 355 |                                 <Input label="Prasad (???)" type="number" value={formData.fees.prasad} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, prasad: v } }))} />
+      |                                  ^^^^^ This component is created during render
+  356 |                                 <Input label="Photography (???)" type="number" value={formData.fees.photography} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, photography: v } }))} />
+  357 |                             </div>
+  358 |
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/static-components
+  356:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:356:34
+  354 |                                 <Input label="Foreigners (???)" type="number" value={formData.fees.foreigners} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, foreigners: v } }))} />
+  355 |                                 <Input label="Prasad (???)" type="number" value={formData.fees.prasad} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, prasad: v } }))} />
+> 356 |                                 <Input label="Photography (???)" type="number" value={formData.fees.photography} onChange={(v: number) => setFormData(p => ({ ...p, fees: { ...p.fees, photography: v } }))} />
+      |                                  ^^^^^ This component is created during render
+  357 |                             </div>
+  358 |
+  359 |                             <div className="pt-6 border-t border-slate-100">
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   react-hooks/static-components
+  364:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:364:38
+  362 |                                 </h3>
+  363 |                                 <div className="grid md:grid-cols-2 gap-4">
+> 364 |                                     <Checkbox label="Enable Donations" checked={formData.donations.enabled} onChange={(v: boolean) => setFormData(p => ({ ...p, donations: { ...p.donations, enabled: v } }))} icon="????" />
+      |                                      ^^^^^^^^ This component is created during render
+  365 |                                     <Checkbox label="80G Tax Exemption" checked={formData.donations.section80G} onChange={(v: boolean) => setFormData(p => ({ ...p, donations: { ...p.donations, section80G: v } }))} icon="????" />
+  366 |                                 </div>
+  367 |                                 <div className="mt-4">
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               react-hooks/static-components
+  365:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:365:38
+  363 |                                 <div className="grid md:grid-cols-2 gap-4">
+  364 |                                     <Checkbox label="Enable Donations" checked={formData.donations.enabled} onChange={(v: boolean) => setFormData(p => ({ ...p, donations: { ...p.donations, enabled: v } }))} icon="????" />
+> 365 |                                     <Checkbox label="80G Tax Exemption" checked={formData.donations.section80G} onChange={(v: boolean) => setFormData(p => ({ ...p, donations: { ...p.donations, section80G: v } }))} icon="????" />
+      |                                      ^^^^^^^^ This component is created during render
+  366 |                                 </div>
+  367 |                                 <div className="mt-4">
+  368 |                                     <Input label="Minimum Donation Amount (???)" type="number" value={formData.donations.minimumAmount} onChange={(v: number) => setFormData(p => ({ ...p, donations: { ...p.donations, minimumAmount: v } }))} />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/static-components
+  368:38   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:368:38
+  366 |                                 </div>
+  367 |                                 <div className="mt-4">
+> 368 |                                     <Input label="Minimum Donation Amount (???)" type="number" value={formData.donations.minimumAmount} onChange={(v: number) => setFormData(p => ({ ...p, donations: { ...p.donations, minimumAmount: v } }))} />
+      |                                      ^^^^^ This component is created during render
+  369 |                                 </div>
+  370 |                             </div>
+  371 |                         </motion.div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:185:19
+  183 |
+  184 |     // Input component for reuse
+> 185 |     const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 186 |         <div className={className}>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 187 |             <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 196 |         </div>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 197 |     );
+      | ^^^^^^ The component is created during render here
+  198 |
+  199 |     // Checkbox component
+  200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/static-components
+  387:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:387:34
+  385 |                             </h3>
+  386 |                             <div className="grid md:grid-cols-3 gap-3">
+> 387 |                                 <Checkbox label="Parking" checked={formData.facilities.parking} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, parking: v } }))} icon="???????" />
+      |                                  ^^^^^^^^ This component is created during render
+  388 |                                 <Checkbox label="Wheelchair Access" checked={formData.facilities.wheelchairAccess} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, wheelchairAccess: v } }))} icon="???" />
+  389 |                                 <Checkbox label="Cloakroom" checked={formData.facilities.cloakroom} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, cloakroom: v } }))} icon="????" />
+  390 |                                 <Checkbox label="Prasad Counter" checked={formData.facilities.prasadCounter} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, prasadCounter: v } }))} icon="????" />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div                                                                                                                                                                                                                                                                                                                                                           react-hooks/static-components
+  388:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:388:34
+  386 |                             <div className="grid md:grid-cols-3 gap-3">
+  387 |                                 <Checkbox label="Parking" checked={formData.facilities.parking} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, parking: v } }))} icon="???????" />
+> 388 |                                 <Checkbox label="Wheelchair Access" checked={formData.facilities.wheelchairAccess} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, wheelchairAccess: v } }))} icon="???" />
+      |                                  ^^^^^^^^ This component is created during render
+  389 |                                 <Checkbox label="Cloakroom" checked={formData.facilities.cloakroom} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, cloakroom: v } }))} icon="????" />
+  390 |                                 <Checkbox label="Prasad Counter" checked={formData.facilities.prasadCounter} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, prasadCounter: v } }))} icon="????" />
+  391 |                                 <Checkbox label="Shoe Stand" checked={formData.facilities.shoeStand} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, shoeStand: v } }))} icon="????" />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div                                                                                                                                                                    react-hooks/static-components
+  389:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:389:34
+  387 |                                 <Checkbox label="Parking" checked={formData.facilities.parking} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, parking: v } }))} icon="???????" />
+  388 |                                 <Checkbox label="Wheelchair Access" checked={formData.facilities.wheelchairAccess} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, wheelchairAccess: v } }))} icon="???" />
+> 389 |                                 <Checkbox label="Cloakroom" checked={formData.facilities.cloakroom} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, cloakroom: v } }))} icon="????" />
+      |                                  ^^^^^^^^ This component is created during render
+  390 |                                 <Checkbox label="Prasad Counter" checked={formData.facilities.prasadCounter} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, prasadCounter: v } }))} icon="????" />
+  391 |                                 <Checkbox label="Shoe Stand" checked={formData.facilities.shoeStand} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, shoeStand: v } }))} icon="????" />
+  392 |                                 <Checkbox label="Drinking Water" checked={formData.facilities.drinkingWater} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, drinkingWater: v } }))} icon="????" />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div       react-hooks/static-components
+  390:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:390:34
+  388 |                                 <Checkbox label="Wheelchair Access" checked={formData.facilities.wheelchairAccess} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, wheelchairAccess: v } }))} icon="???" />
+  389 |                                 <Checkbox label="Cloakroom" checked={formData.facilities.cloakroom} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, cloakroom: v } }))} icon="????" />
+> 390 |                                 <Checkbox label="Prasad Counter" checked={formData.facilities.prasadCounter} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, prasadCounter: v } }))} icon="????" />
+      |                                  ^^^^^^^^ This component is created during render
+  391 |                                 <Checkbox label="Shoe Stand" checked={formData.facilities.shoeStand} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, shoeStand: v } }))} icon="????" />
+  392 |                                 <Checkbox label="Drinking Water" checked={formData.facilities.drinkingWater} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, drinkingWater: v } }))} icon="????" />
+  393 |                                 <Checkbox label="Restrooms" checked={formData.facilities.restrooms} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, restrooms: v } }))} icon="????" />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div  react-hooks/static-components
+  391:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:391:34
+  389 |                                 <Checkbox label="Cloakroom" checked={formData.facilities.cloakroom} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, cloakroom: v } }))} icon="????" />
+  390 |                                 <Checkbox label="Prasad Counter" checked={formData.facilities.prasadCounter} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, prasadCounter: v } }))} icon="????" />
+> 391 |                                 <Checkbox label="Shoe Stand" checked={formData.facilities.shoeStand} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, shoeStand: v } }))} icon="????" />
+      |                                  ^^^^^^^^ This component is created during render
+  392 |                                 <Checkbox label="Drinking Water" checked={formData.facilities.drinkingWater} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, drinkingWater: v } }))} icon="????" />
+  393 |                                 <Checkbox label="Restrooms" checked={formData.facilities.restrooms} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, restrooms: v } }))} icon="????" />
+  394 |                                 <Checkbox label="Accommodation" checked={formData.facilities.accommodation} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, accommodation: v } }))} icon="????" />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div           react-hooks/static-components
+  392:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:392:34
+  390 |                                 <Checkbox label="Prasad Counter" checked={formData.facilities.prasadCounter} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, prasadCounter: v } }))} icon="????" />
+  391 |                                 <Checkbox label="Shoe Stand" checked={formData.facilities.shoeStand} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, shoeStand: v } }))} icon="????" />
+> 392 |                                 <Checkbox label="Drinking Water" checked={formData.facilities.drinkingWater} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, drinkingWater: v } }))} icon="????" />
+      |                                  ^^^^^^^^ This component is created during render
+  393 |                                 <Checkbox label="Restrooms" checked={formData.facilities.restrooms} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, restrooms: v } }))} icon="????" />
+  394 |                                 <Checkbox label="Accommodation" checked={formData.facilities.accommodation} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, accommodation: v } }))} icon="????" />
+  395 |                                 <Checkbox label="Free Food (Langar)" checked={formData.facilities.freeFood} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, freeFood: v } }))} icon="????" />
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div    react-hooks/static-components
+  393:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:393:34
+  391 |                                 <Checkbox label="Shoe Stand" checked={formData.facilities.shoeStand} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, shoeStand: v } }))} icon="????" />
+  392 |                                 <Checkbox label="Drinking Water" checked={formData.facilities.drinkingWater} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, drinkingWater: v } }))} icon="????" />
+> 393 |                                 <Checkbox label="Restrooms" checked={formData.facilities.restrooms} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, restrooms: v } }))} icon="????" />
+      |                                  ^^^^^^^^ This component is created during render
+  394 |                                 <Checkbox label="Accommodation" checked={formData.facilities.accommodation} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, accommodation: v } }))} icon="????" />
+  395 |                                 <Checkbox label="Free Food (Langar)" checked={formData.facilities.freeFood} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, freeFood: v } }))} icon="????" />
+  396 |                             </div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div                                                                                                                                                                                                      react-hooks/static-components
+  394:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:394:34
+  392 |                                 <Checkbox label="Drinking Water" checked={formData.facilities.drinkingWater} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, drinkingWater: v } }))} icon="????" />
+  393 |                                 <Checkbox label="Restrooms" checked={formData.facilities.restrooms} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, restrooms: v } }))} icon="????" />
+> 394 |                                 <Checkbox label="Accommodation" checked={formData.facilities.accommodation} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, accommodation: v } }))} icon="????" />
+      |                                  ^^^^^^^^ This component is created during render
+  395 |                                 <Checkbox label="Free Food (Langar)" checked={formData.facilities.freeFood} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, freeFood: v } }))} icon="????" />
+  396 |                             </div>
+  397 |                         </motion.div>
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div                                                                                                                                                                                                                                                                                                                                                                                         react-hooks/static-components
+  395:34   error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:395:34
+  393 |                                 <Checkbox label="Restrooms" checked={formData.facilities.restrooms} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, restrooms: v } }))} icon="????" />
+  394 |                                 <Checkbox label="Accommodation" checked={formData.facilities.accommodation} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, accommodation: v } }))} icon="????" />
+> 395 |                                 <Checkbox label="Free Food (Langar)" checked={formData.facilities.freeFood} onChange={(v: boolean) => setFormData(p => ({ ...p, facilities: { ...p.facilities, freeFood: v } }))} icon="????" />
+      |                                  ^^^^^^^^ This component is created during render
+  396 |                             </div>
+  397 |                         </motion.div>
+  398 |                     )}
+
+D:\temple-crowd-management\frontend\src\components\admin\TempleForm.tsx:200:22
+  198 |
+  199 |     // Checkbox component
+> 200 |     const Checkbox = ({ label, checked, onChange, icon }: any) => (
+      |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |             <input
+      ???
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |         </label>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |     );
+      | ^^^^^^ The component is created during render here
+  212 |
+  213 |     return (
+  214 |         <motion.div                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/static-components
+
+D:\temple-crowd-management\frontend\src\components\admin\temples\TempleFormModal.tsx
+   33:13   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\temple-crowd-management\frontend\src\components\admin\temples\TempleFormModal.tsx:33:13
+  31 |     useEffect(() => {
+  32 |         if (initialData) {
+> 33 |             setFormData({
+     |             ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  34 |                 ...initialData,
+  35 |                 location: typeof initialData.location === 'string'
+  36 |                     ? { city: initialData.location, state: '', coordinates: { latitude: 0, longitude: 0 } }  react-hooks/set-state-in-effect
+   61:51   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+   64:46   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+   71:50   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+   78:38   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  154:86   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  159:86   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  164:89   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  169:102  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  169:203  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  174:102  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  174:204  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  212:181  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  214:105  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  244:45   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @next/next/no-img-element
+
+D:\temple-crowd-management\frontend\src\components\gatekeeper\SupportModal.tsx
+  80:106  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  80:113  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+D:\temple-crowd-management\frontend\src\components\ui\animated-components.tsx
+  189:42  warning  'duration' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\temple-crowd-management\frontend\src\components\ui\chat-widget.tsx
+  7:22  warning  'ChatMessage' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\temple-crowd-management\frontend\src\components\ui\crowd-prediction-chart.tsx
+  63:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\components\ui\temple-card-public.tsx
+  66:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\temple-crowd-management\frontend\src\components\ui\temple-card.tsx
+  91:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\temple-crowd-management\frontend\src\hooks\use-ml-predict.ts
+   75:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  117:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\hooks\use-rag-chat.ts
+  156:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\lib\api.ts
+   71:19   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  109:21   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  121:10   warning  'handleAuthError' is defined but never used  @typescript-eslint/no-unused-vars
+  299:79   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  309:75   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  375:72   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  386:75   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  386:92   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  386:100  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  391:68   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  399:67   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  407:51   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  412:58   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  417:57   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  422:54   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  427:39   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  492:33   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  497:40   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  502:102  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  519:32   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  527:44   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  542:56   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  547:36   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  556:79   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  581:18   warning  'e' is defined but never used                @typescript-eslint/no-unused-vars
+
+D:\temple-crowd-management\frontend\src\lib\auth-context.tsx
+   66:26  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+  108:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  131:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  149:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\temple-crowd-management\frontend\src\lib\protected-route.tsx
+  44:69  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  66:71  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+??? 190 problems (147 errors, 43 warnings)
+

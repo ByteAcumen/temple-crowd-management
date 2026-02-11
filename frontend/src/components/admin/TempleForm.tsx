@@ -21,6 +21,35 @@ const tabs = [
     { id: 'services', label: 'Services & Events', icon: '🎉' },
 ];
 
+// Input component for reuse
+const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
+    <div className={className}>
+        <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
+        <input
+            type={type}
+            required={required}
+            value={value}
+            onChange={e => onChange(type === 'number' ? Number(e.target.value) : e.target.value)}
+            placeholder={placeholder}
+            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all placeholder:text-slate-400"
+        />
+    </div>
+);
+
+// Checkbox component
+const Checkbox = ({ label, checked, onChange, icon }: any) => (
+    <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
+        <input
+            type="checkbox"
+            checked={checked}
+            onChange={e => onChange(e.target.checked)}
+            className="w-5 h-5 rounded border-slate-300 text-orange-500 focus:ring-orange-500"
+        />
+        <span className="text-lg">{icon}</span>
+        <span className="text-slate-700 font-medium group-hover:text-orange-700">{label}</span>
+    </label>
+);
+
 export default function TempleForm({ initialData, onSubmit, isLoading, error, isEdit = false }: TempleFormProps) {
     const [activeTab, setActiveTab] = useState('basic');
     const [formData, setFormData] = useState({
@@ -114,6 +143,7 @@ export default function TempleForm({ initialData, onSubmit, isLoading, error, is
                 contact: initialData.contact || prev.contact
             }));
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialData]);
 
     // Auto-calculate thresholds when capacity changes
@@ -181,34 +211,7 @@ export default function TempleForm({ initialData, onSubmit, isLoading, error, is
         onSubmit(formData);
     };
 
-    // Input component for reuse
-    const Input = ({ label, value, onChange, type = 'text', required = false, placeholder = '', className = '' }: any) => (
-        <div className={className}>
-            <label className="block text-slate-700 text-sm font-semibold mb-2">{label}</label>
-            <input
-                type={type}
-                required={required}
-                value={value}
-                onChange={e => onChange(type === 'number' ? Number(e.target.value) : e.target.value)}
-                placeholder={placeholder}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all placeholder:text-slate-400"
-            />
-        </div>
-    );
 
-    // Checkbox component
-    const Checkbox = ({ label, checked, onChange, icon }: any) => (
-        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group">
-            <input
-                type="checkbox"
-                checked={checked}
-                onChange={e => onChange(e.target.checked)}
-                className="w-5 h-5 rounded border-slate-300 text-orange-500 focus:ring-orange-500"
-            />
-            <span className="text-lg">{icon}</span>
-            <span className="text-slate-700 font-medium group-hover:text-orange-700">{label}</span>
-        </label>
-    );
 
     return (
         <motion.div
@@ -229,8 +232,8 @@ export default function TempleForm({ initialData, onSubmit, isLoading, error, is
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-5 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-all ${activeTab === tab.id
-                                ? 'border-orange-500 text-orange-600 bg-orange-50/50'
-                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                            ? 'border-orange-500 text-orange-600 bg-orange-50/50'
+                            : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                             }`}
                     >
                         <span>{tab.icon}</span>

@@ -135,7 +135,7 @@ function AdminTemplesContent() {
                         fees: { specialDarshan: 0, general: 0 },
                         facilities: { parking: true, wheelchairAccess: false, restrooms: false, drinkingWater: true, prasadCounter: false }
                     }
-                ] as any);
+                ] as Temple[]);
 
             } finally {
                 setLoading(false);
@@ -180,8 +180,9 @@ function AdminTemplesContent() {
                 }
             }
             setShowModal(false);
-        } catch (err: any) {
-            setError(err.message || 'Failed to save temple');
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to save temple';
+            setError(errorMessage);
         } finally {
             setSaving(false);
         }
@@ -195,8 +196,9 @@ function AdminTemplesContent() {
             // Refetch temples to show updated statuses
             const response = await templesApi.getAll();
             if (response.success) setTemples(response.data || []);
-        } catch (err: any) {
-            setError(err.message || 'Sync failed');
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Sync failed';
+            setError(errorMessage);
         } finally {
             setSyncing(false);
         }

@@ -41,9 +41,13 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     // Focus input when opened
     useEffect(() => {
         if (isOpen) {
-            setTimeout(() => inputRef.current?.focus(), 100);
-            setQuery('');
-            setSelectedIndex(0);
+            // Use setTimeout to avoid synchronous setState during render cycle
+            const timer = setTimeout(() => {
+                inputRef.current?.focus();
+                setQuery('');
+                setSelectedIndex(0);
+            }, 10);
+            return () => clearTimeout(timer);
         }
     }, [isOpen]);
 
@@ -161,7 +165,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                                 ))
                             ) : (
                                 <div className="py-8 text-center text-slate-400 text-sm">
-                                    No commands found for "{query}"
+                                    No commands found for &quot;{query}&quot;
                                 </div>
                             )}
                         </div>

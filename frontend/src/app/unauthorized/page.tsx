@@ -27,7 +27,7 @@ export default function UnauthorizedPage() {
                         Access Denied
                     </h1>
                     <p className="text-slate-600 mb-6">
-                        You don't have permission to access this page.
+                        You don&apos;t have permission to access this page.
                         {user && (
                             <span className="block mt-2 text-sm">
                                 Your role: <span className="font-semibold text-orange-600">{user.role}</span>

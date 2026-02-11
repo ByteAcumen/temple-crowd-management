@@ -6,133 +6,81 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { templesApi, Temple } from '@/lib/api';
-import { TempleCard } from '@/components/ui/temple-card';
+import { PublicTempleCard } from '@/components/ui/temple-card-public';
 import { TrafficLight } from '@/components/ui/traffic-light';
+import { useAllCrowdData } from '@/hooks/use-live-data';
 
 export default function TemplesPage() {
-    const [temples, setTemples] = useState<Temple[]>([]);
-    const [filteredTemples, setFilteredTemples] = useState<Temple[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data: liveData, isLoading, isError } = useAllCrowdData();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'GREEN' | 'ORANGE' | 'RED'>('all');
 
-    // Fetch temples on mount
-    useEffect(() => {
-        async function fetchTemples() {
-            try {
-                const response = await templesApi.getAll();
-                if (response.success) {
-                    setTemples(response.data);
-                    setFilteredTemples(response.data);
-                }
-            } catch (err: unknown) {
-                const message = err instanceof Error ? err.message : 'Failed to load temples';
-                setError(message);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchTemples();
-    }, []);
+    // Extract temples from live data structure
+    // liveData can be an array (if direct list) or object { temples: [], summary: {} }
+    const temples = Array.isArray(liveData) ? liveData : (liveData?.temples || []);
 
-    // Filter temples when search or status filter changes
-    useEffect(() => {
-        let result = temples;
-
-        // Search filter
+    // Filter logic
+    const filteredTemples = temples.filter((temple: any) => {
+        // 1. Search Filter (Name, City, Deity)
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            result = result.filter(temple =>
-                temple.name.toLowerCase().includes(query) ||
-                (typeof temple.location === 'object' &&
-                    (temple.location?.city?.toLowerCase().includes(query) ||
-                        temple.location?.state?.toLowerCase().includes(query)))
-            );
+            const nameMatch = (temple.temple_name || temple.name)?.toLowerCase().includes(query);
+            const cityMatch = (typeof temple.location === 'string' ? temple.location : temple.location?.city)?.toLowerCase().includes(query);
+
+            if (!nameMatch && !cityMatch) return false;
         }
 
-        // Status filter
+        // 2. Status Filter
         if (statusFilter !== 'all') {
-            result = result.filter(temple => {
-                const capacity = typeof temple.capacity === 'object' ? temple.capacity.total : (temple.capacity || 1);
-                const occupancyPercent = ((temple.currentOccupancy || 0) / capacity) * 100;
-
-                const status = occupancyPercent > 95 ? 'RED'
-                    : occupancyPercent > 85 ? 'ORANGE'
-                        : 'GREEN';
-                return status === statusFilter;
-            });
+            const status = temple.traffic_status || 'GREEN'; // Default if missing
+            if (status !== statusFilter) return false;
         }
 
-        setFilteredTemples(result);
-    }, [searchQuery, statusFilter, temples]);
+        return true;
+    });
 
     // Calculate stats
     const stats = {
         total: temples.length,
-        open: temples.filter(t => t.status === 'OPEN').length,
-        lowCrowd: temples.filter(t => {
+        open: temples.filter((t: any) => t.status === 'OPEN').length,
+        lowCrowd: temples.filter((t: any) => {
             const capacity = typeof t.capacity === 'object' ? t.capacity.total : (t.capacity || 1);
-            const pct = ((t.currentOccupancy || 0) / capacity * 100);
+            const occupancy = t.live_count ?? t.currentOccupancy ?? 0;
+            const pct = (occupancy / capacity * 100);
             return pct <= 85;
         }).length,
     };
 
     return (
         <div className="min-h-screen bg-slate-50">
-            {/* Header */}
-            <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        {/* Logo */}
-                        <Link href="/" className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                            </div>
-                            <span className="text-xl font-bold text-slate-900">Temple Smart</span>
-                        </Link>
-
-                        {/* Navigation */}
-                        <nav className="hidden md:flex items-center gap-6">
-                            <Link href="/temples" className="text-orange-600 font-medium">Temples</Link>
-                            <Link href="/live" className="text-slate-600 hover:text-slate-900">Live Status</Link>
-                            <Link href="/dashboard" className="text-slate-600 hover:text-slate-900">My Bookings</Link>
-                        </nav>
-
-                        {/* CTA */}
-                        <Link href="/login" className="btn-primary py-2 px-4 text-sm">
-                            Sign In
-                        </Link>
-                    </div>
-                </div>
-            </header>
-
             {/* Hero Section */}
-            <section className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 text-white py-12">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-8">
-                        <h1 className="text-3xl md:text-4xl font-bold mb-3">
-                            🛕 Explore Sacred Temples
-                        </h1>
-                        <p className="text-orange-100 text-lg max-w-2xl mx-auto">
-                            View real-time crowd levels and book your darshan slot instantly
-                        </p>
-                    </div>
+            <section className="relative py-12 md:py-20 overflow-hidden">
+                {/* Background Decor */}
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-orange-600 to-red-600"></div>
+                <div className="absolute inset-0 bg-[url('/patterns/temple-pattern.png')] opacity-10"></div>
+                <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-400/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center text-white">
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-fade-in-up">
+                        Explore Sacred Spaces
+                    </h1>
+                    <p className="text-orange-100 text-lg md:text-xl max-w-2xl mx-auto mb-8 animate-fade-in-up delay-100">
+                        Discover temples, check live crowd status, and book your peaceful darshan.
+                    </p>
 
                     {/* Quick Stats */}
-                    <div className="flex flex-wrap justify-center gap-6">
-                        <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 text-center">
+                    <div className="inline-flex flex-wrap justify-center gap-4 animate-fade-in-up delay-200">
+                        <div className="glass-white/10 px-6 py-3 rounded-2xl border border-white/20 backdrop-blur-md">
                             <span className="block text-2xl font-bold">{stats.total}</span>
-                            <span className="text-sm text-orange-100">Total Temples</span>
+                            <span className="text-sm text-orange-100">Temples</span>
                         </div>
-                        <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 text-center">
+                        <div className="glass-white/10 px-6 py-3 rounded-2xl border border-white/20 backdrop-blur-md">
                             <span className="block text-2xl font-bold text-green-300">{stats.open}</span>
-                            <span className="text-sm text-orange-100">Currently Open</span>
+                            <span className="text-sm text-orange-100">Open Now</span>
                         </div>
-                        <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 text-center">
-                            <span className="block text-2xl font-bold text-green-300">{stats.lowCrowd}</span>
+                        <div className="glass-white/10 px-6 py-3 rounded-2xl border border-white/20 backdrop-blur-md">
+                            <span className="block text-2xl font-bold text-blue-300">{stats.lowCrowd}</span>
                             <span className="text-sm text-orange-100">Low Crowd</span>
                         </div>
                     </div>
@@ -199,7 +147,7 @@ export default function TemplesPage() {
                                 </div>
                             ))}
                         </div>
-                    ) : error ? (
+                    ) : isError ? (
                         // Error State
                         <div className="text-center py-12">
                             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -208,7 +156,7 @@ export default function TemplesPage() {
                                 </svg>
                             </div>
                             <h3 className="text-xl font-semibold text-slate-900 mb-2">Failed to load temples</h3>
-                            <p className="text-slate-600 mb-4">{error}</p>
+                            <p className="text-slate-600 mb-4">Could not connect to live server.</p>
                             <button
                                 onClick={() => window.location.reload()}
                                 className="btn-primary"
@@ -234,14 +182,14 @@ export default function TemplesPage() {
                     ) : (
                         // Temple Cards Grid
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredTemples.map((temple, index) => (
-                                <TempleCard key={temple._id} temple={temple} index={index} />
+                            {filteredTemples.map((temple: any, index: number) => (
+                                <PublicTempleCard key={temple.temple_id || temple._id} temple={temple} index={index} />
                             ))}
                         </div>
                     )}
 
                     {/* Results Count */}
-                    {!isLoading && !error && filteredTemples.length > 0 && (
+                    {!isLoading && !isError && filteredTemples.length > 0 && (
                         <p className="text-center text-slate-500 mt-8">
                             Showing {filteredTemples.length} of {temples.length} temples
                         </p>

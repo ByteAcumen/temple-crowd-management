@@ -4,7 +4,7 @@
 // Multi-step wizard for booking darshan slots
 
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
 import { templesApi, bookingsApi, Temple } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -40,7 +40,6 @@ function getNext7Days() {
 
 function BookingContent() {
     const searchParams = useSearchParams();
-    const router = useRouter();
     const { user, isAuthenticated } = useAuth();
 
     // Wizard state
@@ -58,6 +57,10 @@ function BookingContent() {
 
     // Booking result
     const [bookingResult, setBookingResult] = useState<any>(null);
+
+    // Availability state
+    const [checkingAvailability, setCheckingAvailability] = useState(false);
+    const [filledSlots, setFilledSlots] = useState<string[]>([]);
 
     const dates = getNext7Days();
 
@@ -79,14 +82,39 @@ function BookingContent() {
                         }
                     }
                 }
-            } catch (err: any) {
-                setError(err.message || 'Failed to load temples');
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Failed to load temples';
+                setError(message);
             } finally {
                 setIsLoading(false);
             }
         }
         fetchTemples();
     }, [searchParams]);
+
+    // Availability Check Effect
+    useEffect(() => {
+        if (selectedTemple && selectedDate) {
+            async function checkSlots() {
+                setCheckingAvailability(true);
+                try {
+                    const res = await bookingsApi.checkAvailability(selectedTemple!._id, selectedDate);
+                    if (res && res.filledSlots) {
+                        setFilledSlots(res.filledSlots);
+                    } else {
+                        setFilledSlots([]);
+                    }
+                } catch (e) {
+                    console.error("Failed to check availability", e);
+                } finally {
+                    setCheckingAvailability(false);
+                }
+            }
+            checkSlots();
+        } else {
+            setFilledSlots([]);
+        }
+    }, [selectedTemple, selectedDate]);
 
     // Handle booking submission
     const handleSubmit = async () => {
@@ -101,6 +129,7 @@ function BookingContent() {
         try {
             const response = await bookingsApi.create({
                 templeId: selectedTemple._id,
+                templeName: selectedTemple.name,
                 date: selectedDate,
                 timeSlot: selectedSlot,
                 visitors: visitors,
@@ -110,8 +139,9 @@ function BookingContent() {
                 setBookingResult(response.data);
                 setStep(5); // Success step
             }
-        } catch (err: any) {
-            setError(err.message || 'Booking failed. Please try again.');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Booking failed. Please try again.';
+            setError(message);
         } finally {
             setIsSubmitting(false);
         }
@@ -134,7 +164,7 @@ function BookingContent() {
             <header className="bg-white border-b border-slate-200">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-4">
-                        <Link href="/temples" className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                        <Link href="/dashboard" className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
                             <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
@@ -264,6 +294,9 @@ function BookingContent() {
                             ))}
                         </div>
 
+
+                        {/* Selected Temple Summary */}
+
                         {/* Selected Temple Summary */}
                         {selectedTemple && (
                             <div className="bg-slate-100 rounded-xl p-4 flex items-center gap-3">
@@ -294,18 +327,28 @@ function BookingContent() {
                                 <div key={period}>
                                     <h3 className="text-sm font-medium text-slate-500 mb-2">{period}</h3>
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                        {TIME_SLOTS.filter(s => s.period === period).map((slot) => (
-                                            <button
-                                                key={slot.id}
-                                                onClick={() => setSelectedSlot(slot.id)}
-                                                className={`p-3 rounded-xl text-sm font-medium transition-all ${selectedSlot === slot.id
-                                                    ? 'bg-orange-500 text-white'
-                                                    : 'bg-white border border-slate-200 text-slate-700 hover:border-orange-300'
-                                                    }`}
-                                            >
-                                                {slot.label}
-                                            </button>
-                                        ))}
+                                        {TIME_SLOTS.filter(s => s.period === period).map((slot) => {
+                                            const isFull = filledSlots.includes(slot.id);
+                                            return (
+                                                <button
+                                                    key={slot.id}
+                                                    onClick={() => !isFull && setSelectedSlot(slot.id)}
+                                                    disabled={isFull || checkingAvailability}
+                                                    className={`p-3 rounded-xl text-sm font-medium transition-all relative ${isFull ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-100' :
+                                                        selectedSlot === slot.id
+                                                            ? 'bg-orange-500 text-white'
+                                                            : 'bg-white border border-slate-200 text-slate-700 hover:border-orange-300'
+                                                        }`}
+                                                >
+                                                    {slot.label}
+                                                    {isFull && (
+                                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                                                            FULL
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))}
@@ -403,7 +446,10 @@ function BookingContent() {
                             ) : (
                                 <div className="bg-orange-50 p-4 border-t border-orange-100">
                                     <p className="text-orange-800 mb-2">Please login to complete your booking</p>
-                                    <Link href="/login" className="btn-primary text-sm py-2 px-4 inline-block">
+                                    <Link
+                                        href={`/login?from=${encodeURIComponent(`/booking?temple=${selectedTemple?._id}`)}`}
+                                        className="btn-primary text-sm py-2 px-4 inline-block"
+                                    >
                                         Login to Continue
                                     </Link>
                                 </div>
