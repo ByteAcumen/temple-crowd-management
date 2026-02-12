@@ -10,19 +10,6 @@ import html2canvas from 'html2canvas';
 import { bookingsApi, Booking } from '@/lib/api';
 import { QRCodeDisplay } from '@/components/ui/qr-code-display';
 import { useTempleLiveData } from '@/hooks/use-live-data';
-import { useState as useToastState } from 'react';
-
-// Toast notification hook
-function useToast() {
-    const [toast, setToast] = useToastState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-        setToast({ message, type });
-        setTimeout(() => setToast(null), 3000);
-    };
-
-    return { toast, showToast };
-}
 
 // Status badge component
 function StatusBadge({ status }: { status: string }) {
@@ -175,6 +162,16 @@ export default function TicketPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 p-4 md:p-8">
+            {/* Success Toast */}
+            {showToast && (
+                <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-[slideIn_0.3s_ease-out]">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p className="font-medium">E-Pass downloaded successfully!</p>
+                </div>
+            )}
+
             <div className="max-w-md mx-auto">
                 {/* Back Button */}
                 <Link
@@ -378,6 +375,16 @@ export default function TicketPage() {
                     }
                     .print\\:hidden {
                         display: none !important;
+                    }
+                }
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
                     }
                 }
             `}</style>
