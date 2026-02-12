@@ -67,10 +67,42 @@ function UserDashboardContent() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
-                    <p className="text-slate-600">Loading...</p>
+            <div className="min-h-screen bg-slate-50 pb-20">
+                {/* Header Skeleton */}
+                <div className="bg-white border-b border-slate-200 pt-8 pb-12 px-6">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-300 rounded-2xl animate-pulse" />
+                                <div className="space-y-2">
+                                    <div className="h-8 w-48 bg-slate-200 rounded animate-pulse" />
+                                    <div className="h-4 w-64 bg-slate-200 rounded animate-pulse" />
+                                </div>
+                            </div>
+                            <div className="h-10 w-80 bg-slate-200 rounded-xl animate-pulse" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content Skeleton */}
+                <div className="max-w-7xl mx-auto px-6 py-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="md:col-span-2 h-48 bg-white rounded-3xl shadow-sm border border-slate-100 animate-pulse" />
+                        <div className="h-48 bg-white rounded-3xl shadow-sm border border-slate-100 animate-pulse" />
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+                        <div className="space-y-4">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-slate-200 rounded-xl animate-pulse" />
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-5 bg-slate-200 rounded animate-pulse w-1/3" />
+                                        <div className="h-4 bg-slate-200 rounded animate-pulse w-1/2" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -187,7 +219,18 @@ function UserDashboardContent() {
                                 </div>
                                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                                     {loadingBookings ? (
-                                        <div className="p-8 text-center text-slate-400">Loading...</div>
+                                        <div className="p-5 space-y-4">
+                                            {[1, 2, 3].map((i) => (
+                                                <div key={i} className="flex items-center gap-4 animate-pulse">
+                                                    <div className="w-12 h-12 rounded-xl bg-slate-200" />
+                                                    <div className="flex-1 space-y-2">
+                                                        <div className="h-5 bg-slate-200 rounded w-1/3" />
+                                                        <div className="h-4 bg-slate-200 rounded w-1/2" />
+                                                    </div>
+                                                    <div className="h-4 w-20 bg-slate-200 rounded" />
+                                                </div>
+                                            ))}
+                                        </div>
                                     ) : bookings.length === 0 ? (
                                         <div className="p-12 text-center">
                                             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">🎫</div>
@@ -234,7 +277,42 @@ function UserDashboardContent() {
                             className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
                         >
                             {loadingBookings ? (
-                                <div className="col-span-full py-20 text-center text-slate-500">Loading your tickets...</div>
+                                <>
+                                    {[1, 2, 3].map((i) => (
+                                        <motion.div key={i} variants={itemVariants}>
+                                            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                                                {/* Header Section Skeleton */}
+                                                <div className="h-32 bg-gradient-to-r from-slate-200 to-slate-300 p-6 flex flex-col justify-between animate-pulse">
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="h-5 w-16 bg-slate-300 rounded" />
+                                                        <div className="h-5 w-20 bg-slate-300 rounded" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="h-6 w-3/4 bg-slate-300 rounded mb-2" />
+                                                        <div className="h-4 w-1/2 bg-slate-300 rounded" />
+                                                    </div>
+                                                </div>
+                                                {/* Body Section Skeleton */}
+                                                <div className="p-6">
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <div className="space-y-1">
+                                                            <div className="h-3 w-16 bg-slate-200 rounded animate-pulse" />
+                                                            <div className="h-5 w-20 bg-slate-200 rounded animate-pulse" />
+                                                        </div>
+                                                        <div className="space-y-1 text-right">
+                                                            <div className="h-3 w-16 bg-slate-200 rounded animate-pulse ml-auto" />
+                                                            <div className="h-5 w-12 bg-slate-200 rounded animate-pulse ml-auto" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="border-t border-dashed border-slate-200 pt-4 flex items-center justify-between">
+                                                        <div className="h-3 w-24 bg-slate-200 rounded animate-pulse" />
+                                                        <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </>
                             ) : bookings.length === 0 ? (
                                 <div className="col-span-full py-20 text-center">
                                     <div className="inline-block p-4 rounded-full bg-slate-100 mb-4">

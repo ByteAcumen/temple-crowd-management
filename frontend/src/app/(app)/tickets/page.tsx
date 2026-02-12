@@ -27,10 +27,50 @@ export default function TicketsPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
-                    <p className="text-slate-600">Loading your tickets...</p>
+            <div className="min-h-screen bg-slate-50 py-12 px-6">
+                <div className="max-w-7xl mx-auto">
+                    {/* Header Skeleton */}
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="space-y-2">
+                            <div className="h-9 w-48 bg-slate-200 rounded animate-pulse" />
+                            <div className="h-5 w-64 bg-slate-200 rounded animate-pulse" />
+                        </div>
+                        <div className="h-11 w-36 bg-slate-200 rounded-lg animate-pulse" />
+                    </div>
+
+                    {/* Cards Skeleton */}
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div key={i} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div className="h-32 bg-gradient-to-r from-slate-200 to-slate-300 p-6 flex flex-col justify-between animate-pulse">
+                                    <div className="flex justify-between items-start">
+                                        <div className="h-5 w-16 bg-slate-300 rounded" />
+                                        <div className="h-5 w-20 bg-slate-300 rounded" />
+                                    </div>
+                                    <div>
+                                        <div className="h-6 w-3/4 bg-slate-300 rounded mb-2" />
+                                        <div className="h-4 w-1/2 bg-slate-300 rounded" />
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="space-y-1">
+                                            <div className="h-3 w-16 bg-slate-200 rounded animate-pulse" />
+                                            <div className="h-5 w-20 bg-slate-200 rounded animate-pulse" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="h-3 w-16 bg-slate-200 rounded animate-pulse ml-auto" />
+                                            <div className="h-5 w-12 bg-slate-200 rounded animate-pulse ml-auto" />
+                                        </div>
+                                    </div>
+                                    <div className="border-t border-dashed border-slate-200 pt-4 flex items-center justify-between">
+                                        <div className="h-3 w-24 bg-slate-200 rounded animate-pulse" />
+                                        <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         );

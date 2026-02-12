@@ -10,6 +10,19 @@ import html2canvas from 'html2canvas';
 import { bookingsApi, Booking } from '@/lib/api';
 import { QRCodeDisplay } from '@/components/ui/qr-code-display';
 import { useTempleLiveData } from '@/hooks/use-live-data';
+import { useState as useToastState } from 'react';
+
+// Toast notification hook
+function useToast() {
+    const [toast, setToast] = useToastState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    return { toast, showToast };
+}
 
 // Status badge component
 function StatusBadge({ status }: { status: string }) {
@@ -37,6 +50,8 @@ export default function TicketPage() {
 
     const [booking, setBooking] = useState<Booking | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [showToast, setShowToast] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Fetch booking details
@@ -68,26 +83,38 @@ export default function TicketPage() {
         window.print();
     };
 
-    // Handle download
+    // Handle download with progress
     const handleDownload = async () => {
-        if (printRef.current) {
+        if (printRef.current && !isDownloading) {
+            setIsDownloading(true);
             try {
                 const canvas = await html2canvas(printRef.current, {
                     scale: 3, // Higher resolution
                     backgroundColor: '#ffffff',
                     logging: false,
-                    useCORS: true, // Important for images
+                    useCORS: true,
                     allowTaint: true,
+                    width: printRef.current.offsetWidth,
+                    height: printRef.current.offsetHeight,
+                    windowWidth: printRef.current.scrollWidth,
+                    windowHeight: printRef.current.scrollHeight,
                 });
 
-                const image = canvas.toDataURL('image/png');
+                const image = canvas.toDataURL('image/png', 1.0);
                 const link = document.createElement('a');
+                const templeName = typeof booking?.temple === 'object' ? booking.temple?.name : booking?.temple || 'Temple';
                 link.href = image;
-                link.download = `temple-epass-${passId}.png`;
+                link.download = `${templeName.replace(/\s+/g, '-')}-EPass-${passId}.png`;
                 link.click();
+
+                // Show success notification
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 3000);
             } catch (err) {
                 console.error("Failed to download ticket", err);
                 alert("Failed to generate image. Please try printing instead.");
+            } finally {
+                setIsDownloading(false);
             }
         }
     };
@@ -289,12 +316,25 @@ export default function TicketPage() {
                 <div className="flex gap-3 mt-6 print:hidden">
                     <button
                         onClick={handleDownload}
-                        className="flex-1 bg-white text-slate-700 py-3 px-4 rounded-xl font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                        disabled={isDownloading}
+                        className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${isDownloading
+                            ? 'bg-orange-500 text-white cursor-wait'
+                            : 'bg-white text-slate-700 hover:bg-slate-50'
+                            }`}
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Download
+                        {isDownloading ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Generating...
+                            </>
+                        ) : (
+                            <>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download
+                            </>
+                        )}
                     </button>
                     <button
                         onClick={handlePrint}
