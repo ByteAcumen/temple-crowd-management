@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
 import { templesApi, bookingsApi, Temple } from '@/lib/api';
+import { getTempleImage } from '@/lib/temple-images';
 import { useAuth } from '@/lib/auth-context';
 import { TrafficLightBadge } from '@/components/ui/traffic-light';
 
@@ -92,29 +93,9 @@ function BookingContent() {
         fetchTemples();
     }, [searchParams]);
 
-    // Availability Check Effect
-    useEffect(() => {
-        if (selectedTemple && selectedDate) {
-            async function checkSlots() {
-                setCheckingAvailability(true);
-                try {
-                    const res = await bookingsApi.checkAvailability(selectedTemple!._id, selectedDate);
-                    if (res && res.filledSlots) {
-                        setFilledSlots(res.filledSlots);
-                    } else {
-                        setFilledSlots([]);
-                    }
-                } catch (e) {
-                    console.error("Failed to check availability", e);
-                } finally {
-                    setCheckingAvailability(false);
-                }
-            }
-            checkSlots();
-        } else {
-            setFilledSlots([]);
-        }
-    }, [selectedTemple, selectedDate]);
+    // Note: Individual slot availability is checked when rendering slot buttons
+    // The backend checkAvailability endpoint requires templeId, date, AND slot
+    // So we can't do a bulk check without knowing which slot the user wants
 
     // Handle booking submission
     const handleSubmit = async () => {

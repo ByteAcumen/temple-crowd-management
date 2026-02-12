@@ -14,14 +14,31 @@ const templeLiveFetcher = async (templeId: string) => {
     return res.data;
 };
 
+// Check if user has access to live data
+function canAccessLiveData(): boolean {
+    if (typeof window === 'undefined') return false;
+
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) return false;
+
+        const user = JSON.parse(userStr);
+        return user?.role && ['admin', 'gatekeeper'].includes(user.role);
+    } catch {
+        return false;
+    }
+}
+
 // Hook for ALL temples (Dashboard)
 export function useAllCrowdData() {
+    const hasAccess = canAccessLiveData();
+
     const { data, error, isLoading, mutate } = useSWR(
-        'all-live-data',
+        hasAccess ? 'all-live-data' : null,
         crowdDataFetcher,
         {
-            refreshInterval: 30000, // Auto-refresh every 30s
-            revalidateOnFocus: true
+            refreshInterval: hasAccess ? 30000 : 0, // Auto-refresh every 30s if has access
+            revalidateOnFocus: hasAccess
         }
     );
 
@@ -29,18 +46,21 @@ export function useAllCrowdData() {
         data,
         isLoading,
         isError: error,
-        mutate
+        mutate,
+        hasAccess
     };
 }
 
 // Hook for SINGLE temple (Details Page)
 export function useTempleLiveData(templeId: string | null) {
+    const hasAccess = canAccessLiveData();
+
     const { data, error, isLoading, mutate } = useSWR(
-        templeId ? `live-data-${templeId}` : null,
+        templeId && hasAccess ? `live-data-${templeId}` : null,
         () => templeLiveFetcher(templeId!),
         {
-            refreshInterval: 15000, // Faster refresh for specific page
-            revalidateOnFocus: true
+            refreshInterval: hasAccess ? 15000 : 0, // Faster refresh for specific page if has access
+            revalidateOnFocus: hasAccess
         }
     );
 
@@ -48,6 +68,7 @@ export function useTempleLiveData(templeId: string | null) {
         liveData: data,
         isLoading,
         isError: error,
-        mutate
+        mutate,
+        hasAccess
     };
 }
