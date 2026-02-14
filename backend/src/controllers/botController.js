@@ -14,8 +14,8 @@ exports.chat = async (req, res) => {
         if (!query) return res.status(400).json({ error: 'Query is required' });
 
         const lowerQuery = query.toLowerCase();
-        let answer = "";
-        let source = "static";
+        let answer = '';
+        let source = 'static';
 
         // --- HYBRID INTELLIGENCE LOGIC ---
 
@@ -24,7 +24,7 @@ exports.chat = async (req, res) => {
             const tomorrow = getTomorrowDate();
             const aiData = await getAIPrediction(tomorrow);
             answer = `For tomorrow (${tomorrow}), our AI Brain predicts about ${aiData.visitors} visitors. Status: ${aiData.status}.`;
-            source = "ai_forecasting_engine";
+            source = 'ai_forecasting_engine';
         }
         // 2. Everything else -> SEMANTIC RAG (Python)
         else {
@@ -39,11 +39,11 @@ exports.chat = async (req, res) => {
                     context: liveContext
                 });
                 answer = ragResponse.data.answer;
-                source = "semantic_rag_model";
+                source = 'semantic_rag_model';
             } catch (err) {
-                console.error("RAG Error:", err.message);
-                answer = "My Brain is currently offline 🧠. But I can tell you: " + liveContext;
-                source = "fallback_live";
+                console.error('RAG Error:', err.message);
+                answer = 'My Brain is currently offline 🧠. But I can tell you: ' + liveContext;
+                source = 'fallback_live';
             }
         }
 
@@ -54,8 +54,8 @@ exports.chat = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Bot Error:", error);
-        res.status(500).json({ success: false, answer: "I'm having trouble thinking right now.", error: error.message });
+        console.error('Bot Error:', error);
+        res.status(500).json({ success: false, answer: 'I\'m having trouble thinking right now.', error: error.message });
     }
 };
 
@@ -84,11 +84,11 @@ async function getLiveCrowd() {
 async function getAIPrediction(dateStr) {
     try {
         const response = await axios.post(`${AI_SERVICE_URL}/predict`, {
-            temple_name: "Somnath", // Default
+            temple_name: 'Somnath', // Default
             date_str: dateStr,
             temperature: 30, // Default avg
             rain_flag: 0,
-            moon_phase: "Normal",
+            moon_phase: 'Normal',
             is_weekend: 0
         });
         return {
@@ -96,7 +96,7 @@ async function getAIPrediction(dateStr) {
             status: response.data.crowd_status
         };
     } catch (e) {
-        return { visitors: "Unknown", status: "Offline" };
+        return { visitors: 'Unknown', status: 'Offline' };
     }
 }
 

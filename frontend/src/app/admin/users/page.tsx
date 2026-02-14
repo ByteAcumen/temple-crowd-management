@@ -251,7 +251,7 @@ function AdminUsersContent() {
             <div className="flex justify-end mb-4">
                 <BackendStatusBar
                     status={loading ? 'loading' : demoMode ? 'demo' : 'connected'}
-                    lastUpdated={lastUpdated}
+                    lastUpdated={lastUpdated || undefined}
                     dataCount={admins.length}
                     onRetry={() => window.location.reload()}
                 />
@@ -429,7 +429,7 @@ function AdminUsersContent() {
                                                             {admin.assignedTemples && admin.assignedTemples.length > 0 ? (
                                                                 admin.assignedTemples.map((t: any, i: number) => {
                                                                     const tid = typeof t === 'object' ? t._id : t;
-                                                                    const tname = typeof t === 'object' ? t.name : temples.find(tm => (tm._id || tm.id) === tid)?.name || 'Temple';
+                                                                    const tname = typeof t === 'object' ? t.name : temples.find(tm => tm._id === tid)?.name || 'Temple';
                                                                     return (
                                                                         <span key={i} className="px-2.5 py-1 rounded-md text-xs font-medium bg-white text-slate-700 border border-slate-200 shadow-sm">
                                                                             {tname}

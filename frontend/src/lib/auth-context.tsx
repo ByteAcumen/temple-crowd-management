@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const token = localStorage.getItem('token');
 
             if (storedUser && token) {
+                console.log('🔐 AuthContext: Found stored user', storedUser.role);
                 // Set user from localStorage immediately for fast UI
                 setUser(storedUser);
 
@@ -59,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     // Verify token with backend and get fresh user data
                     const res = await authApi.getMe();
                     if (res.success && res.data) {
+                        console.log('✅ AuthContext: Backend verified user', res.data.role);
                         // Update both state AND localStorage with fresh data
                         setUser(res.data);
                         localStorage.setItem('user', JSON.stringify(res.data));
@@ -66,8 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 } catch (err) {
                     // API unavailable - keep using stored user data
                     // Only logout if token is explicitly invalid (401)
-                    console.warn('Could not verify session with server, using stored data');
+                    console.warn('⚠️ AuthContext: Could not verify session with server, using stored data', err);
                 }
+            } else {
+                console.log('ℹ️ AuthContext: No stored session found');
             }
             setIsLoading(false);
         };

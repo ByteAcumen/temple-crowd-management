@@ -2,6 +2,7 @@
 // Centralized API communication layer
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+console.log('🔌 API_URL Configured as:', API_URL);
 
 // Types
 export interface User {
@@ -26,6 +27,47 @@ export interface AuthResponse {
 export interface ApiError {
     success: false;
     error: string;
+}
+
+
+
+export interface CrowdData {
+    temple_id: string;
+    temple_name: string;
+    location: string;
+    live_count: number;
+    capacity: number;
+    capacity_percentage: number;
+    traffic_status: 'GREEN' | 'ORANGE' | 'RED';
+    status: 'OPEN' | 'CLOSED' | 'MAINTENANCE';
+    available_space: number;
+}
+
+export interface HourlyPrediction {
+    time: string;
+    crowdLevel: 'Low' | 'Moderate' | 'High' | 'Critical';
+    estimatedWait: number;
+}
+
+export interface PredictionResponse {
+    temple: string;
+    currentTime: string;
+    isOpen: boolean;
+    currentCrowdLevel: string;
+    estimatedWaitMinutes: number;
+    hourlyPredictions: HourlyPrediction[];
+    bestTimeToVisit: string[];
+    recommendation: string;
+}
+
+export interface SystemHealth {
+    status: 'healthy' | 'degraded' | 'down';
+    database: string;
+    redis: string;
+    uptime_seconds: number;
+    uptime_formatted: string;
+    memory_usage?: any;
+    timestamp: string;
 }
 
 // Get token from localStorage
@@ -101,7 +143,12 @@ async function apiRequest<T>(
                 }
             }
             const errorMessage = data.error || data.message || `HTTP ${response.status}: ${response.statusText}`;
-            console.error('❌ API Error:', errorMessage);
+            // Simplify logging: Warn for client errors (4xx), Error for server errors (5xx)
+            if (response.status >= 400 && response.status < 500) {
+                console.warn(`⚠️ API Client Error (${response.status}):`, errorMessage);
+            } else {
+                console.error('❌ API Server Error:', errorMessage);
+            }
             throw new Error(errorMessage);
         }
 
@@ -177,6 +224,11 @@ export const authApi = {
         return apiRequest('/auth/me');
     },
 
+    // Get current user
+    getAnalytics: async (): Promise<{ success: boolean; data: { daily_stats: unknown[]; revenue: unknown } }> => {
+        return apiRequest('/admin/analytics');
+    },
+
     // Update profile
     updateProfile: async (data: { name?: string; email?: string; phone?: string; city?: string; state?: string }): Promise<{ success: boolean; data: User }> => {
         return apiRequest('/auth/updatedetails', {
@@ -231,6 +283,7 @@ export interface Temple {
     currentOccupancy?: number;
     live_count?: number;
     status: 'OPEN' | 'CLOSED' | 'MAINTENANCE';
+    traffic_status?: 'RED' | 'ORANGE' | 'GREEN';
     operatingHours?: {
         regular?: { opens: string; closes: string };
         weekend?: { opens: string; closes: string };
@@ -307,7 +360,7 @@ export const templesApi = {
     },
 
     // Get temple predictions
-    getPredictions: async (id: string): Promise<{ success: boolean; data: any }> => {
+    getPredictions: async (id: string): Promise<{ success: boolean; data: PredictionResponse }> => {
         return apiRequest(`/temples/${id}/predictions`);
     },
 };
@@ -325,6 +378,12 @@ export interface Booking {
     slot?: string;
     timeSlot?: string;
     visitors: number;
+    visitorDetails?: Array<{
+        name: string;
+        age: number;
+        idType?: 'AADHAR' | 'PAN' | 'PASSPORT' | 'DRIVING_LICENSE' | 'VOTER_ID' | 'NONE';
+        idNumber?: string;
+    }>;
     passId: string;
     qrCode?: string;
     qr_code_url?: string;
@@ -345,6 +404,12 @@ export const bookingsApi = {
         visitors: number;
         userName?: string;
         userEmail?: string;
+        visitorDetails?: Array<{
+            name: string;
+            age: number;
+            idType?: string;
+            idNumber?: string;
+        }>;
     }): Promise<{ success: boolean; data: Booking }> => {
         const payload = {
             ...data,
@@ -374,6 +439,10 @@ export const bookingsApi = {
 
     // Check slot availability
     checkAvailability: async (templeId: string, date: string): Promise<any> => {
+        // If date already contains query params (like &slot=...), don't double encode
+        if (date.includes('&slot=')) {
+            return apiRequest(`/bookings/availability?templeId=${templeId}&date=${date}`);
+        }
         const query = new URLSearchParams({ templeId, date }).toString();
         return apiRequest(`/bookings/availability?${query}`);
     },
@@ -384,7 +453,7 @@ export const bookingsApi = {
 export const liveApi = {
     // Get live crowd data for all temples
     // Backend returns { data: { temples: [...], summary: {...} } }
-    getCrowdData: async (): Promise<{ success: boolean; data: { temples?: any[]; summary?: any } | any[] }> => {
+    getCrowdData: async (): Promise<{ success: boolean; data: { temples: CrowdData[]; summary: { total_visitors: number; active_temples: number; critical_alerts: number } } }> => {
         return apiRequest('/live');
     },
 

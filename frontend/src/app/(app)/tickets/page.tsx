@@ -126,7 +126,7 @@ export default function TicketsPage() {
                                         </div>
                                         <div className="relative z-10 text-white">
                                             <h3 className="font-bold text-lg leading-tight truncate">
-                                                {typeof booking.temple === 'object' ? booking.temple?.name : 'Temple'}
+                                                {typeof booking.temple === 'object' ? booking.temple?.name : booking.templeName || 'Temple'}
                                             </h3>
                                             <p className="text-orange-100 text-sm">
                                                 {new Date(booking.date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}

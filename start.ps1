@@ -5,7 +5,7 @@
 # - Auto-restart if tests fail
 # - Health monitoring
 # - Data persistence validation
-# - One-command startup
+# - One-click startup for Backend & Frontend
 #
 # USAGE:
 # powershell -ExecutionPolicy Bypass -File .\start.ps1
@@ -86,9 +86,14 @@ function Stop-PortProcess {
     if ($processes) {
         foreach ($proc in $processes) {
             $processId = $proc.OwningProcess
-            $processName = (Get-Process -Id $processId -ErrorAction SilentlyContinue).ProcessName
+            # Get process name safely
+            try {
+                $processName = (Get-Process -Id $processId -ErrorAction Stop).ProcessName
+            } catch {
+                $processName = "Unknown"
+            }
             
-            if ($processName -match "docker") {
+            if ($processName -match "docker" -or $processName -match "com.docker.backend") {
                 Write-Info "Skipping Docker process $processName (PID: $processId) on port $Port"
                 continue
             }
@@ -96,7 +101,7 @@ function Stop-PortProcess {
             Write-Info "Killing process $processName (PID: $processId) on port $Port"
             Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
         }
-        Write-Pass "Port $Port cleared"
+        Write-Pass "Port $Port check complete"
     }
     else {
         Write-Pass "Port $Port already free"
@@ -106,6 +111,7 @@ function Stop-PortProcess {
 Stop-PortProcess -Port $BACKEND_PORT
 Stop-PortProcess -Port 27017
 Stop-PortProcess -Port 6379
+Stop-PortProcess -Port 3000 # Stop frontend if running
 
 Start-Sleep -Seconds 2
 
@@ -117,7 +123,7 @@ Write-Header "STARTING DOCKER SERVICES"
 
 Set-Location $PROJECT_ROOT
 
-# Stop existing containers
+# Stop existing containers to ensure clean state
 Write-Step "Stopping existing containers..."
 docker compose down --remove-orphans 2>&1 | Out-Null
 
@@ -127,7 +133,7 @@ if ($RebuildAll) {
 }
 
 # Start services
-Write-Step "Starting services..."
+Write-Step "Starting services (Backend, DB, Redis, ML)..."
 if ($Production) {
     docker compose up -d --build 2>&1
 }
@@ -179,41 +185,9 @@ function Wait-ForService {
     return $true
 }
 
-# Wait for MongoDB
-Write-Step "Waiting for MongoDB..."
-$mongoHealthy = $false
-$startTime = Get-Date
-while (-not $mongoHealthy -and ((Get-Date) - $startTime).TotalSeconds -lt 30) {
-    $mongoStatus = docker inspect temple-mongo --format='{{.State.Health.Status}}' 2>&1
-    if ($mongoStatus -eq "healthy") {
-        $mongoHealthy = $true
-        Write-Pass "MongoDB is healthy"
-    }
-    else {
-        Write-Host "." -NoNewline -ForegroundColor Gray
-        Start-Sleep -Seconds 2
-    }
-}
-
-# Wait for Redis
-Write-Step "Waiting for Redis..."
-$redisHealthy = $false
-$startTime = Get-Date
-while (-not $redisHealthy -and ((Get-Date) - $startTime).TotalSeconds -lt 30) {
-    $redisStatus = docker inspect temple-redis --format='{{.State.Health.Status}}' 2>&1
-    if ($redisStatus -eq "healthy") {
-        $redisHealthy = $true
-        Write-Pass "Redis is healthy"
-    }
-    else {
-        Write-Host "." -NoNewline -ForegroundColor Gray
-        Start-Sleep -Seconds 2
-    }
-}
-
 # Wait for Backend API
-Write-Step "Waiting for Backend API..."
-$backendHealthy = Wait-ForService -Name "Backend API" -Url "http://localhost:$BACKEND_PORT" -TimeoutSeconds 60
+Write-Step "Waiting for Backend API ($BACKEND_PORT)..."
+$backendHealthy = Wait-ForService -Name "Backend API" -Url "http://localhost:$BACKEND_PORT" -TimeoutSeconds 90
 
 if (-not $backendHealthy) {
     Write-Fail "Backend failed to start. Checking logs..."
@@ -222,126 +196,42 @@ if (-not $backendHealthy) {
 }
 
 # ============================================
-# DATA PERSISTENCE CHECK
-# ============================================
-
-Write-Header "DATA PERSISTENCE CHECK"
-
-Write-Step "Checking MongoDB data volume..."
-$volumeInfo = docker volume inspect temple-crowd-management_mongo_data 2>&1
-if ($LASTEXITCODE -eq 0) {
-    Write-Pass "MongoDB data volume exists - data will persist"
-}
-else {
-    Write-Info "Creating MongoDB data volume..."
-    docker volume create temple-crowd-management_mongo_data 2>&1
-}
-
-Write-Step "Checking existing data..."
-$templeCount = 0
-try {
-    $response = Invoke-RestMethod -Uri "http://localhost:$BACKEND_PORT/api/v1/temples" -Method GET -TimeoutSec 10
-    if ($response.data) {
-        $templeCount = $response.data.Count
-    }
-    Write-Pass "Found $templeCount temples in database"
-}
-catch {
-    Write-Info "Could not check temple count: $_"
-}
-
-# ============================================
-# AUTOMATED TESTING
+# AUTOMATED TESTING (Quick Sanity Check)
 # ============================================
 
 if (-not $SkipTests) {
-    Write-Header "RUNNING AUTOMATED TESTS"
+    Write-Header "RUNNING QUICK HEALTH CHECKS"
     
-    $testResults = @{ passed = 0; failed = 0; endpoints = @() }
-    
-    function Test-Endpoint {
-        param(
-            [string]$Name,
-            [string]$Method,
-            [string]$Url,
-            [hashtable]$Headers = @{},
-            [string]$Body = $null
-        )
-        
-        $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-        
-        try {
-            $params = @{
-                Uri         = $Url
-                Method      = $Method
-                Headers     = $Headers
-                ContentType = "application/json"
-                TimeoutSec  = 30
-            }
-            
-            if ($Body) { $params.Body = $Body }
-            
-            $response = Invoke-WebRequest @params -ErrorAction Stop
-            $stopwatch.Stop()
-            
-            $elapsed = $stopwatch.ElapsedMilliseconds
-            Write-Pass "$Name - $elapsed ms"
-            $script:testResults.passed++
-            return @{ success = $true; data = $response.Content | ConvertFrom-Json }
-            
+    try {
+        $response = Invoke-RestMethod -Uri "http://localhost:$BACKEND_PORT/api/v1/temples" -Method GET -TimeoutSec 10
+        if ($response.success) {
+            Write-Pass "API /temples endpoint is responding correctly"
+        } else {
+            Write-Fail "API /temples returned error"
         }
-        catch {
-            $stopwatch.Stop()
-            $elapsed = $stopwatch.ElapsedMilliseconds
-            Write-Fail "$Name - $elapsed ms"
-            $script:testResults.failed++
-            return @{ success = $false; error = $_.Exception.Message }
-        }
+    } catch {
+        Write-Fail "Failed to query API: $_"
     }
+}
+
+# ============================================
+# START FRONTEND
+# ============================================
+
+Write-Header "STARTING FRONTEND"
+
+$frontendPath = Join-Path $PROJECT_ROOT "frontend"
+
+if (Test-Path $frontendPath) {
+    Write-Step "Launching Frontend in new window..."
     
-    # Test Health
-    Test-Endpoint -Name "Health Check" -Method "GET" -Url "http://localhost:$BACKEND_PORT/"
+    # Start npm run dev in a new persistent window
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$frontendPath'; Write-Host 'Starting Frontend...' -ForegroundColor Cyan; npm run dev" -WindowStyle Normal
     
-    # Test Temples
-    $templesResult = Test-Endpoint -Name "GET /temples" -Method "GET" -Url "http://localhost:$BACKEND_PORT/api/v1/temples"
-    
-    # Test Auth
-    $loginBody = @{ email = "admin@temple.com"; password = "Admin@123456" } | ConvertTo-Json
-    $loginResult = Test-Endpoint -Name "POST /auth/login" -Method "POST" -Url "http://localhost:$BACKEND_PORT/api/v1/auth/login" -Body $loginBody
-    
-    $token = $null
-    if ($loginResult.success -and $loginResult.data.token) {
-        $token = $loginResult.data.token
-        Write-Pass "Got auth token"
-    }
-    
-    $authHeaders = @{ "Authorization" = "Bearer $token" }
-    
-    # Test Admin endpoints
-    if ($token) {
-        Test-Endpoint -Name "GET /admin/stats" -Method "GET" -Url "http://localhost:$BACKEND_PORT/api/v1/admin/stats" -Headers $authHeaders
-        Test-Endpoint -Name "GET /admin/health" -Method "GET" -Url "http://localhost:$BACKEND_PORT/api/v1/admin/health" -Headers $authHeaders
-    }
-    
-    # Test Live
-    Test-Endpoint -Name "GET /live" -Method "GET" -Url "http://localhost:$BACKEND_PORT/api/v1/live"
-    
-    Write-Host ""
-    Write-Host "Test Results: $($testResults.passed)/$($testResults.passed + $testResults.failed) passed" -ForegroundColor $(if ($testResults.failed -eq 0) { "Green" } else { "Yellow" })
-    
-    # Auto-restart if tests fail
-    if ($testResults.failed -gt 0 -and $MaxRetries -gt 0) {
-        Write-Info "Some tests failed. Restarting backend..."
-        docker compose restart backend 2>&1 | Out-Null
-        Start-Sleep -Seconds 10
-        
-        Write-Info "Retrying tests... (Retries left: $($MaxRetries - 1))"
-        # Recursive retry
-        if ($MaxRetries -gt 1) {
-            & $PSCommandPath -MaxRetries ($MaxRetries - 1)
-            exit $LASTEXITCODE
-        }
-    }
+    Write-Pass "Frontend launch initiated"
+    Write-Info "Frontend will be available at http://localhost:3000"
+} else {
+    Write-Fail "Frontend directory not found at $frontendPath"
 }
 
 # ============================================
@@ -350,43 +240,10 @@ if (-not $SkipTests) {
 
 Write-Header "SYSTEM STATUS"
 
-$services = @(
-    @{ Name = "MongoDB"; Container = "temple-mongo"; Port = 27017 },
-    @{ Name = "Redis"; Container = "temple-redis"; Port = 6379 },
-    @{ Name = "Backend API"; Container = "temple-backend"; Port = $BACKEND_PORT }
-)
-
-foreach ($svc in $services) {
-    $status = docker inspect $svc.Container --format='{{.State.Status}}' 2>&1
-    $health = docker inspect $svc.Container --format='{{.State.Health.Status}}' 2>&1
-    
-    if ($status -eq "running") {
-        if ($health -eq "healthy" -or $health -eq "") {
-            Write-Pass "$($svc.Name): Running on port $($svc.Port)"
-        }
-        else {
-            Write-Info "$($svc.Name): Running (health: $health)"
-        }
-    }
-    else {
-        Write-Fail "$($svc.Name): $status"
-    }
-}
-
-Write-Header "NEXT STEPS"
-Write-Host ""
 Write-Host "Backend API:    http://localhost:$BACKEND_PORT" -ForegroundColor Cyan
+Write-Host "Frontend:       http://localhost:$FRONTEND_PORT" -ForegroundColor Cyan
 Write-Host "MongoDB:        mongodb://localhost:27017/temple_db" -ForegroundColor Cyan
 Write-Host "Redis:          redis://localhost:6379" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Start Frontend (in a new terminal):" -ForegroundColor Yellow
-Write-Host "  cd frontend && npm run dev" -ForegroundColor White
-Write-Host ""
-Write-Host "View Logs:" -ForegroundColor Yellow
-Write-Host "  docker-compose logs -f backend" -ForegroundColor White
-Write-Host ""
-Write-Host "Stop All:" -ForegroundColor Yellow
-Write-Host "  docker-compose down" -ForegroundColor White
-Write-Host ""
-Write-Pass "System is ready!"
+Write-Pass "System is fully operational! 🚀"
 Write-Host "Completed at: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray

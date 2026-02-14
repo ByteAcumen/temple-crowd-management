@@ -7,8 +7,8 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useEffect, useState } from 'react';
-import { templesApi, adminApi, liveApi, Temple, Booking } from '@/lib/api';
-import { motion, AnimatePresence, useScroll } from 'framer-motion';
+import { templesApi, adminApi, liveApi, Temple, Booking, CrowdData } from '@/lib/api';
+import { motion, useScroll } from 'framer-motion';
 import { BackendStatusBar } from '@/components/admin/BackendStatusBar';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DashboardCharts from '@/components/admin/DashboardCharts';
@@ -28,7 +28,9 @@ const containerVariants = {
     }
 };
 
-export default function AdminDashboardContent() {
+import { ProtectedRoute } from '@/lib/protected-route';
+
+function AdminDashboardContent() {
     const { user } = useAuth();
     const { scrollYProgress } = useScroll();
 
@@ -89,12 +91,12 @@ export default function AdminDashboardContent() {
                 const raw = liveRes.data;
                 const liveMap: Record<string, number> = {};
                 // Handle different response structures safely
-                const liveTemples = (typeof raw === 'object' && !Array.isArray(raw) && 'temples' in raw)
-                    ? (raw as any).temples
-                    : (Array.isArray(raw) ? raw : []);
+                const liveTemples: CrowdData[] = (typeof raw === 'object' && !Array.isArray(raw) && 'temples' in raw)
+                    ? (raw as { temples: CrowdData[] }).temples
+                    : (Array.isArray(raw) ? raw as CrowdData[] : []);
 
-                liveTemples.forEach((t: any) => {
-                    const id = t.temple_id || t._id;
+                liveTemples.forEach((t) => {
+                    const id = t.temple_id || (t as { _id?: string })._id; // Handle generic object fallback if needed
                     if (id) liveMap[id] = t.live_count || 0;
                 });
 
@@ -160,8 +162,8 @@ export default function AdminDashboardContent() {
             });
 
             setRecentBookings([
-                { _id: '1', user: 'Amit Kumar', temple: { name: 'Somnath' }, status: 'CONFIRMED', visitors: 4, createdAt: new Date().toISOString() } as any,
-                { _id: '2', user: 'Priya Singh', temple: { name: 'Kashi' }, status: 'COMPLETED', visitors: 2, createdAt: new Date(Date.now() - 3600000).toISOString() } as any,
+                { _id: '1', user: 'Amit Kumar', temple: { name: 'Somnath' } as Temple, status: 'CONFIRMED', visitors: 4, createdAt: new Date().toISOString(), date: new Date().toISOString(), passId: 'DEMO1' } as Booking,
+                { _id: '2', user: 'Priya Singh', temple: { name: 'Kashi' } as Temple, status: 'COMPLETED', visitors: 2, createdAt: new Date(Date.now() - 3600000).toISOString(), date: new Date().toISOString(), passId: 'DEMO2' } as Booking,
             ]);
         } finally {
             setLoading(false);
@@ -174,7 +176,8 @@ export default function AdminDashboardContent() {
         }
     }, [user]);
 
-    if (user?.role !== 'admin' && !user?.isSuperAdmin) return null;
+    // Removed the manual null check since ProtectedRoute handles it
+    // if (user?.role !== 'admin' && !user?.isSuperAdmin) return null;
 
     return (
         <AdminLayout title="Dashboard" subtitle="Overview & Real-time Statistics">
@@ -283,5 +286,13 @@ export default function AdminDashboardContent() {
                 </div>
             </div>
         </AdminLayout>
+    );
+}
+
+export default function AdminDashboard() {
+    return (
+        <ProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboardContent />
+        </ProtectedRoute>
     );
 }

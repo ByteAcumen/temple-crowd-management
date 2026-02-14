@@ -32,7 +32,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="min-h-screen bg-slate-50">
-            <AppNavbar />
+            <div className="print:hidden">
+                <AppNavbar />
+            </div>
             <main>{children}</main>
         </div>
     );

@@ -77,8 +77,8 @@ class TempleStatusService {
         const isWeekend = day === 0 || day === 6;
 
         // Festival/Special days (can be expanded with calendar integration)
-        const month = dateTime.getMonth() + 1;
-        const date = dateTime.getDate();
+        /* const month = now.toLocaleString('default', { month: 'short' });
+        const date = now.getDate(); */
 
         // Peak hours: Morning prayer (5-8 AM), Evening aarti (5-8 PM)
         const isMorningPeak = hour >= 5 && hour <= 8;

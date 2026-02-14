@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Temple } from '@/lib/api';
 import { TrafficLightBadge } from './traffic-light';
+import { getTempleImage } from '@/lib/temple-images';
 
 // Unsplash temple images (free commercial use)
 const TEMPLE_IMAGES = [
@@ -47,8 +49,8 @@ export function PublicTempleCard({ temple, index = 0 }: PublicTempleCardProps) {
         ? `${temple.location?.city || ''}, ${temple.location?.state || ''}`
         : temple.location || 'Location TBD';
 
-    // Get image
-    const imageUrl = temple.imageUrl || TEMPLE_IMAGES[index % TEMPLE_IMAGES.length];
+    // Get real temple image based on temple name
+    const imageUrl = temple.imageUrl || getTempleImage(temple.name);
 
     return (
         <motion.div
@@ -63,10 +65,12 @@ export function PublicTempleCard({ temple, index = 0 }: PublicTempleCardProps) {
         >
             {/* Image Header */}
             <div className="relative h-56 overflow-hidden">
-                <img
+                <Image
                     src={imageUrl}
                     alt={temple.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
@@ -78,8 +82,8 @@ export function PublicTempleCard({ temple, index = 0 }: PublicTempleCardProps) {
                 {/* Open/Closed Badge */}
                 <div className="absolute top-3 left-3">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-md ${temple.status === 'OPEN'
-                            ? 'bg-emerald-500/90 text-white'
-                            : 'bg-rose-500/90 text-white'
+                        ? 'bg-emerald-500/90 text-white'
+                        : 'bg-rose-500/90 text-white'
                         }`}>
                         {temple.status || 'CLOSED'}
                     </span>
@@ -102,7 +106,7 @@ export function PublicTempleCard({ temple, index = 0 }: PublicTempleCardProps) {
                     <div className="flex justify-between text-xs font-medium text-slate-500 mb-1.5">
                         <span>Live Crowd</span>
                         <span className={`${trafficStatus === 'RED' ? 'text-rose-600' :
-                                trafficStatus === 'ORANGE' ? 'text-amber-600' : 'text-emerald-600'
+                            trafficStatus === 'ORANGE' ? 'text-amber-600' : 'text-emerald-600'
                             }`}>
                             {Math.round(occupancyPercent)}% Full
                         </span>
@@ -110,7 +114,7 @@ export function PublicTempleCard({ temple, index = 0 }: PublicTempleCardProps) {
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div
                             className={`h-full rounded-full transition-all duration-500 ${trafficStatus === 'RED' ? 'bg-rose-500' :
-                                    trafficStatus === 'ORANGE' ? 'bg-amber-500' : 'bg-emerald-500'
+                                trafficStatus === 'ORANGE' ? 'bg-amber-500' : 'bg-emerald-500'
                                 }`}
                             style={{ width: `${Math.min(occupancyPercent, 100)}%` }}
                         />

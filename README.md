@@ -40,6 +40,16 @@ The system now includes **self-healing automation scripts** for Windows.
 
 ## 🏗️ Architecture Updates
 
+#### Default Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | `admin@temple.com` | `Admin@123456` |
+| **Gatekeeper** | `gatekeeper@temple.com` | `Gatekeeper@123` |
+| **User** | `user@temple.com` | `User@123456` |
+
+*Note: If these accounts don't exist, the first registered user becomes an Admin.*
+
 ### Data Persistence
 - **MongoDB**: Stores Users, Temples, Bookings (Volume: `temple-mongo-data`)
 - **Redis**: Stores Live Counts, Active Sessions (Volume: `temple-redis-data`)

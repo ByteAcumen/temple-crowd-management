@@ -112,7 +112,7 @@ exports.recordEntry = async (req, res) => {
             });
         }
 
-        if (booking.status === 'COMPLETED') {
+        if (booking.status === 'COMPLETED' || booking.status === 'USED') {
             return res.status(400).json({
                 success: false,
                 error: 'This pass has already been used'
@@ -130,7 +130,7 @@ exports.recordEntry = async (req, res) => {
         }
 
         // 5. Update booking status
-        booking.status = 'COMPLETED';
+        booking.status = 'USED';  // Match schema enum
         booking.entryTime = new Date();
         await booking.save();
 

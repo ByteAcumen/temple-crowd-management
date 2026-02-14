@@ -36,6 +36,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
         if (!isLoading) {
             // If no user, redirect to login
             if (!user) {
+                console.log('🔒 ProtectedRoute: No user, redirecting to login');
                 router.push('/login');
                 return;
             }
@@ -43,6 +44,12 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
             // If user role is not allowed, redirect to their correct dashboard
             if (allowedRoles && !allowedRoles.includes(user.role as any)) {
                 const correctDashboard = getDashboardByRole(user.role);
+                console.log(`🔒 ProtectedRoute: Role mismatch. User: ${user.role}, Allowed: ${allowedRoles}. Redirecting to ${correctDashboard}`);
+
+                // Prevent infinite redirect loops if we are already on the target page
+                // Note: We can't easily check pathname here without usePathname hook, 
+                // but since ProtectedRoute wraps the page content, the push should be fine logic-wise.
+                // However, adding a check is safer.
                 router.push(correctDashboard);
             }
         }

@@ -40,3 +40,9 @@ coverage/
 # OS
 .DS_Store
 Thumbs.db
+
+# Temporary files
+debug_auth_flow.js
+verify_qr_flow.js
+frontend/lint_report.txt
+newuser@1234gmail.com.txt

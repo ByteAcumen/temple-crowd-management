@@ -39,34 +39,34 @@ const logger = winston.createLogger({
             filename: path.join(__dirname, '../../logs/error.log'),
             level: 'error',
             maxsize: 5242880, // 5MB
-            maxFiles: 5,
+            maxFiles: 5
         }),
         // Combined logs
         new winston.transports.File({
             filename: path.join(__dirname, '../../logs/combined.log'),
             maxsize: 5242880, // 5MB
-            maxFiles: 5,
-        }),
+            maxFiles: 5
+        })
     ],
     // Handle exceptions
     exceptionHandlers: [
         new winston.transports.File({
-            filename: path.join(__dirname, '../../logs/exceptions.log'),
-        }),
+            filename: path.join(__dirname, '../../logs/exceptions.log')
+        })
     ],
     // Handle rejections
     rejectionHandlers: [
         new winston.transports.File({
-            filename: path.join(__dirname, '../../logs/rejections.log'),
-        }),
-    ],
+            filename: path.join(__dirname, '../../logs/rejections.log')
+        })
+    ]
 });
 
 // Add console transport in development
 if (process.env.NODE_ENV !== 'production') {
     logger.add(
         new winston.transports.Console({
-            format: consoleFormat,
+            format: consoleFormat
         })
     );
 }
@@ -75,7 +75,7 @@ if (process.env.NODE_ENV !== 'production') {
 logger.stream = {
     write: (message) => {
         logger.info(message.trim());
-    },
+    }
 };
 
 module.exports = logger;

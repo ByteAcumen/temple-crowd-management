@@ -8,23 +8,45 @@ import { useState, useEffect } from 'react';
 import { templesApi, Temple } from '@/lib/api';
 import { PublicTempleCard } from '@/components/ui/temple-card-public';
 import { TrafficLight } from '@/components/ui/traffic-light';
-import { useAllCrowdData } from '@/hooks/use-live-data';
 
 export default function TemplesPage() {
-    const { data: liveData, isLoading, isError } = useAllCrowdData();
+    const [temples, setTemples] = useState<Temple[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'GREEN' | 'ORANGE' | 'RED'>('all');
 
-    // Extract temples from live data structure
-    // liveData can be an array (if direct list) or object { temples: [], summary: {} }
-    const temples = Array.isArray(liveData) ? liveData : (liveData?.temples || []);
+    // Fetch temples on mount
+    useEffect(() => {
+        async function fetchTemples() {
+
+            try {
+                const response = await templesApi.getAll();
+
+
+                if (response && response.success && response.data) {
+
+                    setTemples(response.data);
+                } else {
+                    console.error('❌ Invalid response:', response);
+                    setError('Failed to load temples');
+                }
+            } catch (err) {
+                console.error('❌ Error fetching temples:', err);
+                setError(err instanceof Error ? err.message : 'Failed to load temples');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchTemples();
+    }, []);
 
     // Filter logic
-    const filteredTemples = temples.filter((temple: any) => {
+    const filteredTemples = temples.filter((temple: Temple) => {
         // 1. Search Filter (Name, City, Deity)
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            const nameMatch = (temple.temple_name || temple.name)?.toLowerCase().includes(query);
+            const nameMatch = temple.name?.toLowerCase().includes(query);
             const cityMatch = (typeof temple.location === 'string' ? temple.location : temple.location?.city)?.toLowerCase().includes(query);
 
             if (!nameMatch && !cityMatch) return false;
@@ -32,7 +54,7 @@ export default function TemplesPage() {
 
         // 2. Status Filter
         if (statusFilter !== 'all') {
-            const status = temple.traffic_status || 'GREEN'; // Default if missing
+            const status = (temple as any).traffic_status || 'GREEN'; // Default if missing
             if (status !== statusFilter) return false;
         }
 
@@ -42,10 +64,10 @@ export default function TemplesPage() {
     // Calculate stats
     const stats = {
         total: temples.length,
-        open: temples.filter((t: any) => t.status === 'OPEN').length,
-        lowCrowd: temples.filter((t: any) => {
+        open: temples.filter((t: Temple) => t.status === 'OPEN').length,
+        lowCrowd: temples.filter((t: Temple) => {
             const capacity = typeof t.capacity === 'object' ? t.capacity.total : (t.capacity || 1);
-            const occupancy = t.live_count ?? t.currentOccupancy ?? 0;
+            const occupancy = t.currentOccupancy ?? 0;
             const pct = (occupancy / capacity * 100);
             return pct <= 85;
         }).length,
@@ -147,7 +169,7 @@ export default function TemplesPage() {
                                 </div>
                             ))}
                         </div>
-                    ) : isError ? (
+                    ) : error ? (
                         // Error State
                         <div className="text-center py-12">
                             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -189,7 +211,7 @@ export default function TemplesPage() {
                     )}
 
                     {/* Results Count */}
-                    {!isLoading && !isError && filteredTemples.length > 0 && (
+                    {!isLoading && !error && filteredTemples.length > 0 && (
                         <p className="text-center text-slate-500 mt-8">
                             Showing {filteredTemples.length} of {temples.length} temples
                         </p>

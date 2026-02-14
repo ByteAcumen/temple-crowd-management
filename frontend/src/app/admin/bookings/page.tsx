@@ -148,8 +148,9 @@ function AdminBookingsContent() {
         try {
             await bookingsApi.cancel(bookingId);
             setBookings(prev => prev.map(b => b._id === bookingId ? { ...b, status: 'CANCELLED' as const } : b));
-        } catch (err: any) {
-            alert(err.message || 'Failed to cancel booking');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Unknown error';
+            alert(message || 'Failed to cancel booking');
         } finally {
             setCancelling(null);
         }

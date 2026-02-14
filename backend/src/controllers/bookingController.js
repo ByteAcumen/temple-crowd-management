@@ -17,7 +17,10 @@ const axios = require('axios');
 // @access  Public
 exports.createBooking = async (req, res) => {
     try {
-        const { templeId, templeName, date, slot, visitors, payment, specialPuja, temperature, rain_flag } = req.body;
+        const { templeId, templeName, date, visitors, payment, specialPuja, temperature, rain_flag, visitorDetails } = req.body;
+
+        // Support both 'slot' and 'timeSlot' field names for compatibility
+        const slot = req.body.slot || req.body.timeSlot;
 
         let { userName, userEmail } = req.body;
 
@@ -78,7 +81,7 @@ exports.createBooking = async (req, res) => {
                 date_str: date,
                 temperature: temperature || 30,
                 rain_flag: rain_flag || 0,
-                moon_phase: "Normal",
+                moon_phase: 'Normal',
                 is_weekend: isWeekend
             });
 
@@ -88,7 +91,7 @@ exports.createBooking = async (req, res) => {
             console.log(`🧠 AI Verdict: ${crowdStatus} (${predictedFootfall} visitors)`);
 
         } catch (error) {
-            console.error("⚠️ AI Service Unavailable:", error.message);
+            console.error('⚠️ AI Service Unavailable:', error.message);
         }
 
         // --- 4. CAPACITY GUARD (AI-based) ---
@@ -108,6 +111,7 @@ exports.createBooking = async (req, res) => {
             date,
             slot,
             visitors,
+            visitorDetails: visitorDetails || [],  // Include visitor details
             userName,
             userEmail,
             payment: payment || undefined, // Pass payment if provided
@@ -159,11 +163,23 @@ exports.createBooking = async (req, res) => {
 // @access  Private
 exports.getMyBookings = async (req, res) => {
     try {
-        // Use email from query or fall back to logged-in user's email
-        const email = req.query.email || (req.user && req.user.email);
-        if (!email) return res.status(400).json({ error: 'Email query param required or user must be logged in' });
+        // Build query: match either userId or userEmail
+        const query = {};
 
-        const bookings = await Booking.find({ userEmail: email })
+        if (req.user) {
+            // If authenticated, find by userId OR email (in case legacy data only has email)
+            query.$or = [
+                { userId: req.user._id },
+                { userEmail: req.user.email }
+            ];
+        } else if (req.query.email) {
+            // Fallback for non-auth calls (if any, though this route is private)
+            query.userEmail = req.query.email;
+        } else {
+            return res.status(400).json({ error: 'User must be logged in or provide email' });
+        }
+
+        const bookings = await Booking.find(query)
             .populate('temple', 'name location')
             .sort({ date: -1 });
 
@@ -173,6 +189,7 @@ exports.getMyBookings = async (req, res) => {
             data: bookings
         });
     } catch (error) {
+        console.error('Error fetching bookings:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };
@@ -332,25 +349,12 @@ exports.getBookingByPassId = async (req, res) => {
             });
         }
 
+
+
+        // Return booking directly - toJSON method will handle formatting
         res.status(200).json({
             success: true,
-            data: {
-                booking_id: booking._id,
-                pass_id: booking.passId,
-                passId: booking.passId,
-                temple: booking.temple?.name || booking.templeName,
-                temple_name: booking.temple?.name || booking.templeName,
-                user_name: booking.userName,
-                user_email: booking.userEmail,
-                date: booking.date,
-                slot: booking.slot,
-                visitors: booking.visitors,
-                status: booking.status,
-                qr_code_url: booking.qr_code_url,
-                entry_time: booking.entryTime,
-                exit_time: booking.exitTime,
-                is_valid: booking.status === 'CONFIRMED'
-            }
+            data: booking
         });
 
     } catch (error) {

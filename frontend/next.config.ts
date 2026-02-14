@@ -1,5 +1,3 @@
-import type { NextConfig } from "next";
-
 const nextConfig = {
   output: "standalone",
 
@@ -29,6 +27,6 @@ const nextConfig = {
     ],
   },
   /* config options here */
-};
+} satisfies import("next").NextConfig;
 
 export default nextConfig;

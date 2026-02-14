@@ -31,29 +31,29 @@ const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://ai-service:8000';
 // Initialize
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, { cors: { origin: '*' } });
 
 // Middleware - Security Headers (Industry Standard)
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline scripts for Next.js
-            styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for Tailwind
-            imgSrc: ["'self'", "data:", "blob:"],
-            connectSrc: ["'self'", "ws:", "wss:", "http://localhost:*"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            objectSrc: ["'none'"],
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"],
-        },
+            defaultSrc: ['\'self\''],
+            scriptSrc: ['\'self\'', '\'unsafe-inline\''], // Allow inline scripts for Next.js
+            styleSrc: ['\'self\'', '\'unsafe-inline\''], // Allow inline styles for Tailwind
+            imgSrc: ['\'self\'', 'data:', 'blob:'],
+            connectSrc: ['\'self\'', 'ws:', 'wss:', 'http://localhost:*'],
+            fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
+            objectSrc: ['\'none\''],
+            mediaSrc: ['\'self\''],
+            frameSrc: ['\'none\'']
+        }
     },
     crossOriginEmbedderPolicy: false, // Allow frontend to load resources
     hsts: {
         maxAge: 31536000, // 1 year
         includeSubDomains: true,
-        preload: true,
-    },
+        preload: true
+    }
 }));
 app.use(compression()); // Compress all responses
 app.use(mongoSanitize()); // Prevent NoSQL Injection
@@ -62,12 +62,23 @@ app.use(hpp()); // Prevent HTTP Parameter Pollution
 
 // CORS Configuration - Allow credentials with specific origins
 const corsOptions = {
-    origin: [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:3001'
-    ],
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        // Allow any localhost origin
+        if (origin.match(/^http:\/\/localhost:\d+$/) || origin.match(/^http:\/\/127\.0\.0\.1:\d+$/)) {
+            return callback(null, true);
+        }
+
+        // Allow production domain if known
+        if (origin === process.env.FRONTEND_URL) {
+            return callback(null, true);
+        }
+
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(new Error(msg), false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -93,7 +104,7 @@ const generalLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, error: 'Too many requests. Please try again later.' },
-    skip: skipInTestMode,
+    skip: skipInTestMode
 });
 app.use(generalLimiter);
 
@@ -104,7 +115,7 @@ const authLimiter = rateLimit({
     message: { success: false, error: 'Too many login attempts, please try again after 15 minutes' },
     standardHeaders: true,
     legacyHeaders: false,
-    skip: skipInTestMode,
+    skip: skipInTestMode
 });
 
 // Live/Simulation Rate Limiter (high frequency for real-time ops)
@@ -114,7 +125,7 @@ const liveLimiter = rateLimit({
     message: { success: false, error: 'Rate limit exceeded. Please slow down simulation.' },
     standardHeaders: true,
     legacyHeaders: false,
-    skip: skipInTestMode,
+    skip: skipInTestMode
 });
 
 // Temple Read Rate Limiter (public data, high traffic)
@@ -123,7 +134,7 @@ const templeLimiter = rateLimit({
     max: 500, // Higher for public reads
     standardHeaders: true,
     legacyHeaders: false,
-    skip: skipInTestMode,
+    skip: skipInTestMode
 });
 
 // Admin Rate Limiter (authenticated admins need more requests)
@@ -132,7 +143,7 @@ const adminLimiter = rateLimit({
     max: 1000, // Admins need more for dashboard operations
     standardHeaders: true,
     legacyHeaders: false,
-    skip: skipInTestMode,
+    skip: skipInTestMode
 });
 
 // Apply route-specific limiters BEFORE mounting routes

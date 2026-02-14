@@ -53,7 +53,7 @@ exports.getStats = async (req, res) => {
 
         // Get temples and use Redis for real-time live count
         const temples = await Temple.find().select('name live_count capacity');
-        let totalLiveCrowd = await crowdTracker.getTotalLiveCount();
+        const totalLiveCrowd = await crowdTracker.getTotalLiveCount();
         let totalCapacity = 0;
 
         temples.forEach(temple => {

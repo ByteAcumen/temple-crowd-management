@@ -23,7 +23,8 @@ function canAccessLiveData(): boolean {
         if (!userStr) return false;
 
         const user = JSON.parse(userStr);
-        return user?.role && ['admin', 'gatekeeper'].includes(user.role);
+        // Only allow gatekeepers and admins to view live data (Backend restriction)
+        return user && (user.role === 'gatekeeper' || user.role === 'admin');
     } catch {
         return false;
     }

@@ -60,14 +60,14 @@ const sendErrorDev = (err, req, res) => {
         url: req.originalUrl,
         method: req.method,
         ip: req.ip,
-        user: req.user?.id,
+        user: req.user?.id
     });
 
     res.status(err.statusCode).json({
         success: false,
         error: err.message,
         stack: err.stack,
-        details: err,
+        details: err
     });
 };
 
@@ -82,14 +82,14 @@ const sendErrorProd = (err, req, res) => {
         url: req.originalUrl,
         method: req.method,
         ip: req.ip,
-        user: req.user?.id,
+        user: req.user?.id
     });
 
     // Operational, trusted error: send message to client
     if (err.isOperational) {
         res.status(err.statusCode).json({
             success: false,
-            error: err.message,
+            error: err.message
         });
     }
     // Programming or unknown error: don't leak error details
@@ -98,7 +98,7 @@ const sendErrorProd = (err, req, res) => {
 
         res.status(500).json({
             success: false,
-            error: 'Something went wrong. Please try again later.',
+            error: 'Something went wrong. Please try again later.'
         });
     }
 };
@@ -139,5 +139,5 @@ module.exports = {
     AppError,
     catchAsync,
     errorHandler,
-    notFound,
+    notFound
 };

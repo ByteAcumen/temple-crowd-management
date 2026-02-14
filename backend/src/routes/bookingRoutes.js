@@ -1,15 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const {
+    getBookings,
+    getBooking,
     createBooking,
-    getMyBookings,
     cancelBooking,
     checkAvailability,
-    getBookingByPassId,
-    getBooking
+    getMyBookings,
+    getBookingByPassId
 } = require('../controllers/bookingController');
 
-const { protect, authorize } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 /**
  * BOOKING ROUTES - Enhanced

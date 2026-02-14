@@ -48,7 +48,7 @@ export default function TempleDetailsPage({ params }: { params: Promise<{ id: st
                 } else {
                     setError('Temple not found');
                 }
-            } catch (err) {
+            } catch {
                 setError('Failed to load temple details');
             } finally {
                 setIsLoading(false);
@@ -99,6 +99,7 @@ export default function TempleDetailsPage({ params }: { params: Promise<{ id: st
                     className="absolute inset-0"
                     style={{ y: bgY }}
                 >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src={bgImage}
                         alt={temple.name}
@@ -170,8 +171,8 @@ export default function TempleDetailsPage({ params }: { params: Promise<{ id: st
                                 <div className="h-6 bg-slate-100 rounded-full overflow-hidden">
                                     <motion.div
                                         className={`h-full ${trafficStatus === 'RED' ? 'bg-gradient-to-r from-red-500 to-rose-600' :
-                                                trafficStatus === 'ORANGE' ? 'bg-gradient-to-r from-orange-400 to-amber-500' :
-                                                    'bg-gradient-to-r from-emerald-400 to-green-500'
+                                            trafficStatus === 'ORANGE' ? 'bg-gradient-to-r from-orange-400 to-amber-500' :
+                                                'bg-gradient-to-r from-emerald-400 to-green-500'
                                             }`}
                                         initial={{ width: 0 }}
                                         animate={{ width: `${Math.min(occupancyPercent, 100)}%` }}
@@ -243,7 +244,7 @@ export default function TempleDetailsPage({ params }: { params: Promise<{ id: st
                                     Prediction
                                 </div>
                             </div>
-                            <CrowdPredictionChart data={MOCK_PREDICTIONS as any} />
+                            <CrowdPredictionChart data={MOCK_PREDICTIONS as unknown as { time: string; count: number; level: "Low" | "Moderate" | "High" }[]} />
                         </section>
 
                     </div>

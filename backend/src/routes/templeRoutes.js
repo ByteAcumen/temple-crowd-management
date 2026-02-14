@@ -3,7 +3,7 @@ const router = express.Router();
 
 // Import middleware
 const { protect, authorize } = require('../middleware/auth');
-const { cache, clearCache } = require('../middleware/cache');
+const { cache } = require('../middleware/cache');
 
 // Import controller functions
 const {

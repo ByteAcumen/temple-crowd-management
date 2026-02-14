@@ -143,7 +143,7 @@ export default function TempleForm({ initialData, onSubmit, isLoading, error, is
                 contact: initialData.contact || prev.contact
             }));
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [initialData]);
 
     // Auto-calculate thresholds when capacity changes

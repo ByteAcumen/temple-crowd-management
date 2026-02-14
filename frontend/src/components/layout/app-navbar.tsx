@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useState } from 'react';
@@ -24,13 +25,22 @@ export function AppNavbar() {
                 <div className="flex justify-between h-16">
                     {/* Logo & Desktop Nav */}
                     <div className="flex">
-                        <Link href="/dashboard" className="flex-shrink-0 flex items-center gap-3">
-                            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" />
-                                </svg>
+                        <Link href="/dashboard" className="flex-shrink-0 flex items-center gap-3 group">
+                            <div className="relative">
+                                <Image
+                                    src="/temple-logo.png"
+                                    alt="Temple Smart E-Pass Logo"
+                                    width={40}
+                                    height={40}
+                                    className="w-10 h-10 rounded-xl object-contain transition-transform group-hover:scale-110"
+                                />
+                                {/* Glow Effect */}
+                                <div className="absolute inset-0 bg-orange-400 rounded-xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity"></div>
                             </div>
-                            <span className="font-bold text-xl text-slate-900 hidden sm:block">Temple Smart</span>
+                            <div className="hidden sm:block">
+                                <span className="text-lg font-bold text-slate-900 tracking-tight">Temple Smart</span>
+                                <span className="block text-xs text-orange-600 font-medium">AI-Powered E-Pass</span>
+                            </div>
                         </Link>
 
                         <div className="hidden sm:ml-8 sm:flex sm:space-x-8">

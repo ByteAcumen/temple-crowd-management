@@ -17,7 +17,7 @@ function AddTempleContent() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleSubmit = async (payload: any) => {
+    const handleSubmit = async (payload: Record<string, unknown>) => {
         setIsLoading(true);
         setError('');
 
@@ -29,9 +29,9 @@ function AddTempleContent() {
             } else {
                 setError(res.message || 'Failed to create temple');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Create temple error:', err);
-            setError(err.message || 'Failed to create temple');
+            setError(err instanceof Error ? err.message : 'Failed to create temple');
         } finally {
             setIsLoading(false);
         }

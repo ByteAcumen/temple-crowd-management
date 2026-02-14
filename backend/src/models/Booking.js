@@ -33,75 +33,73 @@ const bookingSchema = new mongoose.Schema({
         min: [1, 'At least 1 visitor required'],
         max: [10, 'Max 10 visitors per booking']
     },
+    // Individual visitor details
+    visitorDetails: [{
+        name: {
+            type: String,
+            required: [true, 'Visitor name is required'],
+            trim: true
+        },
+        age: {
+            type: Number,
+            required: [true, 'Visitor age is required'],
+            min: [1, 'Age must be at least 1'],
+            max: [120, 'Age must be realistic']
+        },
+        gender: {
+            type: String,
+            enum: ['Male', 'Female', 'Other'],
+            required: [true, 'Gender is required']
+        }
+    }],
     userName: {
         type: String,
+        required: [true, 'Please enter your name'],
         trim: true
     },
     userEmail: {
         type: String,
-        required: [true, 'Contact email is required'],
-        match: [
-            /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-            'Please add a valid email'
-        ]
-    },
-    status: {
-        type: String,
-        enum: ['CONFIRMED', 'CANCELLED', 'COMPLETED'],
-        default: 'CONFIRMED'
+        required: [true, 'Please enter your email'],
+        match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email']
     },
     passId: {
         type: String,
+        required: true,
         unique: true,
-        default: uuidv4 // Generates unique ID for QR Code
+        default: () => uuidv4() // Auto-generate unique pass ID
     },
-    // Payment tracking (NEW - Enhanced Booking)
-    payment: {
-        amount: {
-            type: Number,
-            default: 0
-        },
-        status: {
-            type: String,
-            enum: ['PENDING', 'PAID', 'REFUNDED', 'FAILED'],
-            default: 'PENDING'
-        },
-        transaction_id: {
-            type: String,
-            default: null
-        },
-        payment_method: {
-            type: String,
-            enum: ['CARD', 'UPI', 'CASH', 'FREE'],
-            default: 'FREE'
-        },
-        paid_at: {
-            type: Date,
-            default: null
-        }
-    },
-    // QR Code image URL (NEW - for frontend display)
-    qr_code_url: {
+    status: {
         type: String,
-        default: null
+        enum: ['PENDING', 'CONFIRMED', 'CANCELLED', 'USED', 'EXPIRED'],
+        default: 'CONFIRMED' // Auto-confirm for now (future: payment integration)
     },
-    // Entry/Exit tracking (for Live Crowd Tracking)
-    entryTime: {
-        type: Date,
-        default: null
+    qr_code_url: {
+        type: String
     },
-    exitTime: {
-        type: Date,
-        default: null
+    payment: {
+        method: String,
+        amount: Number,
+        status: String,
+        transaction_id: String
     },
+    specialPuja: String,
+    // LIVE TRACKING FIELDS
+    entryTime: Date,
+    exitTime: Date,
+    // ML Metadata
+    temperature: Number,
+    rain_flag: Boolean,
     createdAt: {
         type: Date,
         default: Date.now
     }
+}, {
+    // CRITICAL: Schema options for proper JSON serialization
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
 // Performance Indexes (CRITICAL for fast queries)
-// Note: passId already has unique index from schema definition
 bookingSchema.index({ userId: 1, date: -1 }); // Fast user booking history
 bookingSchema.index({ temple: 1, date: 1, slot: 1 }); // Fast slot availability check
 bookingSchema.index({ userEmail: 1, date: -1 }); // Fast email lookup
@@ -117,10 +115,22 @@ bookingSchema.virtual('is_active').get(function () {
     return this.status === 'CONFIRMED' && new Date(this.date) >= new Date();
 });
 
+// Transform  method - Add timeSlot alias
+bookingSchema.methods.toJSON = function () {
+    const obj = this.toObject({ virtuals: true });
+
+    // Add timeSlot alias for backward compatibility
+    if (obj.slot && !obj.timeSlot) {
+        obj.timeSlot = obj.slot;
+    }
+
+    return obj;
+};
+
 // Pre-save hook: Generate QR code URL if not exists
 bookingSchema.pre('save', function (next) {
     if (!this.qr_code_url && this.passId) {
-        // Generate QR code URL using API (future: integrate QR service)
+        // Generate QR code URL using API
         this.qr_code_url = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${this.passId}`;
     }
     next();

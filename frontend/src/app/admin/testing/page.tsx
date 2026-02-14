@@ -6,12 +6,12 @@
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/lib/protected-route';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { templesApi, adminApi, liveApi, botApi, bookingsApi, Temple } from '@/lib/api';
+import { templesApi, adminApi, liveApi, botApi, bookingsApi, Temple, SystemHealth, CrowdData, PredictionResponse } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { BackendStatusBar } from '@/components/admin/BackendStatusBar';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
 
 // ── Types ──────────────────────────────────────────
 interface TestResult {
@@ -21,12 +21,12 @@ interface TestResult {
     status: 'pending' | 'running' | 'pass' | 'fail';
     ms?: number;
     statusCode?: number;
-    response?: any;
+    response?: unknown;
     error?: string;
 }
 
 // ── Test Suite Definition ──────────────────────────
-const TEST_SUITE: { name: string; method: string; endpoint: string; run: () => Promise<any> }[] = [
+const TEST_SUITE: { name: string; method: string; endpoint: string; run: () => Promise<unknown> }[] = [
     { name: 'Server Health', method: 'GET', endpoint: '/', run: () => fetch(`${API_URL.replace('/api/v1', '')}`).then(r => r.json()) },
     { name: 'System Health', method: 'GET', endpoint: '/admin/health', run: () => adminApi.getSystemHealth() },
     { name: 'Temples List', method: 'GET', endpoint: '/temples', run: () => templesApi.getAll() },
@@ -51,10 +51,10 @@ function AdminTestingContent() {
     const abortRef = useRef(false);
 
     // ── Existing state for tools ──
-    const [health, setHealth] = useState<any>(null);
+    const [health, setHealth] = useState<SystemHealth | null>(null);
     const [temples, setTemples] = useState<Temple[]>([]);
-    const [liveData, setLiveData] = useState<any>(null);
-    const [predictions, setPredictions] = useState<Record<string, any>>({});
+    const [liveData, setLiveData] = useState<{ temples: CrowdData[]; summary: any } | null>(null);
+    const [predictions, setPredictions] = useState<Record<string, PredictionResponse | { error: string }>>({});
     const [botResponse, setBotResponse] = useState<{ query: string; answer: string; source?: string } | null>(null);
     const [botQuery, setBotQuery] = useState('What is the crowd like tomorrow?');
     const [syncResult, setSyncResult] = useState<any>(null);
@@ -79,8 +79,8 @@ function AdminTestingContent() {
                 setLiveData(Array.isArray(d) ? { temples: d, summary: {} } : d);
             }
             setLastUpdated(new Date());
-        } catch (err: any) {
-            setError(err.message || 'Failed to fetch');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch');
         } finally {
             setLoading(null);
         }
@@ -113,10 +113,12 @@ function AdminTestingContent() {
                 setResults(prev => prev.map((r, idx) =>
                     idx === i ? { ...r, status: 'pass', ms, statusCode: 200, response } : r
                 ));
-            } catch (err: any) {
+            } catch (err: unknown) {
                 const ms = Math.round(performance.now() - start);
+                const errorMessage = err instanceof Error ? err.message : 'Request failed';
+                const statusCode = (err as any).status || 0; // retain specific any for status check if needed, or use type guard
                 setResults(prev => prev.map((r, idx) =>
-                    idx === i ? { ...r, status: 'fail', ms, error: err.message || 'Request failed', statusCode: err.status || 0 } : r
+                    idx === i ? { ...r, status: 'fail', ms, error: errorMessage, statusCode } : r
                 ));
             }
 
@@ -136,8 +138,9 @@ function AdminTestingContent() {
         try {
             const res = await templesApi.getPredictions(templeId);
             if (res.success) setPredictions(prev => ({ ...prev, [templeId]: res.data }));
-        } catch (err: any) {
-            setPredictions(prev => ({ ...prev, [templeId]: { error: err.message } }));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Unknown error';
+            setPredictions(prev => ({ ...prev, [templeId]: { error: message } }));
         } finally { setLoading(null); }
     };
 
@@ -183,8 +186,8 @@ function AdminTestingContent() {
     const progress = total > 0 ? ((passed + failed) / total) * 100 : 0;
 
     const liveTemples = liveData?.temples || [];
-    const liveMap = liveTemples.reduce((acc: Record<string, number>, t: any) => {
-        const id = (t.temple_id?.toString?.() || t.temple_id || t._id)?.toString?.();
+    const liveMap = liveTemples.reduce((acc: Record<string, number>, t: CrowdData) => {
+        const id = t.temple_id;
         if (id) acc[id] = t.live_count ?? 0;
         return acc;
     }, {});
@@ -409,17 +412,20 @@ function AdminTestingContent() {
                         <div className="p-5 space-y-4">
                             {Object.entries(predictions).map(([tid, pred]) => {
                                 const t = temples.find(x => x._id === tid);
-                                if (pred.error) {
+                                // Type guard for error
+                                if ('error' in pred) {
                                     return <div key={tid} className="p-4 bg-red-50 rounded-xl text-red-700 text-sm">{t?.name || tid}: {pred.error}</div>;
                                 }
+                                // It's a valid prediction response (explicit cast for safety after check)
+                                const data = pred as PredictionResponse;
                                 return (
                                     <div key={tid} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                                         <p className="font-bold text-slate-900 mb-2">{t?.name || tid}</p>
                                         <div className="grid grid-cols-2 gap-2 text-sm">
-                                            <span className="text-slate-500">Level:</span><span className="font-medium">{pred.currentCrowdLevel}</span>
-                                            <span className="text-slate-500">Wait:</span><span>{pred.estimatedWaitMinutes} min</span>
-                                            <span className="text-slate-500">Best time:</span><span>{pred.bestTimeToVisit?.join(', ') || '-'}</span>
-                                            <span className="text-slate-500 col-span-2">Recommendation: {pred.recommendation}</span>
+                                            <span className="text-slate-500">Level:</span><span className="font-medium">{data.currentCrowdLevel}</span>
+                                            <span className="text-slate-500">Wait:</span><span>{data.estimatedWaitMinutes} min</span>
+                                            <span className="text-slate-500">Best time:</span><span>{data.bestTimeToVisit?.join(', ') || '-'}</span>
+                                            <span className="text-slate-500 col-span-2">Recommendation: {data.recommendation}</span>
                                         </div>
                                     </div>
                                 );

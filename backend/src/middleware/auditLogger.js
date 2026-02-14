@@ -13,7 +13,7 @@ const EVENTS = {
     AUTH_LOGOUT: 'AUTH_LOGOUT',
     ACCESS_DENIED: 'ACCESS_DENIED',
     RATE_LIMIT_HIT: 'RATE_LIMIT_HIT',
-    SENSITIVE_DATA_ACCESS: 'SENSITIVE_DATA_ACCESS',
+    SENSITIVE_DATA_ACCESS: 'SENSITIVE_DATA_ACCESS'
 };
 
 /**
@@ -27,7 +27,7 @@ const logSecurityEvent = (event, details = {}) => {
         event,
         ...details,
         // Mark as security log for filtering
-        category: 'SECURITY_AUDIT',
+        category: 'SECURITY_AUDIT'
     };
 
     // Use winston logger for structured logging
@@ -55,7 +55,7 @@ const auditMiddleware = (req, res, next) => {
                 path: req.path,
                 statusCode: res.statusCode,
                 ip: req.ip || req.connection.remoteAddress,
-                userId: req.user?.id,
+                userId: req.user?.id
             });
         }
         originalEnd.call(this, chunk, encoding);
@@ -82,7 +82,7 @@ const logAccessDenied = (userId, role, attemptedRoute, ip) => {
         userId,
         role,
         attemptedRoute,
-        ip,
+        ip
     });
 };
 
@@ -91,5 +91,5 @@ module.exports = {
     logSecurityEvent,
     auditMiddleware,
     logAuthAttempt,
-    logAccessDenied,
+    logAccessDenied
 };
