@@ -25,7 +25,7 @@ param(
 
 $ErrorActionPreference = "Continue"
 $PROJECT_ROOT = $PSScriptRoot
-$BACKEND_PORT = 5000
+$BACKEND_PORT = 5001
 $FRONTEND_PORT = 3000
 
 # Colors
@@ -45,15 +45,34 @@ Write-Host "Mode: $(if ($Production) { 'PRODUCTION' } else { 'DEVELOPMENT' })" -
 
 # Check Docker
 Write-Step "Checking Docker..."
-try {
-    $dockerVersion = docker --version 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "Docker not running"
+$maxDockerRetries = 5
+$retryCount = 0
+$dockerRunning = $false
+
+while ($retryCount -lt $maxDockerRetries) {
+    try {
+        $dockerVersion = docker --version 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            $dockerRunning = $true
+            Write-Pass "Docker: $dockerVersion"
+            break
+        }
     }
-    Write-Pass "Docker: $dockerVersion"
+    catch {
+        # Ignore error and retry
+    }
+    
+    Write-Info "Waiting for Docker to start... ($($retryCount + 1)/$maxDockerRetries)"
+    Start-Sleep -Seconds 3
+    $retryCount++
 }
-catch {
-    Write-Fail "Docker is not running. Please start Docker Desktop."
+
+if (-not $dockerRunning) {
+    Write-Fail "Docker is not running."
+    Write-Info "Please start Docker Desktop and run this script again."
+    Write-Info "Using fallback local start (if available)..."
+    # Don't exit immediately, let the script fail at Service Startup if needed, 
+    # or we can ask user.
     exit 1
 }
 
@@ -89,7 +108,8 @@ function Stop-PortProcess {
             # Get process name safely
             try {
                 $processName = (Get-Process -Id $processId -ErrorAction Stop).ProcessName
-            } catch {
+            }
+            catch {
                 $processName = "Unknown"
             }
             
@@ -135,10 +155,19 @@ if ($RebuildAll) {
 # Start services
 Write-Step "Starting services (Backend, DB, Redis, ML)..."
 if ($Production) {
-    docker compose up -d --build 2>&1
+    Write-Info "Running in PRODUCTION mode"
+    docker compose -f docker-compose.yml up -d --build 2>&1
 }
 else {
-    docker compose up -d 2>&1
+    Write-Info "Running in DEVELOPMENT mode (using docker-compose.dev.yml)"
+    # Use standalone dev file which now includes all services
+    if (Test-Path "docker-compose.dev.yml") {
+        docker compose -f docker-compose.dev.yml up -d --build 2>&1
+    }
+    else {
+        # Fallback if dev file missing (unlikely)
+        docker compose up -d --build 2>&1
+    }
 }
 
 if ($LASTEXITCODE -ne 0) {
@@ -187,7 +216,7 @@ function Wait-ForService {
 
 # Wait for Backend API
 Write-Step "Waiting for Backend API ($BACKEND_PORT)..."
-$backendHealthy = Wait-ForService -Name "Backend API" -Url "http://localhost:$BACKEND_PORT" -TimeoutSeconds 90
+$backendHealthy = Wait-ForService -Name "Backend API" -Url "http://localhost:$BACKEND_PORT/api/v1/health" -TimeoutSeconds 90
 
 if (-not $backendHealthy) {
     Write-Fail "Backend failed to start. Checking logs..."
@@ -206,10 +235,12 @@ if (-not $SkipTests) {
         $response = Invoke-RestMethod -Uri "http://localhost:$BACKEND_PORT/api/v1/temples" -Method GET -TimeoutSec 10
         if ($response.success) {
             Write-Pass "API /temples endpoint is responding correctly"
-        } else {
+        }
+        else {
             Write-Fail "API /temples returned error"
         }
-    } catch {
+    }
+    catch {
         Write-Fail "Failed to query API: $_"
     }
 }
@@ -230,7 +261,8 @@ if (Test-Path $frontendPath) {
     
     Write-Pass "Frontend launch initiated"
     Write-Info "Frontend will be available at http://localhost:3000"
-} else {
+}
+else {
     Write-Fail "Frontend directory not found at $frontendPath"
 }
 

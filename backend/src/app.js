@@ -60,6 +60,15 @@ app.use(mongoSanitize()); // Prevent NoSQL Injection
 app.use(xss()); // Prevent XSS
 app.use(hpp()); // Prevent HTTP Parameter Pollution
 
+// Prevent Caching on all API routes to avoid data leakage between users
+app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+    next();
+});
+
 // CORS Configuration - Allow credentials with specific origins
 const corsOptions = {
     origin: function (origin, callback) {
@@ -161,11 +170,15 @@ app.use('/api/v1/temples', templeRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
 // Health Check
-app.get('/', (req, res) => {
+app.get('/api/v1/health', (req, res) => {
     res.json({
-        service: 'Temple Booking API',
-        status: 'Healthy',
-        ai_link: AI_SERVICE_URL
+        success: true,
+        message: 'System Operational',
+        timestamp: new Date(),
+        services: {
+            db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+            ai: AI_SERVICE_URL
+        }
     });
 });
 

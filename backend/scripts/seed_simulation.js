@@ -14,19 +14,12 @@ const Booking = require('../src/models/Booking');
 
 // Connect DB
 // Use 'temple_db' (underscore) to match .env
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/temple_db')
+mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/temple_db')
     .then(() => console.log('✅ MongoDB Connected'))
     .catch(err => console.error('❌ DB Error:', err));
 
 const DATA = {
     temples: [
-        {
-            name: "Kashi Vishwanath Temple",
-            location: { city: "Varanasi", state: "Uttar Pradesh", address: "Lahori Tola" },
-            capacity: { total: 5000, per_slot: 400 },
-            operatingHours: { open: "04:00", close: "23:00" },
-            description: "One of the most famous Hindu temples dedicated to Lord Shiva."
-        },
         {
             name: "Tirumala Tirupati Devasthanams",
             location: { city: "Tirumala", state: "Andhra Pradesh", address: "Chittoor District" },
@@ -35,11 +28,102 @@ const DATA = {
             description: "The richest temple in the world, dedicated to Lord Venkateswara."
         },
         {
+            name: "Kashi Vishwanath Temple",
+            location: { city: "Varanasi", state: "Uttar Pradesh", address: "Lahori Tola" },
+            capacity: { total: 5000, per_slot: 400 },
+            operatingHours: { open: "04:00", close: "23:00" },
+            description: "One of the most famous Hindu temples dedicated to Lord Shiva."
+        },
+        {
             name: "Golden Temple",
             location: { city: "Amritsar", state: "Punjab", address: "Atta Mandi" },
             capacity: { total: 8000, per_slot: 600 },
             operatingHours: { open: "03:00", close: "22:00" },
             description: "The holiest Gurdwara of Sikhism, also known as Sri Harmandir Sahib."
+        },
+        {
+            name: "Vaishno Devi Temple",
+            location: { city: "Katra", state: "Jammu & Kashmir", address: "Trikuta Mountains" },
+            capacity: { total: 10000, per_slot: 800 },
+            operatingHours: { open: "05:00", close: "22:00" },
+            description: "A holy cave shrine dedicated to Mata Vaishno Devi."
+        },
+        {
+            name: "Kedarnath Temple",
+            location: { city: "Kedarnath", state: "Uttarakhand", address: "Rudraprayag" },
+            capacity: { total: 3000, per_slot: 200 },
+            operatingHours: { open: "06:00", close: "20:00" },
+            description: "Dedicated to Lord Shiva, located in the Garhwal Himalayas."
+        },
+        {
+            name: "Badrinath Temple",
+            location: { city: "Badrinath", state: "Uttarakhand", address: "Chamoli" },
+            capacity: { total: 3500, per_slot: 250 },
+            operatingHours: { open: "04:30", close: "21:00" },
+            description: "One of the Char Dham pilgrimage sites, dedicated to Lord Vishnu."
+        },
+        {
+            name: "Somnath Temple",
+            location: { city: "Veraval", state: "Gujarat", address: "Prabhas Patan" },
+            capacity: { total: 6000, per_slot: 500 },
+            operatingHours: { open: "06:00", close: "21:30" },
+            description: "The first among the twelve Jyotirlinga shrines of Shiva."
+        },
+        {
+            name: "Dwarkadhish Temple",
+            location: { city: "Dwarka", state: "Gujarat", address: "Dwarka" },
+            capacity: { total: 5500, per_slot: 450 },
+            operatingHours: { open: "06:30", close: "21:30" },
+            description: "Dedicated to Lord Krishna, known as the 'King of Dwarka'."
+        },
+        {
+            name: "Jagannath Temple",
+            location: { city: "Puri", state: "Odisha", address: "Grand Road" },
+            capacity: { total: 12000, per_slot: 900 },
+            operatingHours: { open: "05:00", close: "23:00" },
+            description: "Famous for its annual Ratha Yatra, dedicated to Lord Jagannath."
+        },
+        {
+            name: "Meenakshi Amman Temple",
+            location: { city: "Madurai", state: "Tamil Nadu", address: "Madurai Main" },
+            capacity: { total: 9000, per_slot: 700 },
+            operatingHours: { open: "05:00", close: "22:00" },
+            description: "A historic Hindu temple located on the southern bank of the Vaigai River."
+        },
+        {
+            name: "Ramanathaswamy Temple",
+            location: { city: "Rameswaram", state: "Tamil Nadu", address: "Rameswaram Island" },
+            capacity: { total: 7000, per_slot: 500 },
+            operatingHours: { open: "05:00", close: "21:00" },
+            description: "One of the twelve Jyotirlinga temples, known for its long corridors."
+        },
+        {
+            name: "Siddhivinayak Temple",
+            location: { city: "Mumbai", state: "Maharashtra", address: "Prabhadevi" },
+            capacity: { total: 15000, per_slot: 1200 },
+            operatingHours: { open: "05:30", close: "22:00" },
+            description: "Dedicated to Lord Shri Ganesh, one of the richest temples in Mumbai."
+        },
+        {
+            name: "Shirdi Sai Baba Temple",
+            location: { city: "Shirdi", state: "Maharashtra", address: "Ahmednagar" },
+            capacity: { total: 20000, per_slot: 1500 },
+            operatingHours: { open: "04:00", close: "23:00" },
+            description: "The resting place of the famous saint Sai Baba."
+        },
+        {
+            name: "Padmanabhaswamy Temple",
+            location: { city: "Thiruvananthapuram", state: "Kerala", address: "East Fort" },
+            capacity: { total: 6000, per_slot: 400 },
+            operatingHours: { open: "03:30", close: "21:00" },
+            description: "Dedicated to Lord Vishnu, one of the richest temples in the world."
+        },
+        {
+            name: "Konark Sun Temple",
+            location: { city: "Konark", state: "Odisha", address: "Konark" },
+            capacity: { total: 4000, per_slot: 350 },
+            operatingHours: { open: "06:00", close: "20:00" },
+            description: "A 13th-century CE Sun Temple, a UNESCO World Heritage Site."
         }
     ],
     users: 50,
@@ -64,6 +148,7 @@ async function seed() {
             console.log('🧹 Clearing data (--force flag detected)...');
             await Temple.deleteMany({});
             await Booking.deleteMany({});
+            await User.deleteMany({});
         } else {
             console.log('✨ Database is empty/incomplete. Seeding...');
         }
@@ -76,12 +161,12 @@ async function seed() {
         // Create Admin if not exists
         let admin = await User.findOne({ email: 'admin@temple.com' });
         if (!admin) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash('Admin@123456', salt);
+            // const salt = await bcrypt.genSalt(10);
+            // const hashedPassword = await bcrypt.hash('Admin@123456', salt);
             admin = await User.create({
                 name: 'Super Admin',
                 email: 'admin@temple.com',
-                password: hashedPassword,
+                password: 'Admin@123456',
                 role: 'admin',
                 isSuperAdmin: true
             });
@@ -91,12 +176,12 @@ async function seed() {
         // Create Gatekeeper
         let gatekeeper = await User.findOne({ email: 'gatekeeper@temple.com' });
         if (!gatekeeper) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash('Gate@12345', salt);
+            // const salt = await bcrypt.genSalt(10);
+            // const hashedPassword = await bcrypt.hash('Gate@12345', salt);
             gatekeeper = await User.create({
                 name: 'Main Gatekeeper',
                 email: 'gatekeeper@temple.com',
-                password: hashedPassword,
+                password: 'Gate@12345',
                 role: 'gatekeeper',
                 assignedTemples: [createdTemples[0]._id] // Assign to first temple
             });
@@ -104,14 +189,28 @@ async function seed() {
         }
 
         const users = [];
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash('User@12345', salt);
+        // const salt = await bcrypt.genSalt(10);
+        // const hashedPassword = await bcrypt.hash('User@12345', salt);
 
         for (let i = 0; i < DATA.users; i++) {
+            let email = `user${i + 1}@example.com`;
+            let name = `Devotee ${i + 1}`;
+
+            if (i === 0) {
+                email = 'user@temple.com';
+                name = 'Devotee User';
+            } else if (i === 1) {
+                email = 'ram@temple.com';
+                name = 'Ram';
+            } else if (i === 2) { // Add the specific requested Ram email
+                email = 'Ram123@gmail.com';
+                name = 'Ram Gmail';
+            }
+
             users.push({
-                name: `Devotee ${i + 1}`,
-                email: i === 0 ? 'user@temple.com' : `user${i + 1}@example.com`, // First user matches request
-                password: hashedPassword,
+                name,
+                email,
+                password: i === 2 ? 'R@m123456789' : 'User@12345', // Specific password for Ram Gmail
                 role: 'user'
             });
         }
@@ -131,7 +230,7 @@ async function seed() {
 
         console.log('🎫 Creating Bookings...');
         const bookings = [];
-        const statuses = ['CONFIRMED', 'COMPLETED', 'CANCELLED', 'CONFIRMED', 'CONFIRMED']; // Weighted
+        const statuses = ['CONFIRMED', 'USED', 'CANCELLED', 'CONFIRMED', 'CONFIRMED']; // Weighted
         const slots = ['06:00 - 08:00', '08:00 - 10:00', '10:00 - 12:00', '12:00 - 14:00', '16:00 - 18:00', '18:00 - 20:00'];
 
         for (let i = 0; i < DATA.bookings; i++) {

@@ -45,19 +45,19 @@ RUN mkdir -p logs && chown -R nodejs:nodejs logs
 
 # Environment variables
 ENV NODE_ENV=production \
-    PORT=5000 \
+    PORT=5001 \
     # Graceful shutdown timeout (ms)
     SHUTDOWN_TIMEOUT=10000
 
 # Expose port
-EXPOSE 5000
+EXPOSE 5001
 
 # Switch to non-root user
 USER nodejs
 
 # Health check with timeout
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:5000/ || exit 1
+    CMD curl -f http://localhost:5001/api/v1/health || exit 1
 
 # Use tini for proper signal handling (graceful shutdown)
 ENTRYPOINT ["/sbin/tini", "--"]

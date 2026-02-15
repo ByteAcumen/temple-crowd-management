@@ -1,7 +1,7 @@
 // API Client for Temple Smart E-Pass System
 // Centralized API communication layer
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
 console.log('🔌 API_URL Configured as:', API_URL);
 
 // Types
@@ -68,6 +68,50 @@ export interface SystemHealth {
     uptime_formatted: string;
     memory_usage?: any;
     timestamp: string;
+}
+
+// Dashboard Stats Interfaces
+export interface DashboardStats {
+    success: boolean;
+    data: {
+        overview: {
+            total_temples: number;
+            total_bookings: number;
+            total_users: number;
+            total_revenue: number;
+        };
+        bookings: {
+            today: number;
+            this_week: number;
+            this_month: number;
+        };
+        crowd: {
+            current_live_count: number;
+            total_entries_today: number;
+            total_exits_today: number;
+        };
+    };
+}
+
+export interface DashboardAnalytics {
+    success: boolean;
+    data: {
+        daily_trends: Array<{
+            _id: string;
+            count: number;
+            date?: string;
+        }>;
+        revenue_by_temple: Array<{
+            _id: string;
+            revenue: number;
+            bookings: number;
+            temple_name?: string;
+        }>;
+        popular_slots?: Array<{
+            slot: string;
+            count: number;
+        }>;
+    };
 }
 
 // Get token from localStorage
@@ -422,9 +466,9 @@ export const bookingsApi = {
         });
     },
 
-    // Get my bookings
+    // Get my bookings (with cache busting)
     getMyBookings: async (): Promise<{ success: boolean; data: Booking[] }> => {
-        return apiRequest('/bookings');
+        return apiRequest(`/bookings?_cb=${Date.now()}`);
     },
 
     // Get booking by pass ID
@@ -559,8 +603,8 @@ export const adminApi = {
     },
 
     // Get dashboard stats
-    getStats: async (): Promise<any> => {
-        return apiRequest('/admin/stats');
+    getStats: async (): Promise<DashboardStats> => {
+        return apiRequest<DashboardStats>('/admin/stats');
     },
 
     // Get system health
@@ -569,9 +613,9 @@ export const adminApi = {
     },
 
     // Get analytics
-    getAnalytics: async (params: { startDate: string; endDate: string; templeId?: string }): Promise<any> => {
+    getAnalytics: async (params: { startDate: string; endDate: string; templeId?: string }): Promise<DashboardAnalytics> => {
         const query = new URLSearchParams(params as Record<string, string>).toString();
-        return apiRequest(`/admin/analytics${query ? `?${query}` : ''}`);
+        return apiRequest<DashboardAnalytics>(`/admin/analytics${query ? `?${query}` : ''}`);
     },
 
     // Get all bookings (backend expects 'temple' not 'templeId')

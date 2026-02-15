@@ -27,31 +27,22 @@ cd temple-crowd-management
 # No .env needed - Docker uses built-in config
 ```
 
-### Step 2: Start Backend Ecosystem 🐳
-Run one of these commands:
+### Step 2: One-Click Startup 🚀
+Run the master startup script. This handles **Backend**, **Database**, **AI Services**, and launches the **Frontend** automatically.
 
 ```powershell
-# Option A: Minimal (mongo + redis + backend - most reliable)
-.\run-docker.ps1
-
-# Option B: Full stack (includes ML services)
-.\start_backend.ps1
+.\start.ps1
 ```
 
-**Wait for the green success message:**
-> ✅ All backend services are healthy.
-> 📡 API: http://localhost:5000/api/v1
+**What this does:**
+1.  Starts all Docker containers (Backend, Mongo, Redis, ML Models).
+2.  Waits for services to be healthy.
+3.  Automatically opens a new window for the Frontend.
 
-### Step 3: Start Frontend 💻
-Open a **new terminal window** (keep the backend running in the first one):
-
-```powershell
-cd frontend
-npm install  # First time only
-npm run dev
-```
-
-Server running at: **http://localhost:3000**
+**Success Output:**
+> ✅ System is fully operational! 🚀
+> 📡 Backend: http://localhost:5001
+> 💻 Frontend: http://localhost:3000
 
 ---
 

@@ -156,10 +156,11 @@ services:
     container_name: temple-backend
     restart: always
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
       # Docker Network URLs (override local .env)
       - NODE_ENV=production
+      - PORT=5001
       - MONGO_URI=mongodb://mongo:27017/temple_db
       - MONGODB_URI=mongodb://mongo:27017/temple_db
       - REDIS_HOST=redis
@@ -167,9 +168,8 @@ services:
       - REDIS_URL=redis://redis:6379
       - ML_DETECTION_URL=http://ml-detection:8000
       - ML_FORECASTING_URL=http://ml-forecasting:8000
-      - AI_SERVICE_URL=http://ml-forecasting:8000
-      - JWT_SECRET=temple_crowd_jwt_secret_change_in_production
-      # Graceful shutdown timeout
+      - AI_SERVICE_URL=${AI_SERVICE_URL:-http://ml-forecasting:8000}
+      - JWT_SECRET=${JWT_SECRET}
       - SHUTDOWN_TIMEOUT=10000
     depends_on:
       mongo:
@@ -179,7 +179,7 @@ services:
     networks:
       - temple-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000/" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:5001/api/v1/health" ]
       interval: 30s
       timeout: 10s
       retries: 3

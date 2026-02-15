@@ -1,5 +1,18 @@
 {
-  "dependencies": {
-    "express": "^5.2.1"
-  }
+  "name": "temple-crowd-management",
+  "version": "1.0.0",
+  "description": "Smart Temple Crowd Management System",
+  "scripts": {
+    "start": "powershell -ExecutionPolicy Bypass -File ./start.ps1",
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "install-all": "npm install && npm install --prefix backend && npm install --prefix frontend",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {}
 }

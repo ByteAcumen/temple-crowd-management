@@ -42,6 +42,14 @@ const DEFAULT_GATEKEEPER = {
     role: 'gatekeeper'
 };
 
+// Default Devotee User
+const DEFAULT_USER = {
+    name: 'Devotee',
+    email: 'user@temple.com',
+    password: 'User@12345',
+    role: 'user'
+};
+
 // Sample Temples (matching Temple model schema)
 const SAMPLE_TEMPLES = [
     {
@@ -160,6 +168,18 @@ async function seedDatabase() {
     );
     pass(`Gatekeeper user ready: ${DEFAULT_GATEKEEPER.email} (password: ${DEFAULT_GATEKEEPER.password})`);
 
+    // Create Devotee User
+    const userHashedPassword = await bcrypt.hash(DEFAULT_USER.password, 10);
+    const devoteeUser = await User.findOneAndUpdate(
+        { email: DEFAULT_USER.email },
+        {
+            ...DEFAULT_USER,
+            password: userHashedPassword
+        },
+        { new: true, upsert: true }
+    );
+    pass(`Devotee user ready: ${DEFAULT_USER.email} (password: ${DEFAULT_USER.password})`);
+
     // Create Temples
     console.log(`\n${colors.cyan}Creating Temples...${colors.reset}`);
 
@@ -182,7 +202,8 @@ async function seedDatabase() {
     console.log(`Temples: ${templeCount}`);
     console.log(`\nTest Credentials:`);
     console.log(`  Admin: ${DEFAULT_ADMIN.email} / ${DEFAULT_ADMIN.password}`);
-    console.log(`  Gatekeeper: ${DEFAULT_GATEKEEPER.email} / ${DEFAULT_GATEKEEPER.password}\n`);
+    console.log(`  Gatekeeper: ${DEFAULT_GATEKEEPER.email} / ${DEFAULT_GATEKEEPER.password}`);
+    console.log(`  Devotee:    ${DEFAULT_USER.email} / ${DEFAULT_USER.password}\n`);
 
     await mongoose.connection.close();
     pass('Database connection closed');

@@ -60,9 +60,10 @@ function BookingContent() {
     const [visitorDetails, setVisitorDetails] = useState<Array<{
         name: string;
         age: number;
+        gender: string;
         idType: string;
         idNumber: string;
-    }>>([{ name: '', age: 0, idType: 'NONE', idNumber: '' }]);
+    }>>([{ name: '', age: 0, gender: '', idType: 'NONE', idNumber: '' }]);
 
     // Booking result
     const [bookingResult, setBookingResult] = useState<any>(null);
@@ -182,7 +183,7 @@ function BookingContent() {
                 const hasSlot = !!selectedSlot && visitors > 0;
                 const allDetailsFilled = visitorDetails
                     .slice(0, visitors)
-                    .every(v => v.name.trim() && v.age > 0);
+                    .every(v => v.name.trim() && v.age > 0 && v.gender.trim());
                 return hasSlot && allDetailsFilled;
             }
             case 4: return isAuthenticated;
@@ -433,7 +434,7 @@ function BookingContent() {
                                                 setVisitors(newCount);
                                                 setVisitorDetails(prev => [
                                                     ...prev,
-                                                    { name: '', age: 0, idType: 'NONE', idNumber: '' }
+                                                    { name: '', age: 0, gender: '', idType: 'NONE', idNumber: '' }
                                                 ]);
                                             }}
                                             className="w-10 h-10 rounded-xl bg-white text-slate-700 font-bold text-xl hover:bg-slate-100 transition-colors shadow-sm disabled:opacity-50"
@@ -489,6 +490,26 @@ function BookingContent() {
                                                         className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all"
                                                         required
                                                     />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">
+                                                        Gender <span className="text-red-500">*</span>
+                                                    </label>
+                                                    <select
+                                                        value={visitorDetails[idx]?.gender || ''}
+                                                        onChange={(e) => {
+                                                            const newDetails = [...visitorDetails];
+                                                            newDetails[idx] = { ...newDetails[idx], gender: e.target.value };
+                                                            setVisitorDetails(newDetails);
+                                                        }}
+                                                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all appearance-none"
+                                                        required
+                                                    >
+                                                        <option value="">Select gender</option>
+                                                        <option value="Male">Male</option>
+                                                        <option value="Female">Female</option>
+                                                        <option value="Other">Other</option>
+                                                    </select>
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">

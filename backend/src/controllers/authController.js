@@ -74,6 +74,13 @@ exports.register = async (req, res) => {
 
         sendTokenResponse(user, 200, res);
     } catch (error) {
+        // Handle duplicate email error
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                error: 'Email already exists. Please login instead.'
+            });
+        }
         res.status(400).json({ success: false, error: error.message });
     }
 };
@@ -96,14 +103,18 @@ exports.login = async (req, res) => {
         const user = await User.findOne({ email }).select('+password');
 
         if (!user) {
+            console.log(`❌ Login Failed: User not found for email ${email}`);
             logAuthAttempt(false, email, req.ip);
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }
+        console.log(`✅ User found: ${user._id} (Role: ${user.role})`);
 
         // Check if password matches
         const isMatch = await user.matchPassword(password);
+        console.log(`🔐 Password Match Result: ${isMatch}`);
 
         if (!isMatch) {
+            console.log(`❌ Login Failed: Password mismatch for ${email}`);
             logAuthAttempt(false, email, req.ip);
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }

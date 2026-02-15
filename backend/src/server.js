@@ -4,7 +4,7 @@ const logger = require('./config/logger');
 const templeStatusService = require('./services/TempleStatusService');
 const crowdTracker = require('./services/CrowdTracker');
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 console.log('🚀 Server starting...');
 console.log('📂 __filename:', __filename);

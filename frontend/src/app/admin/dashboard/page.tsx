@@ -63,27 +63,38 @@ function AdminDashboardContent() {
             setLoading(true);
             setApiError(null);
             setDemoMode(false);
+            setLastUpdated(new Date());
+            console.log('🔄 Dashboard: Starting data fetch...');
 
             // 1. Stats
+            console.log('📊 Fetching admin stats...');
             const statsRes = await adminApi.getStats();
+            console.log('📊 Stats Response:', statsRes);
             const statsData = statsRes.success && statsRes.data ? statsRes.data : null;
+
 
             // 2. Analytics (Charts)
             const today = new Date();
             const lastMonth = new Date();
             lastMonth.setDate(today.getDate() - 30);
 
+            console.log('📈 Fetching analytics from', lastMonth.toISOString().split('T')[0], 'to', today.toISOString().split('T')[0]);
             const analyticsRes = await adminApi.getAnalytics({
                 startDate: lastMonth.toISOString().split('T')[0],
                 endDate: today.toISOString().split('T')[0]
             });
+            console.log('📈 Analytics Response:', analyticsRes);
             const analytics = analyticsRes.success && analyticsRes.data ? analyticsRes.data : null;
 
             // 3. Live Crowd & Temples
+            console.log('🏛️ Fetching temples and live data...');
             const [templesRes, liveRes] = await Promise.all([
                 templesApi.getAll(),
                 liveApi.getCrowdData()
             ]);
+            console.log('🏛️ Temples Response:', templesRes);
+            console.log('👥 Live Crowd Response:', liveRes);
+
 
             // Merge Live Data
             let templesData = templesRes.data || [];
@@ -111,33 +122,50 @@ function AdminDashboardContent() {
 
             // 4. Recent Bookings
             const bookingsRes = await adminApi.getBookings({ limit: 5 });
-            setRecentBookings(bookingsRes.data || []);
+            console.log('📊 Dashboard - Bookings Response:', bookingsRes);
+            if (bookingsRes.success && bookingsRes.data) {
+                console.log('✅ Setting recent bookings:', bookingsRes.data.length, 'bookings');
+                setRecentBookings(bookingsRes.data);
+            } else {
+                console.warn('⚠️ No booking data received or request failed');
+            }
+
 
             // Set State
             if (statsData) {
-                setStats({
+                const newStats = {
                     totalTemples: statsData.overview?.total_temples ?? templesData.length,
                     totalBookings: statsData.overview?.total_bookings ?? 0,
                     totalUsers: statsData.overview?.total_users ?? 0,
                     currentCrowd: statsData.crowd?.current_live_count ?? 0,
                     todayVisits: statsData.bookings?.today ?? 0,
                     totalRevenue: statsData.overview?.total_revenue ?? 0,
-                });
+                };
+                console.log('💾 Setting stats:', newStats);
+                setStats(newStats);
+            } else {
+                console.warn('⚠️ No stats data available from backend');
             }
 
             if (analytics) {
-                setChartData({
+                const chartData = {
                     dailyTrends: analytics.daily_trends || [],
                     revenueByTemple: analytics.revenue_by_temple || []
-                });
+                };
+                console.log('📊 Setting chart data:', chartData);
+                setChartData(chartData);
+            } else {
+                console.warn('⚠️ No analytics data available from backend');
             }
 
-            setLastUpdated(new Date());
+            console.log('✅ Dashboard data fetch completed successfully');
 
         } catch (error: unknown) {
-            console.error('Dashboard fetch error:', error);
+            console.error('❌ Dashboard fetch failed:', error);
             setDemoMode(true);
+            console.log('🎭 Entering demo mode with fallback data');
             setApiError(error instanceof Error ? error.message : 'Backend unreachable');
+
 
             // DEMO DATA GENERATION
             setStats({

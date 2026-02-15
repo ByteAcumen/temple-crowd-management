@@ -34,7 +34,7 @@ export default function GatekeeperScanPage() {
 }
 
 function GatekeeperContent() {
-    const { user, logout } = useAuth();
+    const { user, logout, isLoading: authLoading } = useAuth();
     const router = useRouter();
 
     // Core State
@@ -54,6 +54,7 @@ function GatekeeperContent() {
             router.replace('/dashboard');
             return;
         }
+        console.log('🔌 Gatekeeper Config: API_URL', process.env.NEXT_PUBLIC_API_URL);
     }, [user, router]);
 
     // State
@@ -63,12 +64,21 @@ function GatekeeperContent() {
 
     // Fetch Stats
     const fetchStats = useCallback(async () => {
+        // CRITICAL: Wait for auth loading to complete AND verify role
+        if (authLoading) {
+            console.log('⏳ Skipping fetchStats - auth still loading');
+            return;
+        }
+
         // Skip if no temple selected or user not authorized
         if (!selectedTempleId || !user || (user.role !== 'gatekeeper' && user.role !== 'admin')) {
+            console.log('⏭️ Skipping fetchStats - no temple or unauthorized');
+            // Don't set offline here - just skip the fetch
             return;
         }
 
         try {
+            console.log(`📊 Fetching stats for temple: ${selectedTempleId}`);
             const res = await liveApi.getDailyStats(selectedTempleId);
             if (res.success && res.data) {
                 setStats({
@@ -77,12 +87,26 @@ function GatekeeperContent() {
                     live: res.data.live_count
                 });
                 setIsOnline(true);
+                console.log('✅ Stats fetched successfully');
             }
-        } catch (err) {
-            console.error("Failed to fetch stats", err);
-            setIsOnline(false);
+        } catch (err: any) {
+            console.error("❌ Failed to fetch stats:", err);
+            // Only mark offline if it's NOT an auth error and NOT a client error
+            if (err.message && (
+                err.message.includes('authorized') ||
+                err.message.includes('permission') ||
+                err.message.includes('401') ||
+                err.message.includes('403')
+            )) {
+                // Auth error - we are Online, just unauthorized for this specific call
+                setIsOnline(true);
+            } else {
+                // Genuine network/server error
+                setIsOnline(false);
+            }
         }
-    }, [selectedTempleId, user]);
+    }, [selectedTempleId, user, authLoading]);
+
 
     // Initial Fetch & Interval
     useEffect(() => {
@@ -156,9 +180,16 @@ function GatekeeperContent() {
     const startCamera = async () => {
         try {
             const { Html5Qrcode } = await import('html5-qrcode');
-            if (scannerContainerRef.current && !scannerRef.current) {
-                scannerRef.current = new Html5Qrcode('qr-scanner-gk');
-                await scannerRef.current.start(
+            if (scannerContainerRef.current) {
+                // Ensure any previous instance is stopped
+                if (scannerRef.current) {
+                    await stopCamera();
+                }
+
+                const scanner = new Html5Qrcode('qr-scanner-gk');
+                scannerRef.current = scanner;
+
+                await scanner.start(
                     { facingMode: 'environment' },
                     { fps: 15, qrbox: { width: 280, height: 280 }, aspectRatio: 1 },
                     onScanSuccess,
@@ -167,9 +198,21 @@ function GatekeeperContent() {
                 setIsCameraActive(true);
                 setCameraError(null);
             }
-        } catch (_err) {
+        } catch (_err: any) {
             console.error("Camera start failed", _err);
-            setCameraError("Camera access denied or unavailable.");
+            let errorMessage = "Camera access unavailable.";
+
+            if (_err.name === 'NotAllowedError') {
+                errorMessage = "Camera permission denied. Please allow access in browser settings.";
+            } else if (_err.name === 'NotFoundError') {
+                errorMessage = "No camera device found.";
+            } else if (_err.name === 'NotReadableError') {
+                errorMessage = "Camera is in use by another app. Please close other apps/tabs using camera.";
+            } else if (_err.name === 'OverconstrainedError') {
+                errorMessage = "Camera constraints not satisfied.";
+            }
+
+            setCameraError(errorMessage);
             setIsCameraActive(false);
         }
     };
@@ -212,13 +255,13 @@ function GatekeeperContent() {
             console.log('🔍 Raw Scan Data:', passId);
 
             // Parse QR code - it might be JSON or plain passId
-            let actualPassId = passId.trim();
+            let actualPassId = passId.trim().replace(/\s+/g, ''); // Remove ALL whitespace
             try {
                 // Try parsing as JSON first (e.g. {"id":"PAS-123","t":"Temp1"})
                 const qrData = JSON.parse(passId);
                 // Extract passId from JSON structure
                 // Common patterns: id, passId, _id
-                actualPassId = qrData.id || qrData.passId || qrData._id || passId.trim();
+                actualPassId = (qrData.id || qrData.passId || qrData._id || passId.trim()).replace(/\s+/g, ''); // Remove spaces
                 console.log('✅ QR Parsed as JSON:', qrData, 'Derived PassID:', actualPassId);
             } catch {
                 // Not JSON, treat as raw text (e.g. "PAS-123")
@@ -226,36 +269,55 @@ function GatekeeperContent() {
             }
 
             // A. Check Temple Selection
-            if (!currentTempleId) throw new Error("Please select a temple first.");
+            if (!currentTempleId) {
+                console.error('❌ No temple selected');
+                throw new Error("SELECT TEMPLE|Please select a temple from the dropdown first");
+            }
 
             // B. Fetch Booking using extracted passId
-            console.log(`🚀 Verifying PassID: ${actualPassId}`);
-            const res = await bookingsApi.getByPassId(actualPassId);
+            console.log(`🚀 Verifying PassID: ${actualPassId} at temple: ${currentTempleId}`);
 
-            if (!res.success || !res.data) {
-                console.error("❌ API verification failed:", res);
-                throw new Error(res.success === false ? "Invalid Pass ID (Not Found)" : "Server Error");
+            let res;
+            try {
+                res = await bookingsApi.getByPassId(actualPassId);
+                console.log('✅ Booking API Response:', res);
+            } catch (apiError: any) {
+                console.error("❌ API Call Failed:", apiError);
+                throw new Error(`SERVER ERROR|${apiError.message || 'Cannot connect to server'}. Ensure backend is running.`);
+            }
+
+            if (!res || !res.success || !res.data) {
+                console.error("❌ Invalid API response:", res);
+                throw new Error("INVALID PASS|Pass ID not found in system");
             }
 
             const booking = res.data;
+            console.log('📋 Booking Details:', {
+                passId: booking.passId,
+                status: booking.status,
+                temple: booking.temple,
+                date: booking.date
+            });
 
             // C. Validate Temple matching
             // Handle populated vs string temple ID
             const bookingTempleId = typeof booking.temple === 'object' ? booking.temple._id : booking.temple;
             const bookingTempleName = typeof booking.temple === 'object' ? booking.temple.name : 'Another Temple';
 
+            console.log(`🏛️ Temple Check: Booking=${bookingTempleId} vs Selected=${currentTempleId}`);
             if (bookingTempleId !== currentTempleId) {
-                throw new Error(`WRONG TEMPLE|Pass is for: ${bookingTempleName}`);
+                throw new Error(`WRONG TEMPLE|This pass is for: ${bookingTempleName}`);
             }
 
             // E. Validate Status
-            if (booking.status === 'CANCELLED') throw new Error("CANCELLED|Pass has been cancelled.");
-            if (booking.status === 'EXPIRED') throw new Error("EXPIRED|Pass has expired.");
+            console.log(`📊 Status Check: Current=${booking.status}, Mode=${currentScanMode}`);
+            if (booking.status === 'CANCELLED') throw new Error("CANCELLED|This pass has been cancelled");
+            if (booking.status === 'EXPIRED') throw new Error("EXPIRED|This pass has expired");
             if (currentScanMode === 'entry' && booking.status === 'USED') {
-                throw new Error("ALREADY USED|Entry already recorded.");
+                throw new Error("ALREADY USED|Entry already recorded for this pass");
             }
             if (currentScanMode === 'exit' && booking.exitTime) {
-                throw new Error("ALREADY EXIT|Exit already recorded.");
+                throw new Error("ALREADY EXIT|Exit already recorded for this pass");
             }
 
             // G. Validate Date (Must be TODAY)
@@ -266,18 +328,29 @@ function GatekeeperContent() {
             today.setHours(0, 0, 0, 0);
             bookingDate.setHours(0, 0, 0, 0);
 
+            console.log(`📅 Date Check: Booking=${bookingDate.toDateString()} vs Today=${today.toDateString()}`);
             if (bookingDate.getTime() !== today.getTime()) {
-                // Allow "future" bookings? NO. Allow "past"? NO.
-                if (bookingDate < today) throw new Error("EXPIRED DATE|Pass was for a past date.");
+                // WARN but allow scanning for flexibility in testing (or stricter based on requirements)
+                // For now, let's throw ERROR if it's clearly past, but maybe WARNING if future?
+                // Actually, stricty speaking, a pass is only valid for its specific slot.
+                // Let's keep it strict but ensure the error is CLEAR.
+                if (bookingDate < today) throw new Error("EXPIRED DATE|Pass was for a past date");
                 if (bookingDate > today) throw new Error(`FUTURE DATE|Valid for: ${new Date(booking.date).toLocaleDateString()}`);
             }
 
             // F. Process Action
+            console.log(`🎯 Recording ${currentScanMode} for temple ${currentTempleId} with pass ${actualPassId}`);
             let apiRes;
-            if (currentScanMode === 'entry') {
-                apiRes = await liveApi.recordEntry(currentTempleId, actualPassId);
-            } else {
-                apiRes = await liveApi.recordExit(currentTempleId, actualPassId);
+            try {
+                if (currentScanMode === 'entry') {
+                    apiRes = await liveApi.recordEntry(currentTempleId, actualPassId);
+                } else {
+                    apiRes = await liveApi.recordExit(currentTempleId, actualPassId);
+                }
+                console.log(`✅ ${currentScanMode.toUpperCase()} recorded:`, apiRes);
+            } catch (recordError: any) {
+                console.error(`❌ Failed to record ${currentScanMode}:`, recordError);
+                throw new Error(`RECORDING FAILED|${recordError.message || 'Could not record entry/exit'}`);
             }
 
             // G. Success Result
@@ -308,7 +381,7 @@ function GatekeeperContent() {
 
         } catch (err: any) {
             // H. Failure Result
-            console.warn("⚠️ Scan Process Result:", err);
+            console.error("❌ Scan Failed - Full Error:", err);
             const audio = new Audio('/sounds/error.mp3');
             audio.play().catch(() => { });
             if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -317,13 +390,15 @@ function GatekeeperContent() {
             let message = err.message || 'Verification Failed';
             let type: ResultType = 'error';
 
+            // Handle pipe-separated error format (TITLE|MESSAGE)
             if (message.includes('|')) {
                 const parts = message.split('|');
                 title = parts[0];
                 message = parts[1];
             }
 
-            if (title.includes('FUTURE') || title.includes('WRONG TEMPLE')) {
+            // Determine error type
+            if (title.includes('FUTURE') || title.includes('WRONG TEMPLE') || title.includes('SELECT TEMPLE')) {
                 type = 'warning';
             }
 
@@ -335,14 +410,13 @@ function GatekeeperContent() {
             };
             setScanResult(result);
             setRecentScans(prev => [result, ...prev].slice(0, 50));
-            // Force re-enable scanning after delay if needed, but handled by finally
         } finally {
             setIsScanning(false);
             setManualPassId('');
-            // Auto-dismiss result after 3s
+            // Auto-dismiss result after 3.5s
             setTimeout(() => setScanResult(null), 3500);
         }
-    }, [bookingsApi, liveApi]);
+    }, []);
 
     const currentTemple = temples.find(t => t._id === selectedTempleId);
 

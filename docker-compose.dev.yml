@@ -1,13 +1,13 @@
 version: '3.8'
 
 services:
-  mongodb:
+  mongo:
     image: mongo:latest
-    container_name: temple-mongodb-dev
+    container_name: temple-mongo-dev
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
+      - temple-mongo-data-dev:/data/db
     environment:
       - MONGO_INITDB_DATABASE=temple_db
     healthcheck:
@@ -33,25 +33,72 @@ services:
     networks:
       - temple-network
 
+  ml-detection:
+    build:
+      context: ./ml-services/crowd-detection
+      dockerfile: Dockerfile
+    container_name: temple-ml-detection-dev
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./ml-services/crowd-detection/models:/app/models
+    environment:
+      - MODEL_PATH=/app/models
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - temple-network
+
+  ml-forecasting:
+    build:
+      context: ./ml-services/demand-forecasting
+      dockerfile: Dockerfile
+    container_name: temple-ml-forecasting-dev
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./ml-services/demand-forecasting/models:/app/models
+    environment:
+      - MODEL_PATH=/app/models
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - temple-network
+
   backend:
     build: ./backend
     container_name: temple-backend-dev
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
       - NODE_ENV=development
-      - PORT=5000
-      - MONGO_URI=mongodb://mongodb:27017/temple_db
-      - MONGODB_URI=mongodb://mongodb:27017/temple_db
+      - PORT=5001
+      - MONGO_URI=mongodb://mongo:27017/temple_db
+      - MONGODB_URI=mongodb://mongo:27017/temple_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=dev_jwt_secret_change_in_production_ABSOLUTELY
-      - JWT_EXPIRE=30d
+      - ML_DETECTION_URL=http://ml-detection:8000
+      - ML_FORECASTING_URL=http://ml-forecasting:8000
+      - AI_SERVICE_URL=${AI_SERVICE_URL:-http://ml-forecasting:8000}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRE=${JWT_EXPIRE:-30d}
     depends_on:
-      mongodb:
+      mongo:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      ml-detection:
+        condition: service_healthy
+      ml-forecasting:
         condition: service_healthy
     volumes:
       - ./backend:/app
@@ -61,14 +108,14 @@ services:
     networks:
       - temple-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000/" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:5001/api/v1/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
 
 volumes:
-  mongodb_data:
+  temple-mongo-data-dev:
 
 
 networks:

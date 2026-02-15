@@ -24,12 +24,18 @@ exports.createBooking = async (req, res) => {
 
         let { userName, userEmail } = req.body;
 
-        // Fallback to authenticated user details if missing
-        if (!userEmail && req.user) {
+        // SECURITY: If user is logged in, FORCE their identity (prevents spoofing)
+        if (req.user) {
             userEmail = req.user.email;
-        }
-        if (!userName && req.user) {
             userName = req.user.name;
+        }
+
+        // Validate contact details for guests
+        if (!userEmail || !userName) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide name and email for the booking'
+            });
         }
 
         // --- 1. VALIDATE TEMPLE EXISTS ---
@@ -167,17 +173,19 @@ exports.getMyBookings = async (req, res) => {
         const query = {};
 
         if (req.user) {
-            // If authenticated, find by userId OR email (in case legacy data only has email)
+            // STRICT SECURITY: Only match authenticated User ID
+            // We also match email just in case specific old records only have email, 
+            // BUT we only use the email from the TRUSTED req.user object.
             query.$or = [
                 { userId: req.user._id },
                 { userEmail: req.user.email }
             ];
-        } else if (req.query.email) {
-            // Fallback for non-auth calls (if any, though this route is private)
-            query.userEmail = req.query.email;
         } else {
-            return res.status(400).json({ error: 'User must be logged in or provide email' });
+            // Should never happen due to 'protect' middleware, but good safety net
+            return res.status(401).json({ error: 'User must be logged in' });
         }
+
+        console.log(`🔍 getMyBookings Query:`, JSON.stringify(query, null, 2));
 
         const bookings = await Booking.find(query)
             .populate('temple', 'name location')
@@ -209,10 +217,13 @@ exports.cancelBooking = async (req, res) => {
         }
 
         // Authorization: User owns booking or is admin
-        const isOwner = booking.userEmail === req.user.email;
         const isAdmin = req.user.role === 'admin';
 
-        if (!isOwner && !isAdmin) {
+        // Check ownership (ID preference, Email fallback)
+        const isOwnerId = booking.userId && booking.userId.toString() === req.user.id;
+        const isOwnerEmail = booking.userEmail === req.user.email;
+
+        if (!isAdmin && !isOwnerId && !isOwnerEmail) {
             return res.status(403).json({
                 success: false,
                 error: 'Not authorized to cancel this booking'
@@ -338,14 +349,18 @@ exports.checkAvailability = async (req, res) => {
 exports.getBookingByPassId = async (req, res) => {
     try {
         const { passId } = req.params;
+        console.log(`🔍 [API] Looking up booking with Pass ID: "${passId}"`);
 
         const booking = await Booking.findOne({ passId })
             .populate('temple', 'name location capacity');
 
+        console.log(`✅ [API] Lookup result:`, booking ? 'Found' : 'Not Found');
+
         if (!booking) {
+            console.log(`❌ [API] Booking not found for Pass ID: "${passId}"`);
             return res.status(404).json({
                 success: false,
-                error: 'Booking not found - Invalid QR code'
+                error: `Booking not found for ID: ${passId}`
             });
         }
 
@@ -379,10 +394,17 @@ exports.getBooking = async (req, res) => {
         }
 
         // Authorization check
-        const isOwner = booking.userEmail === req.user.email;
+        // 1. Admin always has access
         const isAdmin = req.user.role === 'admin';
 
-        if (!isOwner && !isAdmin) {
+        // 2. Check ownership via User ID (Strongest link)
+        const isOwnerId = booking.userId && booking.userId.toString() === req.user.id;
+
+        // 3. Fallback: Check ownership via Email (Legacy/Guest compliance)
+        const isOwnerEmail = booking.userEmail === req.user.email;
+
+        if (!isAdmin && !isOwnerId && !isOwnerEmail) {
+            console.warn(`⚠️ Unauthorized access attempt by ${req.user.email} for booking ${booking._id}`);
             return res.status(403).json({
                 success: false,
                 error: 'Not authorized to view this booking'
