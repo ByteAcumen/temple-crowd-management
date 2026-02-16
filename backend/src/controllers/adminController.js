@@ -699,3 +699,107 @@ exports.getSystemHealth = async (req, res) => {
         });
     }
 };
+
+// @desc    Search Devotees (for Gatekeeper Manual Entry)
+// @route   GET /api/v1/admin/devotees/search
+// @access  Private (Admin/Gatekeeper)
+exports.searchDevotees = async (req, res) => {
+    try {
+        const { query } = req.query;
+
+        if (!query || query.length < 3) {
+            return res.status(400).json({
+                success: false,
+                error: 'Search query must be at least 3 characters'
+            });
+        }
+
+        // 1. Find Users matching Name, Email, or Phone
+        // Using $regex for partial match, case insensitive
+        const users = await User.find({
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { email: { $regex: query, $options: 'i' } },
+                { phone: { $regex: query, $options: 'i' } }
+            ]
+        }).select('_id name email phone');
+
+        if (users.length === 0) {
+            return res.status(200).json({
+                success: true,
+                count: 0,
+                data: []
+            });
+        }
+
+        // 2. Find Active Bookings for these users for TODAY
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const tomorrowStart = new Date(todayStart);
+        tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+        const userIds = users.map(u => u._id);
+        const userEmails = users.map(u => u.email);
+
+        const bookings = await Booking.find({
+            $or: [
+                { userId: { $in: userIds } },
+                { userEmail: { $in: userEmails } }
+            ],
+            date: { $gte: todayStart, $lt: tomorrowStart },
+            status: { $in: ['CONFIRMED', 'USED'] } // Show confirmed AND already entered
+        }).populate('temple', 'name location');
+
+        // 3. Merge Data
+        const results = users.map(user => {
+            const userBookings = bookings.filter(b =>
+                (b.userId && b.userId.toString() === user._id.toString()) ||
+                b.userEmail === user.email
+            );
+
+            return {
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone
+                },
+                bookings: userBookings
+            };
+        }).filter(item => item.bookings.length > 0); // Only return users with bookings today? 
+        // Actually, maybe gatekeeper wants to see user exists even if no booking?
+        // Let's return all found users, but flag if they have bookings.
+        // The filter above hides users without bookings. 
+        // Better to show them but indicate "No Booking Today".
+
+        const finalResults = users.map(user => {
+            const userBookings = bookings.filter(b =>
+                (b.userId && b.userId.toString() === user._id.toString()) ||
+                b.userEmail === user.email
+            );
+            return {
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone
+                },
+                bookings: userBookings
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            count: finalResults.length,
+            data: finalResults
+        });
+
+    } catch (error) {
+        console.error('❌ Error searching devotees:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Search failed'
+        });
+    }
+};

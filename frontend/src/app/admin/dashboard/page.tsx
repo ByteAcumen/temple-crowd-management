@@ -239,6 +239,9 @@ function AdminDashboardContent() {
                         <Link href="/admin/live" className="px-6 py-3 bg-white/10 text-white font-bold rounded-xl border border-white/20 hover:bg-white/20 transition-all backdrop-blur-md flex items-center gap-2">
                             <span>📡</span> Live Monitor
                         </Link>
+                        <Link href="/gatekeeper" className="px-6 py-3 bg-white/10 text-white font-bold rounded-xl border border-white/20 hover:bg-white/20 transition-all backdrop-blur-md flex items-center gap-2">
+                            <span>📷</span> Scan Ticket
+                        </Link>
                     </div>
                 </div>
             </motion.div>

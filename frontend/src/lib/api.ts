@@ -314,16 +314,16 @@ export interface Temple {
     images?: string[];
     location: {
         address?: string;
-        city?: string;
+        city: string;
         state?: string;
         coordinates?: { latitude: number; longitude: number };
-    } | string;
+    };
     capacity: {
         total: number;
         per_slot: number;
         threshold_warning?: number;
         threshold_critical?: number;
-    } | number;
+    };
     currentOccupancy?: number;
     live_count?: number;
     status: 'OPEN' | 'CLOSED' | 'MAINTENANCE';
@@ -660,6 +660,11 @@ export const adminApi = {
     // Server health check (root endpoint)
     healthCheck: async (): Promise<any> => {
         return apiRequest('/', { method: 'GET' });
+    },
+
+    // Search Devotees (Gatekeeper)
+    searchDevotees: async (query: string): Promise<{ success: boolean; count: number; data: Array<{ user: User; bookings: Booking[] }> }> => {
+        return apiRequest(`/admin/devotees/search?query=${encodeURIComponent(query)}`);
     },
 };
 

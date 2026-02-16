@@ -10,7 +10,8 @@ const {
     getSystemHealth,
     getAdminUsers,
     updateUserTemples,
-    deleteUser
+    deleteUser,
+    searchDevotees
 } = require('../controllers/adminController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -44,6 +45,9 @@ router.post('/users', createUser);
 router.get('/admins', getAdminUsers);                    // List all admins (Super Admin)
 router.put('/users/:id/temples', updateUserTemples);     // Assign temples (Super Admin)
 router.delete('/users/:id', deleteUser);                 // Delete user (Super Admin)
+
+// Gatekeeper Search
+router.get('/devotees/search', searchDevotees);
 
 // Booking Management
 router.get('/bookings', getBookingManagement);

@@ -114,6 +114,30 @@ services:
       retries: 3
       start_period: 60s
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: deps
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5001/api/v1
+    container_name: temple-frontend-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:5001/api/v1
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - temple-network
+    command: npm run dev
+
 volumes:
   temple-mongo-data-dev:
 

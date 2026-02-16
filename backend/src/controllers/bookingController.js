@@ -22,21 +22,17 @@ exports.createBooking = async (req, res) => {
         // Support both 'slot' and 'timeSlot' field names for compatibility
         const slot = req.body.slot || req.body.timeSlot;
 
-        let { userName, userEmail } = req.body;
-
-        // SECURITY: If user is logged in, FORCE their identity (prevents spoofing)
-        if (req.user) {
-            userEmail = req.user.email;
-            userName = req.user.name;
-        }
-
-        // Validate contact details for guests
-        if (!userEmail || !userName) {
-            return res.status(400).json({
+        // STRONGLY ENFORCE AUTHENTICATION
+        // User must be logged in to book preventing "guest" bookings or spoofing
+        if (!req.user) {
+            return res.status(401).json({
                 success: false,
-                error: 'Please provide name and email for the booking'
+                error: 'Authentication required. Please log in to book.'
             });
         }
+
+        const userEmail = req.user.email;
+        const userName = req.user.name;
 
         // --- 1. VALIDATE TEMPLE EXISTS ---
         const temple = await Temple.findById(templeId);

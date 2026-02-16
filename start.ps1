@@ -245,25 +245,14 @@ if (-not $SkipTests) {
     }
 }
 
-# ============================================
-# START FRONTEND
-# ============================================
+# Wait for Frontend
+Write-Step "Waiting for Frontend ($FRONTEND_PORT)..."
+$frontendHealthy = Wait-ForService -Name "Frontend" -Url "http://localhost:$FRONTEND_PORT" -TimeoutSeconds 120
 
-Write-Header "STARTING FRONTEND"
-
-$frontendPath = Join-Path $PROJECT_ROOT "frontend"
-
-if (Test-Path $frontendPath) {
-    Write-Step "Launching Frontend in new window..."
-    
-    # Start npm run dev in a new persistent window
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$frontendPath'; Write-Host 'Starting Frontend...' -ForegroundColor Cyan; npm run dev" -WindowStyle Normal
-    
-    Write-Pass "Frontend launch initiated"
-    Write-Info "Frontend will be available at http://localhost:3000"
-}
-else {
-    Write-Fail "Frontend directory not found at $frontendPath"
+if (-not $frontendHealthy) {
+    Write-Fail "Frontend failed to start. Checking logs..."
+    docker logs temple-frontend --tail 50
+    # We don't exit here, as the backend might still be usable
 }
 
 # ============================================

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Temple, bookingsApi } from '@/lib/api'; // Assuming bookingsApi has getAllTemples or similar, checking api.ts...
+import { Temple } from '@/lib/api'; // Assuming bookingsApi has getAllTemples or similar, checking api.ts...
 // If not, we might need a templesApi. But checking `dashboard/page` it uses `bookingsApi`.
 // Let's assume we need to extend api.ts or verify if getTemples exists.
 // Wait, I haven't checked api.ts for `templesApi`.
@@ -124,7 +124,7 @@ export default function TemplesPage() {
                                     {/* Status Badge */}
                                     <div className="absolute top-4 right-4">
                                         <span className="px-3 py-1 bg-white/90 backdrop-blur text-xs font-bold rounded-full text-slate-800 shadow-lg">
-                                            OPEN: {temple.operatingHours.open} - {temple.operatingHours.close}
+                                            OPEN: {temple.operatingHours?.regular?.opens || '06:00'} - {temple.operatingHours?.regular?.closes || '21:00'}
                                         </span>
                                     </div>
                                 </div>
