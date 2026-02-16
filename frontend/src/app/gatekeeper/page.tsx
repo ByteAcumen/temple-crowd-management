@@ -60,7 +60,15 @@ export default function GatekeeperPage() {
     }, []);
 
     if (!user || (user.role !== 'gatekeeper' && user.role !== 'admin' && !user.isSuperAdmin)) {
-        return <div className="p-10 text-center text-white">Access Denied</div>;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-10">
+                <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+                <p className="text-slate-400 mb-8">You do not have permission to view this page.</p>
+                <div className="bg-slate-800 p-4 rounded-lg font-mono text-xs">
+                    Role: {user?.role || 'Guest'}
+                </div>
+            </div>
+        );
     }
 
     const currentTemple = temples.find(t => t._id === selectedTempleId);
@@ -175,7 +183,7 @@ export default function GatekeeperPage() {
                                                 setShowTempleSelector(false);
                                             }}
                                             className={`p-4 rounded-2xl border text-left transition-all ${selectedTempleId === t._id
-                                                ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30'
+                                                ? 'bg-orange-50 border-orange-500 text-white shadow-lg shadow-orange-500/30'
                                                 : 'bg-white border-slate-200 hover:border-orange-300'
                                                 }`}
                                         >
@@ -232,7 +240,6 @@ export default function GatekeeperPage() {
                     >
                         {activeTab === 'scan' ? (
                             <ScanTab
-                                temples={temples}
                                 selectedTempleId={selectedTempleId}
                                 onScanSuccess={(type) => incrementStats(type || 'entry')}
                             />

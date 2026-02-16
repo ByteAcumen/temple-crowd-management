@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Temple } from '@/lib/api'; // Assuming bookingsApi has getAllTemples or similar, checking api.ts...
 // If not, we might need a templesApi. But checking `dashboard/page` it uses `bookingsApi`.
 // Let's assume we need to extend api.ts or verify if getTemples exists.

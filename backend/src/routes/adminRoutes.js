@@ -27,6 +27,11 @@ const { protect, authorize } = require('../middleware/auth');
 
 // Protect all admin routes
 router.use(protect);
+
+// Gatekeeper Search - Must be defined BEFORE specific admin-only authorization
+router.get('/devotees/search', authorize('admin', 'gatekeeper'), searchDevotees);
+
+// Require Admin role for all subsequent routes
 router.use(authorize('admin'));
 
 // Dashboard & Statistics
@@ -46,8 +51,8 @@ router.get('/admins', getAdminUsers);                    // List all admins (Sup
 router.put('/users/:id/temples', updateUserTemples);     // Assign temples (Super Admin)
 router.delete('/users/:id', deleteUser);                 // Delete user (Super Admin)
 
-// Gatekeeper Search
-router.get('/devotees/search', searchDevotees);
+// Booking Management
+router.get('/bookings', getBookingManagement);
 
 // Booking Management
 router.get('/bookings', getBookingManagement);

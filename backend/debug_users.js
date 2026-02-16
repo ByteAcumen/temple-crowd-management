@@ -18,7 +18,7 @@ const User = mongoose.model('User', UserSchema);
 const connectDB = async () => {
     try {
         // Try localhost default if env not set
-        const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/temple-pass';
+        const uri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/temple-pass';
         console.log(`Checking DB at: ${uri}`);
         const conn = await mongoose.connect(uri);
         console.log(`MongoDB Connected: ${conn.connection.host}`);

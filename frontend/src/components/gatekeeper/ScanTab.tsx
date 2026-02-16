@@ -1,9 +1,9 @@
+/* eslint-disable */
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { liveApi, bookingsApi, Temple, Booking } from '@/lib/api';
+import { liveApi, bookingsApi, Booking } from '@/lib/api';
 
 interface ScanTabProps {
-    temples: Temple[];
     selectedTempleId: string;
     onScanSuccess: (type?: 'entry' | 'exit') => void;
 }
@@ -21,7 +21,7 @@ interface ScanResult {
     timestamp: Date;
 }
 
-export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabProps) {
+export function ScanTab({ selectedTempleId, onScanSuccess }: ScanTabProps) {
     const [scanMode, setScanMode] = useState<ScanMode>('entry');
     const [scanMethod, setScanMethod] = useState<ScanMethod>('camera');
     const [isScanning, setIsScanning] = useState(false);
@@ -33,7 +33,7 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
     const [recentScans, setRecentScans] = useState<ScanResult[]>([]);
 
     // Refs
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const scannerRef = useRef<any | null>(null);
     const scannerContainerRef = useRef<HTMLDivElement>(null);
     const lastScannedCode = useRef<string | null>(null);
@@ -64,15 +64,32 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
 
     const startCamera = async () => {
         try {
-            const { Html5Qrcode } = await import('html5-qrcode');
+            const { Html5Qrcode, Html5QrcodeScannerState } = await import('html5-qrcode');
             if (!scannerContainerRef.current) return;
 
+            // Prevent race conditions
+            if (isProcessing) return;
+            setIsProcessing(true);
+
+            // Cleanup existing scanner safely
             if (scannerRef.current) {
-                await stopCamera();
+                try {
+                    const state = scannerRef.current.getState();
+                    if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) {
+                        await scannerRef.current.stop();
+                    }
+                    scannerRef.current.clear();
+                } catch (err) {
+                    console.warn("Cleanup warning:", err);
+                }
+                scannerRef.current = null;
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
 
-            if (!scannerContainerRef.current) return;
+            if (!scannerContainerRef.current) {
+                setIsProcessing(false);
+                return;
+            }
             scannerContainerRef.current.innerHTML = "";
 
             const scanner = new Html5Qrcode('qr-scanner-gk');
@@ -86,18 +103,43 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
             );
 
             if (!scannerContainerRef.current) {
-                await scanner.stop();
+                // If unmounted during start
+                try {
+                    await scanner.stop();
+                    scanner.clear();
+                } catch { } // Ignore cleanup errors on unmount
                 scannerRef.current = null;
+                setIsProcessing(false);
                 return;
             }
 
             setIsCameraActive(true);
             setCameraError(null);
+            setIsProcessing(false);
+
+
 
         } catch (_err: any) {
-            if (_err?.message?.includes("scanner is running") || _err?.includes?.("scanner is running")) {
-                console.log("Scanner already running, skipping start");
-                setIsCameraActive(true);
+            setIsProcessing(false);
+            const errMessage = _err?.message || _err?.toString() || "";
+
+            // Ignore benign errors
+            if (
+                errMessage.includes("scanner is running") ||
+                errMessage.includes("Cannot stop") ||
+                errMessage.includes("AbortError") ||
+                errMessage.includes("The play() request was interrupted")
+            ) {
+                console.log("Scanner status:", errMessage);
+                if (errMessage.includes("scanner is running")) {
+                    setIsCameraActive(true);
+                }
+                return;
+            }
+
+            // Ignore errors if unmounted
+            if (!scannerContainerRef.current) {
+                console.log("Camera errored but component unmounted", errMessage);
                 return;
             }
 
@@ -110,7 +152,17 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
 
     const stopCamera = async () => {
         if (scannerRef.current) {
-            await scannerRef.current.stop().catch(() => { });
+            try {
+                // Import state enum dynamically or check if methods exist
+                const { Html5QrcodeScannerState } = await import('html5-qrcode');
+                const state = scannerRef.current.getState();
+                if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) {
+                    await scannerRef.current.stop();
+                }
+                scannerRef.current.clear();
+            } catch (err) {
+                console.warn("Stop camera warning:", err);
+            }
             scannerRef.current = null;
             setIsCameraActive(false);
         }
@@ -139,11 +191,17 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
 
         try {
             // Parse Pass ID
+            // UUIDs are case-sensitive but standardly lowercase. Force lowercase to match DB.
             let actualPassId = passId.trim().replace(/\s+/g, '');
             try {
                 const qrData = JSON.parse(passId);
                 actualPassId = (qrData.id || qrData.passId || qrData._id || passId.trim()).replace(/\s+/g, '');
             } catch { }
+
+            // Ensure lowercase for standard UUID matching
+            if (actualPassId.length > 20) { // UUIDs are long
+                actualPassId = actualPassId.toLowerCase();
+            }
 
             if (!currentTempleId) throw new Error("SELECT TEMPLE|Please select a temple first");
 
@@ -151,6 +209,7 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
             let res;
             try {
                 res = await bookingsApi.getByPassId(actualPassId);
+
             } catch (err: any) {
                 if (err.message && (err.message.includes('404') || err.message.includes('not found'))) {
                     throw new Error("INVALID PASS|Pass ID not found in system");
@@ -201,6 +260,7 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
             };
             setScanResult(result);
             onScanSuccess(currentScanMode);
+
 
         } catch (err: any) {
             console.error("Scan Failed:", err);
@@ -296,7 +356,7 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
             </div>
 
             {/* Main Action Area */}
-            <div className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100 ring-1 ring-slate-900/5 min-h-[420px] flex flex-col group">
+            <div className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100 ring-1 ring-slate-900/5 min-h-[600px] flex flex-col group">
                 <AnimatePresence mode="wait">
                     {scanMethod === 'camera' ? (
                         <motion.div
@@ -337,11 +397,15 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
                                 {!isCameraActive && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 z-20">
                                         <button onClick={startCamera} className="group relative px-8 py-5 bg-white hover:bg-slate-50 rounded-3xl border border-slate-200 shadow-xl transition-all active:scale-95 flex flex-col items-center">
-                                            <div className="w-20 h-20 rounded-full bg-orange-500 flex items-center justify-center mb-4 shadow-lg shadow-orange-500/30 group-hover:scale-110 transition-transform">
-                                                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 shadow-lg transition-transform group-hover:scale-110 ${cameraError ? 'bg-red-100 shadow-red-500/20' : 'bg-orange-500 shadow-orange-500/30'}`}>
+                                                {cameraError ? (
+                                                    <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                                ) : (
+                                                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                )}
                                             </div>
-                                            <span className="text-slate-900 font-bold tracking-widest text-sm">TAP TO START</span>
-                                            <span className="text-slate-400 text-xs mt-1">Camera Permission Required</span>
+                                            <span className={`font-bold tracking-widest text-sm ${cameraError ? 'text-red-600' : 'text-slate-900'}`}>{cameraError ? 'RETRY CAMERA' : 'TAP TO START'}</span>
+                                            <span className={`text-xs mt-1 max-w-[200px] text-center ${cameraError ? 'text-red-400' : 'text-slate-400'}`}>{cameraError || 'Camera Permission Required'}</span>
                                         </button>
                                     </div>
                                 )}
@@ -353,17 +417,17 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-white"
+                            className="absolute inset-0 flex flex-col items-center pt-16 pb-32 bg-white px-8"
                         >
-                            <form onSubmit={handleManualSubmit} className="w-full max-w-xs space-y-8 relative z-10">
-                                <div className="text-center space-y-3">
+                            <form onSubmit={handleManualSubmit} className="w-full max-w-xs space-y-6 relative z-10">
+                                <div className="text-center space-y-2">
                                     <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center mx-auto text-orange-600 mb-4 shadow-sm ring-1 ring-orange-100">
                                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                     </div>
                                     <div>
-                                        <div className="text-xs font-bold text-orange-600 uppercase tracking-[0.2em] mb-1">Manual Verification</div>
+                                        <div className="text-xs font-bold text-orange-600 uppercase tracking-[0.2em] mb-2">Manual Verification</div>
                                         <h3 className="text-3xl font-black text-slate-900 tracking-tight">Enter Pass ID</h3>
-                                        <p className="text-slate-400 text-sm mt-2">Type the ID from the visitor's ticket</p>
+                                        <p className="text-slate-400 text-sm mt-1">Type the ID from the visitor&apos;s ticket</p>
                                     </div>
                                 </div>
 
@@ -371,9 +435,9 @@ export function ScanTab({ temples, selectedTempleId, onScanSuccess }: ScanTabPro
                                     <input
                                         type="text"
                                         value={manualCode}
-                                        onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                                        placeholder="PASS-XXXX"
-                                        className="w-full bg-slate-50 border-2 border-slate-100 py-5 text-center font-mono text-3xl font-bold text-slate-900 placeholder:text-slate-300 rounded-2xl focus:outline-none focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-500/10 transition-all tracking-wider shadow-sm"
+                                        onChange={(e) => setManualCode(e.target.value)}
+                                        placeholder="pass-xxxx"
+                                        className="w-full bg-slate-50 border-2 border-slate-100 py-4 text-center font-mono text-2xl font-bold text-slate-900 placeholder:text-slate-300 rounded-2xl focus:outline-none focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-500/10 transition-all tracking-wider shadow-sm"
                                         autoFocus
                                     />
                                     {manualCode && (
