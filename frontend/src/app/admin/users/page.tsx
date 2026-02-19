@@ -1,244 +1,175 @@
 'use client';
 
-// Temple Smart E-Pass - Admin User Management
-// Super Admin only - Manage temple admins and gatekeepers
-// Premium Redesign (Light Theme)
+// Temple Smart E-Pass — Admin Users & Roles Management
+// Premium redesign: stat bar, animated table, create modal, assign temples modal, delete
 
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/lib/protected-route';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { adminApi, templesApi, Temple, User } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { BackendStatusBar } from '@/components/admin/BackendStatusBar';
-import { StatCard as SharedStatCard } from '@/components/admin/StatCard';
-import { StatCardSkeleton } from '@/components/admin/LoadingSkeleton';
+import {
+    Users, Crown, Building2, Search, Plus, AlertCircle, CheckCircle2,
+    X, Shield, Key, Mail, User as UserIcon, Lock, Loader2,
+    RefreshCw, Trash2, ChevronDown, Eye, EyeOff,
+} from 'lucide-react';
 
-// Animation Variants
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: { staggerChildren: 0.1 }
-    }
+/* ─── role config ─── */
+const ROLE_CONFIG: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
+    super_admin: { label: 'Super Admin', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
+    admin: { label: 'Temple Admin', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
+    gatekeeper: { label: 'Gatekeeper', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
 };
+const getRoleCfg = (u: User) =>
+    u.isSuperAdmin ? ROLE_CONFIG['super_admin'] : ROLE_CONFIG[u.role] || ROLE_CONFIG['admin'];
 
-const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.4 }
-    }
-};
+/* ─── avatar colour pool ─── */
+const AVATAR_COLORS = [
+    'from-indigo-400 to-blue-500',
+    'from-emerald-400 to-teal-500',
+    'from-amber-400 to-orange-500',
+    'from-pink-400 to-rose-500',
+    'from-purple-400 to-violet-500',
+    'from-cyan-400 to-sky-500',
+];
+const avatarGradient = (name: string) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 
-// Interfaces
-interface CreateAdminModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSubmit: (e: React.FormEvent) => Promise<void>;
-    formData: any;
-    setFormData: (data: any) => void;
-}
-
-interface AssignTemplesModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (ids: string[]) => Promise<void>;
-    user: User | null;
-    temples: Temple[];
-}
-
-
+/* ══════════════════════════ MAIN COMPONENT ══════════════════════════ */
 function AdminUsersContent() {
     const { user, isLoading } = useAuth();
+
     const [admins, setAdmins] = useState<User[]>([]);
     const [temples, setTemples] = useState<Temple[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showAssignModal, setShowAssignModal] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const [demoMode, setDemoMode] = useState(false);
-    const [apiError, setApiError] = useState<string | null>(null);
+    const [search, setSearch] = useState('');
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-    // Create form state
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        role: 'admin',
-        isSuperAdmin: false,
-        assignedTemples: [] as string[]
+    const [showCreate, setShowCreate] = useState(false);
+    const [showAssign, setShowAssign] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
+    /* ─ form state ─ */
+    const [form, setForm] = useState({
+        name: '', email: '', password: '', role: 'admin', isSuperAdmin: false,
     });
+    const [formLoading, setFormLoading] = useState(false);
+    const [showPw, setShowPw] = useState(false);
 
-    // Fetch data with Demo Mode Fallback
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                setLoading(true);
-                setApiError(null);
-                setDemoMode(false);
-
-                // Fetch temples first
-                const templesRes = await templesApi.getAll();
-                if (templesRes.success) {
-                    setTemples(templesRes.data);
-                }
-
-                // Fetch admin + gatekeeper users for super admin user management
-                if (user?.isSuperAdmin) {
-                    const usersRes = await adminApi.getUsers();
-                    if (usersRes.success && usersRes.data) {
-                        const staff = usersRes.data.filter((u: User) => u.role === 'admin' || u.role === 'gatekeeper');
-                        setAdmins(staff);
-                    }
-                    setLastUpdated(new Date());
-                }
-            } catch (err: unknown) {
-                const errorMessage = err instanceof Error ? err.message : String(err);
-                console.error('Error fetching admin data:', errorMessage);
-
-                // Switch to Demo Mode if backend fails
-                if (user?.isSuperAdmin) {
-                    console.warn('⚠️ Backend unreachable. Switching to Demo Mode.');
-                    setApiError(errorMessage || 'Backend unreachable');
-                    setDemoMode(true);
-
-                    // Mock Data
-                    setAdmins([
-                        { _id: '1', id: '1', name: 'Demo Super Admin', email: 'super@demo.com', role: 'admin', isSuperAdmin: true },
-                        { _id: '2', id: '2', name: 'Temple Manager', email: 'manager@demo.com', role: 'admin', isSuperAdmin: false, assignedTemples: ['1'] },
-                        { _id: '3', id: '3', name: 'Gate Keeper', email: 'gate@demo.com', role: 'gatekeeper', isSuperAdmin: false, assignedTemples: ['2'] }
-                    ] as User[]);
-
-                    setTemples([
-                        { _id: '1', name: 'Somnath Temple', location: { city: 'Veraval' } },
-                        { _id: '2', name: 'Kashi Vishwanath', location: { city: 'Varanasi' } }
-                    ] as Temple[]);
-                }
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        if (!isLoading && user) {
-            fetchData();
-        }
-    }, [user, isLoading]);
-
-    // Filter admins by search query
-    const filteredAdmins = admins.filter(admin =>
-        admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        admin.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    // Handlers
-    const handleCreateUser = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setSuccess('');
-
-        if (demoMode) {
-            setSuccess('Demo Mode: User created successfully (simulated)');
-            setShowCreateModal(false);
-            return;
-        }
-
+    /* ─── fetch ─── */
+    const fetchData = useCallback(async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
-            const res = await adminApi.createUser(formData);
-            if (res.success) {
-                setAdmins(prev => [res.data, ...prev]);
-                setSuccess('Admin created successfully');
-                setShowCreateModal(false);
-                setFormData({ name: '', email: '', password: '', role: 'admin', isSuperAdmin: false, assignedTemples: [] });
+            const [tRes, uRes] = await Promise.all([
+                templesApi.getAll(),
+                adminApi.getUsers(),
+            ]);
+            if (tRes.success) setTemples(tRes.data || []);
+            if (uRes.success && uRes.data) {
+                setAdmins(uRes.data.filter((u: User) => u.role === 'admin' || u.role === 'gatekeeper'));
             }
-        } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            setError(errorMessage || 'Failed to create user');
+            setLastUpdated(new Date());
+        } catch (e: any) {
+            setError(e.message || 'Failed to load users');
+        } finally {
+            setLoading(false);
         }
+    }, []);
+
+    useEffect(() => { if (!isLoading && user) fetchData(); }, [user, isLoading, fetchData]);
+
+    /* auto-clear toasts */
+    useEffect(() => {
+        if (!success && !error) return;
+        const t = setTimeout(() => { setSuccess(''); setError(''); }, 4000);
+        return () => clearTimeout(t);
+    }, [success, error]);
+
+    /* ─── computed ─── */
+    const filtered = admins.filter(a =>
+        a.name.toLowerCase().includes(search.toLowerCase()) ||
+        a.email.toLowerCase().includes(search.toLowerCase())
+    );
+    const superAdminCount = admins.filter(a => a.isSuperAdmin).length;
+    const adminCount = admins.filter(a => a.role === 'admin' && !a.isSuperAdmin).length;
+    const gatekeeperCount = admins.filter(a => a.role === 'gatekeeper').length;
+
+    /* ─── handlers ─── */
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFormLoading(true);
+        try {
+            const res = await adminApi.createUser(form);
+            if (res.success) {
+                setAdmins(p => [res.data, ...p]);
+                setSuccess(`${res.data.name} created successfully`);
+                setShowCreate(false);
+                setForm({ name: '', email: '', password: '', role: 'admin', isSuperAdmin: false });
+            }
+        } catch (e: any) { setError(e.message || 'Failed to create user'); }
+        finally { setFormLoading(false); }
     };
 
-    const handleUpdateTemples = async (templeIds: string[]) => {
+    const handleAssign = async (templeIds: string[]) => {
         if (!selectedUser) return;
-        setError('');
-
-        if (demoMode) {
-            setSuccess('Demo Mode: Assignments updated (simulated)');
-            setShowAssignModal(false);
-            return;
-        }
-
         try {
-            const res = await adminApi.updateUserTemples(selectedUser._id || selectedUser.id, {
-                assignedTemples: templeIds
-            });
+            const uid = selectedUser._id || selectedUser.id;
+            const res = await adminApi.updateUserTemples(uid, { assignedTemples: templeIds });
             if (res.success) {
-                setAdmins(prev => prev.map(a =>
-                    (a._id || a.id) === (selectedUser._id || selectedUser.id) ? res.data : a
-                ));
-                setSuccess('Temple assignments updated');
-                setShowAssignModal(false);
+                setAdmins(p => p.map(a => (a._id || a.id) === uid ? res.data : a));
+                setSuccess('Temple assignments saved');
+                setShowAssign(false);
                 setSelectedUser(null);
             }
-        } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            setError(errorMessage || 'Failed to update assignments');
-        }
+        } catch (e: any) { setError(e.message || 'Failed to update assignments'); }
     };
 
-    const handleDeleteUser = async (userId: string) => {
-        if (!confirm('Are you sure you want to delete this user?')) return;
-
-        if (demoMode) {
-            setAdmins(prev => prev.filter(a => (a._id || a.id) !== userId));
-            setSuccess('Demo Mode: User deleted (simulated)');
-            return;
-        }
-
+    const handleDelete = async (u: User) => {
+        const uid = u._id || u.id;
+        if (!confirm(`Delete "${u.name}"? This cannot be undone.`)) return;
+        setDeletingId(uid);
         try {
-            const res = await adminApi.deleteUser(userId);
+            const res = await adminApi.deleteUser(uid);
             if (res.success) {
-                setAdmins(prev => prev.filter(a => (a._id || a.id) !== userId));
-                setSuccess('User deleted');
+                setAdmins(p => p.filter(a => (a._id || a.id) !== uid));
+                setSuccess(`${u.name} deleted`);
             }
-        } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            setError(errorMessage || 'Failed to delete user');
-        }
+        } catch (e: any) { setError(e.message || 'Failed to delete user'); }
+        finally { setDeletingId(null); }
     };
 
+    /* ══════════ ACCESS GUARD ══════════ */
     if (isLoading) {
         return (
-            <AdminLayout title="User Management" subtitle="Loading...">
-                <div className="grid sm:grid-cols-3 gap-6 mb-8">
-                    {[1, 2, 3].map(i => <StatCardSkeleton key={i} />)}
+            <AdminLayout title="Users & Roles" subtitle="Loading…">
+                <div className="grid sm:grid-cols-4 gap-4 mb-6">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="h-24 rounded-2xl bg-slate-100 animate-pulse" />
+                    ))}
                 </div>
-                <div className="h-64 rounded-2xl bg-slate-100 animate-pulse" />
+                <div className="h-64 rounded-3xl bg-slate-100 animate-pulse" />
             </AdminLayout>
         );
     }
 
     if (!user?.isSuperAdmin) {
         return (
-            <AdminLayout title="Access Restricted" subtitle="Super Admin privileges required">
+            <AdminLayout title="Access Restricted" subtitle="Super Admin only">
                 <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-                    <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                        <span className="text-5xl">🔐</span>
+                    <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Lock className="w-10 h-10 text-red-400" />
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-900 mb-3">Super Admin Zone</h2>
-                    <p className="text-slate-500 mb-8 leading-relaxed max-w-md">
-                        This area is restricted to Super Administrators. You can view your dashboard or manage your assigned temple tasks.
+                    <h2 className="text-2xl font-black text-slate-800 mb-2">Super Admin Zone</h2>
+                    <p className="text-slate-500 max-w-sm mb-8">
+                        Only Super Admins can manage users and roles.
                     </p>
-                    <Link
-                        href="/admin/dashboard"
-                        className="px-8 py-3 bg-slate-900 text-white rounded-xl font-medium hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10"
-                    >
+                    <Link href="/admin/dashboard"
+                        className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors">
                         Back to Dashboard
                     </Link>
                 </div>
@@ -246,406 +177,553 @@ function AdminUsersContent() {
         );
     }
 
+    /* ══════════ RENDER ══════════ */
     return (
-        <AdminLayout title="User Management" subtitle="Manage admin accounts and assignments">
-            <div className="flex justify-end mb-4">
-                <BackendStatusBar
-                    status={loading ? 'loading' : demoMode ? 'demo' : 'connected'}
-                    lastUpdated={lastUpdated || undefined}
-                    dataCount={admins.length}
-                    onRetry={() => window.location.reload()}
-                />
-            </div>
+        <AdminLayout title="Users & Roles" subtitle="Manage staff accounts, roles & temple assignments">
+            <div className="space-y-5">
 
-            {/* Demo Mode Banner */}
-            <AnimatePresence>
-                {demoMode && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -20, height: 0 }}
-                        animate={{ opacity: 1, y: 0, height: 'auto' }}
-                        exit={{ opacity: 0, y: -20, height: 0 }}
-                        className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-4 shadow-sm"
-                    >
-                        <span className="text-2xl">⚠️</span>
-                        <div>
-                            <h3 className="font-bold text-amber-800">Viewing Demo Data - Backend Unreachable</h3>
-                            <p className="text-sm text-amber-700 mt-1">
-                                The system is currently in read-only demo mode because the backend server is unreachable.
-                                Error: <span className="font-mono bg-amber-100 px-1 rounded">{apiError}</span>
-                            </p>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="space-y-8"
-            >
-                {/* Stats Cards */}
-                <div className="grid sm:grid-cols-3 gap-6">
-                    {loading ? (
-                        <>
-                            {[1, 2, 3].map(i => <StatCardSkeleton key={i} />)}
-                        </>
-                    ) : (
-                        <>
-                            <SharedStatCard icon="👥" label="Total Users" value={admins.length} subtext="Registered accounts" color="orange" trend={{ value: 'staff', positive: true }} />
-                            <SharedStatCard icon="👑" label="Super Admins" value={admins.filter(a => a.isSuperAdmin).length} subtext="Full access" color="purple" />
-                            <SharedStatCard icon="🛕" label="Active Temples" value={temples.length} subtext="Managed locations" color="blue" />
-                        </>
-                    )}
-                </div>
-
-                {/* Actions & Search */}
-                <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                    <div className="relative flex-1 max-w-lg w-full group">
-                        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <input
-                            type="text"
-                            placeholder="Search admins by name or email..."
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all shadow-sm hover:shadow-md"
-                        />
+                {/* ── Status bar ── */}
+                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${loading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500 animate-pulse'}`} />
+                        <span className="text-sm font-black text-slate-700">
+                            {loading ? 'Loading users…' : `${admins.length} staff member${admins.length !== 1 ? 's' : ''} managed`}
+                        </span>
                     </div>
-                    <motion.button
-                        onClick={() => setShowCreateModal(true)}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add New User
-                    </motion.button>
-                </div>
+                    <div className="flex items-center gap-3">
+                        {lastUpdated && (
+                            <span className="text-[11px] text-slate-400 font-medium hidden sm:flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                {lastUpdated.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            </span>
+                        )}
+                        <motion.button whileTap={{ scale: 0.95 }} onClick={() => fetchData(true)}
+                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200">
+                            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                        </motion.button>
+                    </div>
+                </motion.div>
 
-                {/* Alerts */}
+                {/* ── Toast ── */}
                 <AnimatePresence>
-                    {(error || success) && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className={`p-4 rounded-xl border flex items-center gap-3 shadow-sm ${error
-                                ? 'bg-red-50 border-red-200 text-red-600'
-                                : 'bg-emerald-50 border-emerald-200 text-emerald-600'
-                                }`}
-                        >
-                            <span className="text-xl">{error ? '⚠️' : '✅'}</span>
-                            <p className="font-medium">{error || success}</p>
-                            <button onClick={() => { setError(''); setSuccess(''); }} className="ml-auto hover:bg-black/5 p-1 rounded">
-                                ✕
+                    {(success || error) && (
+                        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                            className={`flex items-center gap-3 px-5 py-3 rounded-2xl border text-sm font-bold
+                                        ${error ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+                            {error ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                            {error || success}
+                            <button onClick={() => { setError(''); setSuccess(''); }} className="ml-auto opacity-60 hover:opacity-100">
+                                <X className="w-4 h-4" />
                             </button>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                {/* Admins Table */}
-                <div className="admin-card bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                    <div className="p-6 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
+                {/* ── KPI row ── */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                        { label: 'Total Staff', value: admins.length, icon: <Users className="w-4.5 h-4.5" />, bg: 'bg-indigo-50', icon_bg: 'bg-indigo-100 text-indigo-600', val_color: 'text-indigo-700' },
+                        { label: 'Super Admins', value: superAdminCount, icon: <Crown className="w-4.5 h-4.5" />, bg: 'bg-purple-50', icon_bg: 'bg-purple-100 text-purple-600', val_color: 'text-purple-700' },
+                        { label: 'Temple Admins', value: adminCount, icon: <Shield className="w-4.5 h-4.5" />, bg: 'bg-blue-50', icon_bg: 'bg-blue-100 text-blue-600', val_color: 'text-blue-700' },
+                        { label: 'Gatekeepers', value: gatekeeperCount, icon: <Key className="w-4.5 h-4.5" />, bg: 'bg-emerald-50', icon_bg: 'bg-emerald-100 text-emerald-600', val_color: 'text-emerald-700' },
+                    ].map((c, i) => (
+                        <motion.div key={c.label}
+                            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                            className={`${c.bg} rounded-2xl border border-white/80 shadow-sm p-4 flex items-center gap-3`}>
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${c.icon_bg}`}>
+                                {c.icon}
+                            </div>
+                            <div>
+                                <p className={`text-2xl font-black tabular-nums ${c.val_color}`}>
+                                    {loading ? '—' : c.value}
+                                </p>
+                                <p className="text-[11px] font-semibold text-slate-500">{c.label}</p>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* ── Search + Add ── */}
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+                    className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                            placeholder="Search staff by name or email…"
+                            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none transition-all" />
+                        {search && (
+                            <button onClick={() => setSearch('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                    <motion.button whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.96 }}
+                        onClick={() => setShowCreate(true)}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-blue-600
+                                   text-white font-bold rounded-xl shadow-md shadow-indigo-500/25 text-sm shrink-0">
+                        <Plus className="w-4 h-4" /> Add New User
+                    </motion.button>
+                </motion.div>
+
+                {/* ── Users Table ── */}
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}
+                    className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    {/* table header */}
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                         <div>
-                            <h3 className="text-lg font-bold text-slate-900">System Users</h3>
-                            <p className="text-sm text-slate-500">Manage access control and permissions</p>
+                            <h3 className="font-black text-slate-800 flex items-center gap-2">
+                                <Users className="w-4.5 h-4.5 text-indigo-500" /> System Users
+                                {!loading && (
+                                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-black border border-indigo-100">
+                                        {filtered.length}
+                                    </span>
+                                )}
+                            </h3>
+                            <p className="text-xs text-slate-400 mt-0.5 font-medium">
+                                Admins &amp; Gatekeepers · GET /api/v1/admin/users
+                            </p>
                         </div>
-                        <div className="px-3 py-1 bg-slate-100 rounded-lg text-xs font-semibold text-slate-600">
-                            {filteredAdmins.length} Users
-                        </div>
+                        {search && (
+                            <span className="text-xs font-bold text-slate-400">
+                                {filtered.length} of {admins.length} shown
+                            </span>
+                        )}
                     </div>
 
-                    {filteredAdmins.length === 0 ? (
-                        <div className="p-16 text-center text-slate-500">
-                            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
-                                🕵️‍♂️
+                    {loading ? (
+                        <div className="divide-y divide-slate-50">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="px-6 py-4 flex items-center gap-4 animate-pulse">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-100 shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-3.5 bg-slate-100 rounded w-32" />
+                                        <div className="h-3 bg-slate-100 rounded w-48" />
+                                    </div>
+                                    <div className="h-6 w-24 bg-slate-100 rounded-full" />
+                                </div>
+                            ))}
+                        </div>
+                    ) : filtered.length === 0 ? (
+                        <div className="py-20 text-center px-6">
+                            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <Users className="w-7 h-7 text-slate-400" />
                             </div>
-                            <h4 className="text-lg font-semibold text-slate-900 mb-1">No users found</h4>
-                            <p>Try adjusting your search terms or create a new user.</p>
+                            <h4 className="font-black text-slate-700 mb-1">{search ? 'No results' : 'No staff members yet'}</h4>
+                            <p className="text-slate-400 text-sm">
+                                {search ? `No users match "${search}"` : 'Add your first admin or gatekeeper with the button above.'}
+                            </p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr className="text-left text-xs uppercase tracking-wider text-slate-500 border-b border-slate-100 bg-slate-50/50">
-                                        <th className="px-6 py-4 font-semibold">User Details</th>
-                                        <th className="px-6 py-4 font-semibold">Role & Access</th>
-                                        <th className="px-6 py-4 font-semibold">Assignments</th>
-                                        <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                                    <tr className="bg-slate-50 border-b border-slate-100 text-left">
+                                        <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">User</th>
+                                        <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Role</th>
+                                        <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Temple Assignments</th>
+                                        <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="divide-y divide-slate-50">
                                     <AnimatePresence>
-                                        {filteredAdmins.map((admin, index) => (
-                                            <motion.tr
-                                                key={admin._id || admin.id}
-                                                variants={itemVariants}
-                                                initial="hidden"
-                                                animate="visible"
-                                                layout
-                                                className="hover:bg-orange-50/30 transition-colors group"
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm border border-white ${admin.isSuperAdmin
-                                                            ? 'bg-gradient-to-br from-purple-100 to-indigo-100 text-purple-600'
-                                                            : 'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600'
-                                                            }`}>
-                                                            {admin.name.charAt(0)}
+                                        {filtered.map((admin, i) => {
+                                            const uid = admin._id || admin.id;
+                                            const cfg = getRoleCfg(admin);
+                                            const grad = avatarGradient(admin.name);
+                                            const isDeleting = deletingId === uid;
+                                            return (
+                                                <motion.tr key={uid}
+                                                    initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, x: 8, height: 0 }}
+                                                    transition={{ delay: i * 0.02 }}
+                                                    className="hover:bg-slate-50/80 transition-colors group">
+                                                    {/* user */}
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center font-black text-white text-sm shrink-0`}>
+                                                                {admin.name.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-bold text-slate-800 text-sm">{admin.name}</p>
+                                                                <p className="text-[11px] text-slate-400 font-medium">{admin.email}</p>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <p className="font-bold text-slate-900">{admin.name}</p>
-                                                            <p className="text-sm text-slate-500 font-medium">{admin.email}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {admin.isSuperAdmin ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 border border-purple-200 shadow-sm">
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
-                                                            Super Admin
+                                                    </td>
+                                                    {/* role */}
+                                                    <td className="px-6 py-4">
+                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${admin.isSuperAdmin ? 'animate-pulse' : ''}`} />
+                                                            {cfg.label}
                                                         </span>
-                                                    ) : (
-                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${admin.role === 'gatekeeper'
-                                                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                                            : 'bg-blue-100 text-blue-700 border-blue-200'
-                                                            }`}>
-                                                            {admin.role === 'gatekeeper' ? 'Gatekeeper' : 'Temple Admin'}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {admin.isSuperAdmin ? (
-                                                        <span className="text-slate-400 text-sm font-medium italic flex items-center gap-1">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                                                            Full System Access
-                                                        </span>
-                                                    ) : (
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {admin.assignedTemples && admin.assignedTemples.length > 0 ? (
-                                                                admin.assignedTemples.map((t: any, i: number) => {
-                                                                    const tid = typeof t === 'object' ? t._id : t;
-                                                                    const tname = typeof t === 'object' ? t.name : temples.find(tm => tm._id === tid)?.name || 'Temple';
-                                                                    return (
-                                                                        <span key={i} className="px-2.5 py-1 rounded-md text-xs font-medium bg-white text-slate-700 border border-slate-200 shadow-sm">
-                                                                            {tname}
-                                                                        </span>
-                                                                    );
-                                                                })
-                                                            ) : (
-                                                                <span className="text-amber-500/80 text-sm font-medium flex items-center gap-1 px-2 py-1 bg-amber-50 rounded-lg">
-                                                                    ⚠️ Unassigned
-                                                                </span>
+                                                    </td>
+                                                    {/* assignments */}
+                                                    <td className="px-6 py-4">
+                                                        {admin.isSuperAdmin ? (
+                                                            <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                                                                <Shield className="w-3.5 h-3.5" /> Full system access
+                                                            </span>
+                                                        ) : (
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {admin.assignedTemples && admin.assignedTemples.length > 0 ? (
+                                                                    admin.assignedTemples.slice(0, 3).map((t: any, idx) => {
+                                                                        const name = typeof t === 'object'
+                                                                            ? t.name
+                                                                            : temples.find(tm => tm._id === t)?.name || 'Temple';
+                                                                        return (
+                                                                            <span key={idx}
+                                                                                className="px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg text-[10px] font-bold">
+                                                                                {name}
+                                                                            </span>
+                                                                        );
+                                                                    })
+                                                                ) : (
+                                                                    <span className="flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg text-[10px] font-bold">
+                                                                        <AlertCircle className="w-3 h-3" /> Unassigned
+                                                                    </span>
+                                                                )}
+                                                                {admin.assignedTemples && admin.assignedTemples.length > 3 && (
+                                                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg text-[10px] font-bold">
+                                                                        +{admin.assignedTemples.length - 3}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    {/* actions */}
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            {!admin.isSuperAdmin && (
+                                                                <motion.button whileTap={{ scale: 0.9 }}
+                                                                    onClick={() => { setSelectedUser(admin); setShowAssign(true); }}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-[11px] font-black transition-colors">
+                                                                    <Building2 className="w-3 h-3" /> Assign
+                                                                </motion.button>
+                                                            )}
+                                                            {!admin.isSuperAdmin && (
+                                                                <motion.button whileTap={{ scale: 0.9 }}
+                                                                    onClick={() => handleDelete(admin)}
+                                                                    disabled={isDeleting}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-[11px] font-black transition-colors disabled:opacity-50">
+                                                                    {isDeleting
+                                                                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                                                                        : <Trash2 className="w-3 h-3" />}
+                                                                    Delete
+                                                                </motion.button>
                                                             )}
                                                         </div>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                                        <motion.button
-                                                            whileHover={{ scale: 1.1 }}
-                                                            whileTap={{ scale: 0.9 }}
-                                                            onClick={() => { setSelectedUser(admin); setShowAssignModal(true); }}
-                                                            className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all border border-transparent hover:border-orange-100"
-                                                            title="Assign Temples"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" />
-                                                            </svg>
-                                                        </motion.button>
-
-                                                        {!admin.isSuperAdmin && (
-                                                            <motion.button
-                                                                whileHover={{ scale: 1.1 }}
-                                                                whileTap={{ scale: 0.9 }}
-                                                                onClick={() => handleDeleteUser(admin._id || admin.id)}
-                                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                                                                title="Delete User"
-                                                            >
-                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                </svg>
-                                                            </motion.button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </motion.tr>
-                                        ))}
+                                                    </td>
+                                                </motion.tr>
+                                            );
+                                        })}
                                     </AnimatePresence>
                                 </tbody>
                             </table>
                         </div>
                     )}
-                </div>
-            </motion.div>
+                </motion.div>
 
-            {/* Modals */}
-            <CreateAdminModal
-                isOpen={showCreateModal}
-                onClose={() => setShowCreateModal(false)}
-                onSubmit={handleCreateUser}
-                formData={formData}
-                setFormData={setFormData}
+                {/* ── Temples quick reference ── */}
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20 }}
+                    className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                        <div>
+                            <h3 className="font-black text-slate-800 flex items-center gap-2">
+                                <Building2 className="w-4.5 h-4.5 text-teal-500" /> Temples Reference
+                                <span className="px-2 py-0.5 bg-teal-50 text-teal-600 rounded-lg text-xs font-black border border-teal-100">
+                                    {temples.length}
+                                </span>
+                            </h3>
+                            <p className="text-xs text-slate-400 mt-0.5 font-medium">All manageable locations</p>
+                        </div>
+                    </div>
+                    <div className="p-4 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                        {temples.length === 0 && !loading && (
+                            <p className="text-slate-400 text-sm col-span-full px-2">No temples configured yet.</p>
+                        )}
+                        {temples.map((t, i) => (
+                            <motion.div key={t._id}
+                                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.02 }}
+                                className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                                <div className="w-7 h-7 rounded-lg bg-teal-100 text-teal-600 flex items-center justify-center text-xs font-black shrink-0">
+                                    {t.name.charAt(0)}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="font-bold text-slate-700 text-[11px] truncate">{t.name}</p>
+                                    <p className="text-[10px] text-slate-400 truncate">
+                                        {typeof t.location === 'object'
+                                            ? `${(t.location as any).city}, ${(t.location as any).state}`
+                                            : String(t.location || '')}
+                                    </p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* ══ Modals via Portal ══ */}
+            <CreateUserModal
+                isOpen={showCreate}
+                form={form}
+                setForm={setForm}
+                loading={formLoading}
+                showPw={showPw}
+                setShowPw={setShowPw}
+                onClose={() => setShowCreate(false)}
+                onSubmit={handleCreate}
             />
-
             <AssignTemplesModal
-                isOpen={showAssignModal}
-                onClose={() => { setShowAssignModal(false); setSelectedUser(null); }}
-                onSave={handleUpdateTemples}
+                isOpen={showAssign}
                 user={selectedUser}
                 temples={temples}
+                onClose={() => { setShowAssign(false); setSelectedUser(null); }}
+                onSave={handleAssign}
             />
         </AdminLayout>
     );
 }
 
-// Sub-components
-function CreateAdminModal({ isOpen, onClose, onSubmit, formData, setFormData }: CreateAdminModalProps) {
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white p-8 rounded-3xl w-full max-w-lg shadow-2xl relative overflow-hidden"
-            >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-red-600" />
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">Create Administrator</h3>
-                <p className="text-slate-500 mb-8">Grant access to the temple management system.</p>
-
-                <form onSubmit={onSubmit} className="space-y-5">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">Full Name</label>
-                        <input
-                            type="text"
-                            value={formData.name}
-                            onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            required
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
-                            placeholder="e.g. Sarah Connor"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">Email Address</label>
-                        <input
-                            type="email"
-                            value={formData.email}
-                            onChange={e => setFormData({ ...formData, email: e.target.value })}
-                            required
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
-                            placeholder="admin@temple.com"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">Password</label>
-                        <input
-                            type="password"
-                            value={formData.password}
-                            onChange={e => setFormData({ ...formData, password: e.target.value })}
-                            required
-                            minLength={8}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
-                            placeholder="••••••••"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <input
-                            type="checkbox"
-                            id="superAdmin"
-                            checked={formData.isSuperAdmin}
-                            onChange={e => setFormData({ ...formData, isSuperAdmin: e.target.checked })}
-                            className="w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-                        />
-                        <div>
-                            <label htmlFor="superAdmin" className="text-slate-900 font-medium cursor-pointer block">
-                                Super Admin Privileges
-                            </label>
-                            <p className="text-xs text-slate-500">Full access to system settings and user management</p>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4 pt-4">
-                        <button type="button" onClick={onClose} className="flex-1 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit" className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-medium rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all">
-                            Create Account
-                        </button>
-                    </div>
-                </form>
-            </motion.div>
-        </div>
-    );
+/* ══════════════════════ CREATE USER MODAL ══════════════════════ */
+interface CreateModalProps {
+    isOpen: boolean; form: any; setForm: any; loading: boolean;
+    showPw: boolean; setShowPw: (v: boolean) => void;
+    onClose: () => void; onSubmit: (e: React.FormEvent) => void;
 }
-
-function AssignTemplesModal({ isOpen, onClose, onSave, user, temples }: AssignTemplesModalProps) {
-    if (!isOpen || !user) return null;
-
-    return (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white p-8 rounded-3xl w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]"
-            >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-red-600" />
-                <h3 className="text-2xl font-bold text-slate-900 mb-1">Assign Temples</h3>
-                <p className="text-slate-500 mb-6">Manage access for <span className="text-orange-600 font-medium">{user.name}</span></p>
-
-                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2 mb-6">
-                    {temples.map((temple: any) => {
-                        const isAssigned = user.assignedTemples?.some((t: any) =>
-                            (typeof t === 'string' ? t : t._id) === temple._id
-                        );
-
-                        return (
-                            <label key={temple._id} className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl cursor-pointer border border-transparent hover:border-slate-200 transition-all group">
-                                <input
-                                    type="checkbox"
-                                    defaultChecked={isAssigned}
-                                    data-temple-id={temple._id}
-                                    className="temple-checkbox w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-                                />
-                                <div className="flex-1">
-                                    <h4 className="text-slate-900 font-medium group-hover:text-orange-600 transition-colors">{temple.name}</h4>
-                                    <p className="text-xs text-slate-500">{temple.location?.city || temple.location}</p>
+function CreateUserModal({ isOpen, form, setForm, loading, showPw, setShowPw, onClose, onSubmit }: CreateModalProps) {
+    if (typeof window === 'undefined') return null;
+    return createPortal(
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    {/* backdrop */}
+                    <motion.div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+                    {/* panel */}
+                    <motion.div className="relative bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden z-10"
+                        initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.92, opacity: 0, y: 20 }} onClick={e => e.stopPropagation()}>
+                        {/* accent bar */}
+                        <div className="h-1 w-full bg-gradient-to-r from-indigo-500 to-blue-600" />
+                        <div className="p-7">
+                            <div className="flex items-start justify-between mb-6">
+                                <div>
+                                    <h3 className="font-black text-slate-800 text-xl">Create Staff Account</h3>
+                                    <p className="text-slate-400 text-sm mt-0.5">Grant access to the temple admin system</p>
                                 </div>
-                            </label>
-                        );
-                    })}
-                </div>
+                                <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
 
-                <div className="flex gap-4">
-                    <button type="button" onClick={onClose} className="flex-1 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors">
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            const checkboxes = document.querySelectorAll('.temple-checkbox:checked');
-                            const templeIds = Array.from(checkboxes).map((cb) => (cb as HTMLInputElement).dataset.templeId as string);
-                            onSave(templeIds);
-                        }}
-                        className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-medium rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all"
-                    >
-                        Save Changes
-                    </button>
-                </div>
-            </motion.div>
-        </div>
+                            <form onSubmit={onSubmit} className="space-y-4">
+                                {/* Name */}
+                                <div>
+                                    <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">Full Name</label>
+                                    <div className="relative">
+                                        <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <input type="text" required value={form.name}
+                                            onChange={e => setForm({ ...form, name: e.target.value })}
+                                            placeholder="e.g. Rajan Kumar"
+                                            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-slate-800 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none transition-all" />
+                                    </div>
+                                </div>
+                                {/* Email */}
+                                <div>
+                                    <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">Email Address</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <input type="email" required value={form.email}
+                                            onChange={e => setForm({ ...form, email: e.target.value })}
+                                            placeholder="admin@temple.in"
+                                            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-slate-800 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none transition-all" />
+                                    </div>
+                                </div>
+                                {/* Password */}
+                                <div>
+                                    <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">Password</label>
+                                    <div className="relative">
+                                        <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <input type={showPw ? 'text' : 'password'} required minLength={8}
+                                            value={form.password}
+                                            onChange={e => setForm({ ...form, password: e.target.value })}
+                                            placeholder="Min. 8 characters"
+                                            className="w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-xl text-slate-800 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none transition-all" />
+                                        <button type="button" onClick={() => setShowPw(!showPw)}
+                                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                            {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                </div>
+                                {/* Role */}
+                                <div>
+                                    <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">Role</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {(['admin', 'gatekeeper'] as const).map(r => (
+                                            <label key={r}
+                                                className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${form.role === r ? 'bg-indigo-50 border-indigo-400 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+                                                <input type="radio" name="role" value={r}
+                                                    checked={form.role === r}
+                                                    onChange={() => setForm({ ...form, role: r })}
+                                                    className="sr-only" />
+                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${form.role === r ? 'border-indigo-500' : 'border-slate-300'}`}>
+                                                    {form.role === r && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                                                </div>
+                                                <span className="text-sm font-bold capitalize">{r === 'admin' ? 'Temple Admin' : 'Gatekeeper'}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                                {/* Super Admin */}
+                                <label className="flex items-center gap-3 p-3 bg-purple-50 border border-purple-200 rounded-xl cursor-pointer">
+                                    <input type="checkbox" checked={form.isSuperAdmin}
+                                        onChange={e => setForm({ ...form, isSuperAdmin: e.target.checked })}
+                                        className="w-4 h-4 rounded border-slate-300 text-purple-600 focus:ring-purple-400" />
+                                    <div>
+                                        <p className="text-sm font-bold text-purple-800">Super Admin Privileges</p>
+                                        <p className="text-[11px] text-purple-600">Full system access including user management</p>
+                                    </div>
+                                </label>
+                                {/* actions */}
+                                <div className="flex gap-3 pt-2">
+                                    <button type="button" onClick={onClose}
+                                        className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors text-sm">
+                                        Cancel
+                                    </button>
+                                    <motion.button type="submit" disabled={loading} whileTap={{ scale: 0.97 }}
+                                        className="flex-1 py-2.5 bg-gradient-to-r from-indigo-500 to-blue-600 text-white font-bold rounded-xl shadow-md shadow-indigo-500/25 disabled:opacity-60 flex items-center justify-center gap-2 text-sm">
+                                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                                        Create Account
+                                    </motion.button>
+                                </div>
+                            </form>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>,
+        document.body
     );
 }
 
+/* ══════════════════════ ASSIGN TEMPLES MODAL ══════════════════════ */
+interface AssignModalProps {
+    isOpen: boolean; user: User | null; temples: Temple[];
+    onClose: () => void; onSave: (ids: string[]) => void;
+}
+function AssignTemplesModal({ isOpen, user, temples, onClose, onSave }: AssignModalProps) {
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (user && isOpen) {
+            const ids = (user.assignedTemples || []).map((t: any) =>
+                typeof t === 'object' ? t._id : t
+            );
+            setSelected(new Set(ids));
+        }
+    }, [user, isOpen]);
+
+    const toggle = (id: string) => setSelected(p => {
+        const n = new Set(p);
+        n.has(id) ? n.delete(id) : n.add(id);
+        return n;
+    });
+
+    const handleSave = async () => {
+        setSaving(true);
+        await onSave(Array.from(selected));
+        setSaving(false);
+    };
+
+    if (typeof window === 'undefined') return null;
+    return createPortal(
+        <AnimatePresence>
+            {isOpen && user && (
+                <motion.div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <motion.div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+                    <motion.div className="relative bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden z-10 flex flex-col max-h-[80vh]"
+                        initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.92, opacity: 0, y: 20 }} onClick={e => e.stopPropagation()}>
+                        <div className="h-1 w-full bg-gradient-to-r from-teal-400 to-emerald-500 shrink-0" />
+                        <div className="p-6 border-b border-slate-100 shrink-0">
+                            <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${avatarGradient(user.name)} flex items-center justify-center font-black text-white`}>
+                                        {user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-slate-800">Assign Temples</h3>
+                                        <p className="text-sm text-slate-400">{user.name} · {user.email}</p>
+                                    </div>
+                                </div>
+                                <button onClick={onClose}
+                                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="mt-3 flex items-center gap-2">
+                                <span className="text-[11px] font-bold text-slate-400">{selected.size} of {temples.length} selected</span>
+                                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <motion.div className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 rounded-full"
+                                        animate={{ width: `${temples.length > 0 ? (selected.size / temples.length) * 100 : 0}%` }}
+                                        transition={{ duration: 0.3 }} />
+                                </div>
+                            </div>
+                        </div>
+                        {/* scrollable list */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-1.5">
+                            {temples.map(t => {
+                                const isOn = selected.has(t._id);
+                                return (
+                                    <motion.label key={t._id} whileHover={{ x: 2 }}
+                                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-all
+                                                   ${isOn ? 'bg-teal-50 border-teal-300' : 'bg-slate-50 border-slate-100 hover:border-slate-200'}`}>
+                                        <input type="checkbox" checked={isOn}
+                                            onChange={() => toggle(t._id)}
+                                            className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-400" />
+                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${isOn ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>
+                                            {t.name.charAt(0)}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className={`font-bold text-sm truncate ${isOn ? 'text-teal-800' : 'text-slate-700'}`}>{t.name}</p>
+                                            <p className="text-[10px] text-slate-400 truncate">
+                                                {typeof t.location === 'object'
+                                                    ? `${(t.location as any).city}, ${(t.location as any).state}`
+                                                    : String(t.location || '')}
+                                            </p>
+                                        </div>
+                                        {isOn && <CheckCircle2 className="w-4 h-4 text-teal-500 shrink-0" />}
+                                    </motion.label>
+                                );
+                            })}
+                        </div>
+                        {/* footer */}
+                        <div className="p-4 border-t border-slate-100 shrink-0 flex gap-3">
+                            <button onClick={onClose}
+                                className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors text-sm">
+                                Cancel
+                            </button>
+                            <motion.button onClick={handleSave} disabled={saving} whileTap={{ scale: 0.97 }}
+                                className="flex-1 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-bold rounded-xl shadow-md shadow-teal-500/25 disabled:opacity-60 flex items-center justify-center gap-2 text-sm">
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                Save Changes
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>,
+        document.body
+    );
+}
+
+/* ══════════════════════ PAGE EXPORT ══════════════════════ */
 export default function AdminUsersPage() {
     return (
         <ProtectedRoute allowedRoles={['admin']}>

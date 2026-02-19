@@ -23,6 +23,7 @@ const liveRoutes = require('./routes/liveRoutes');
 const botRoutes = require('./routes/botRoutes');
 const templeRoutes = require('./routes/templeRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const visionRoutes = require('./routes/visionRoutes');
 
 // Config
 const PORT = process.env.PORT || 5000;
@@ -168,6 +169,7 @@ app.use('/api/v1/live', liveRoutes);
 app.use('/api/v1/bot', botRoutes);
 app.use('/api/v1/temples', templeRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/vision', visionRoutes); // New Vision API
 
 // Health Check
 app.get('/api/v1/health', (req, res) => {

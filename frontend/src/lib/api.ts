@@ -82,13 +82,19 @@ export interface DashboardStats {
         };
         bookings: {
             today: number;
-            this_week: number;
+            this_week?: number;
             this_month: number;
+            active: number;
+            cancelled: number;
+            completed: number;
         };
         crowd: {
             current_live_count: number;
-            total_entries_today: number;
-            total_exits_today: number;
+            total_entries_today?: number;
+            total_exits_today?: number;
+            total_capacity: number;
+            occupancy_percentage: number;
+            status: 'HIGH' | 'MODERATE' | 'LOW';
         };
     };
 }
@@ -106,6 +112,10 @@ export interface DashboardAnalytics {
             revenue: number;
             bookings: number;
             temple_name?: string;
+        }>;
+        peak_hours: Array<{
+            hour: number;
+            visitors: number;
         }>;
         popular_slots?: Array<{
             slot: string;
@@ -482,12 +492,10 @@ export const bookingsApi = {
     },
 
     // Check slot availability
-    checkAvailability: async (templeId: string, date: string): Promise<any> => {
-        // If date already contains query params (like &slot=...), don't double encode
-        if (date.includes('&slot=')) {
-            return apiRequest(`/bookings/availability?templeId=${templeId}&date=${date}`);
-        }
-        const query = new URLSearchParams({ templeId, date }).toString();
+    checkAvailability: async (templeId: string, date: string, slot?: string): Promise<any> => {
+        const params: Record<string, string> = { templeId, date };
+        if (slot) params.slot = slot;
+        const query = new URLSearchParams(params).toString();
         return apiRequest(`/bookings/availability?${query}`);
     },
 };

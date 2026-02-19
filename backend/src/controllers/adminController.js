@@ -113,6 +113,7 @@ exports.getAnalytics = async (req, res) => {
         const end = endDate ? new Date(endDate) : new Date();
 
         // 1. Peak Hours Analysis
+        // 1. Peak Hours Analysis (Group by hour of day)
         const peakHours = await Booking.aggregate([
             {
                 $match: {
@@ -120,17 +121,34 @@ exports.getAnalytics = async (req, res) => {
                 }
             },
             {
+                // Extract hour from createdAt
+                $project: {
+                    hour: { $hour: "$createdAt" },
+                    visitors: 1
+                }
+            },
+            {
                 $group: {
-                    _id: '$slot',
+                    _id: "$hour",
                     count: { $sum: 1 },
                     total_visitors: { $sum: '$visitors' }
                 }
             },
             {
-                $sort: { count: -1 }
+                $sort: { _id: 1 } // Sort by hour (0-23)
             },
             {
-                $limit: 5
+                // Format hour back to readable string "HH:00"
+                $project: {
+                    _id: {
+                        $concat: [
+                            { $toString: "$_id" },
+                            ":00"
+                        ]
+                    },
+                    count: 1,
+                    total_visitors: 1
+                }
             }
         ]);
 
@@ -197,30 +215,33 @@ exports.getAnalytics = async (req, res) => {
             }
         ]);
 
-        // If no booking data, return sample data so graphs/charts render (helps demo mode)
-        let dailyTrends = trendsByDay;
-        let revenueByTempleData = revenueByTemple;
-        if (trendsByDay.length === 0) {
-            const today = new Date();
-            dailyTrends = [];
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date(today);
-                d.setDate(d.getDate() - i);
-                dailyTrends.push({
-                    _id: d.toISOString().split('T')[0],
-                    count: Math.floor(50 + Math.random() * 150)
-                });
-            }
-        }
-        if (revenueByTemple.length === 0) {
-            const temples = await Temple.find({}).select('name').limit(5);
-            revenueByTempleData = temples.map(t => ({
-                _id: t.name,
-                revenue: Math.floor(Math.random() * 50000) + 5000,
-                bookings: Math.floor(Math.random() * 100)
-            }));
-        }
+        // Helper: Fill in missing dates with 0
+        const fillMissingDates = (data, startDate, endDate) => {
+            const result = [];
+            const currentDate = new Date(startDate);
+            const stopDate = new Date(endDate);
 
+            // Create a map for quick lookup
+            const dataMap = new Map();
+            data.forEach(item => {
+                dataMap.set(item._id, item.count);
+            });
+
+            while (currentDate <= stopDate) {
+                const dateStr = currentDate.toISOString().split('T')[0];
+                result.push({
+                    _id: dateStr,
+                    count: dataMap.get(dateStr) || 0
+                });
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            return result;
+        };
+
+        let dailyTrends = fillMissingDates(trendsByDay, start, end);
+        let revenueByTempleData = revenueByTemple;
+
+        // Return real data (even if empty)
         res.status(200).json({
             success: true,
             period: {
@@ -228,10 +249,10 @@ exports.getAnalytics = async (req, res) => {
                 end_date: end
             },
             data: {
-                peak_hours: peakHours,
-                popular_temples: popularTemples,
-                daily_trends: dailyTrends,
-                revenue_by_temple: revenueByTempleData
+                peak_hours: peakHours || [],
+                popular_temples: popularTemples || [],
+                daily_trends: dailyTrends || [],
+                revenue_by_temple: revenueByTempleData || []
             }
         });
 

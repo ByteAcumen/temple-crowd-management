@@ -1,108 +1,135 @@
 const axios = require('axios');
 const Temple = require('../models/Temple');
 const crowdTracker = require('../services/CrowdTracker');
+const BotMemory = require('../services/BotMemory');
+const { v4: uuidv4 } = require('uuid');
 
 // Constants
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || process.env.ML_FORECASTING_URL || 'http://localhost:8002';
 
-// @desc    Process User Query
+// --- AGENT TOOLS ---
+const tools = {
+    async getTempleStatus(name) {
+        const temple = await Temple.findOne({ name: { $regex: name, $options: 'i' } });
+        if (!temple) return `I couldn't find a temple named "${name}".`;
+        const count = await crowdTracker.getCurrentCount(temple._id.toString());
+        return `Current status for ${temple.name}: ${count} visitors. Status: ${temple.status}. Capacity: ${temple.capacity.total}.`;
+    },
+    async closeTemple(name) {
+        // In a real agent, we'd check permissions here.
+        const temple = await Temple.findOneAndUpdate(
+            { name: { $regex: name, $options: 'i' } },
+            { status: 'CLOSED' },
+            { new: true }
+        );
+        if (!temple) return `I couldn't find "${name}".`;
+        return `✅ ACTION EXECUTED: ${temple.name} is now CLOSED.`;
+    },
+    async openTemple(name) {
+        const temple = await Temple.findOneAndUpdate(
+            { name: { $regex: name, $options: 'i' } },
+            { status: 'OPEN' },
+            { new: true }
+        );
+        if (!temple) return `I couldn't find "${name}".`;
+        return `✅ ACTION EXECUTED: ${temple.name} is now OPEN.`;
+    }
+};
+
+// @desc    Smart Agent Chat
 // @route   POST /api/v1/bot/query
-// @access  Public (or Protected, depending on plan)
 exports.chat = async (req, res) => {
     try {
-        const { query } = req.body;
+        const { query, sessionId } = req.body;
+
+        // 1. Session Management
+        // If no sessionId provided, generate new one
+        const activeSessionId = sessionId || uuidv4();
+
         if (!query) return res.status(400).json({ error: 'Query is required' });
+
+        // 2. Add User Message to History
+        BotMemory.addMessage(activeSessionId, 'user', query);
 
         const lowerQuery = query.toLowerCase();
         let answer = '';
-        let source = 'static';
+        let source = 'agent_logic';
 
-        // --- HYBRID INTELLIGENCE LOGIC ---
-
-        // 1. Future Prediction (Keep explicit logic for now to fetch forecast)
-        if (lowerQuery.includes('tomorrow') || lowerQuery.includes('predict') || lowerQuery.includes('future')) {
-            const tomorrow = getTomorrowDate();
-            const aiData = await getAIPrediction(tomorrow);
-            answer = `For tomorrow (${tomorrow}), our AI Brain predicts about ${aiData.visitors} visitors. Status: ${aiData.status}.`;
-            source = 'ai_forecasting_engine';
+        // 3. INTENT CLASSIFICATION (Simple logic for now)
+        // Check for specific commands
+        if (lowerQuery.includes('close') && lowerQuery.includes('temple')) {
+            // Extract temple name (naive)
+            // "Close Somnath temple" -> "Somnath"
+            const words = lowerQuery.split(' ');
+            const templeIndex = words.indexOf('close') + 1;
+            const templeName = words[templeIndex]; // Simple extraction
+            answer = await tools.closeTemple(templeName || 'Somnath'); // Default for demo
         }
-        // 2. Everything else -> SEMANTIC RAG (Python)
+        else if (lowerQuery.includes('open') && lowerQuery.includes('temple')) {
+            const words = lowerQuery.split(' ');
+            const templeIndex = words.indexOf('open') + 1;
+            const templeName = words[templeIndex];
+            answer = await tools.openTemple(templeName || 'Somnath');
+        }
+        else if (lowerQuery.includes('status') || lowerQuery.includes('how many')) {
+            // "Status of Somnath"
+            const templeName = 'Somnath'; // Hardcoded for simplified MVP logic
+            answer = await tools.getTempleStatus(templeName);
+        }
+        // 4. Fallback to RAG / AI
         else {
-            // Fetch Context (Live Crowd)
-            const crowdData = await getLiveCrowd();
-            const liveContext = `Current Devotee Count: ${crowdData.count}. Safety Status: ${crowdData.status}.`;
+            // Get History
+            const history = BotMemory.getHistoryContext(activeSessionId);
 
-            // Call Python RAG
+            // Get Live Context
+            const liveStats = await getLiveCrowd();
+            const systemContext = `
+                You are a Temple Admin Assistant.
+                Current Global Crowd: ${liveStats.count}.
+                Safety Level: ${liveStats.status}.
+                Conversation History:
+                ${history}
+             `;
+
             try {
+                // Call RAG Service (Mock or Python)
                 const ragResponse = await axios.post(`${AI_SERVICE_URL}/chat`, {
                     query: query,
-                    context: liveContext
+                    context: systemContext
                 });
                 answer = ragResponse.data.answer;
-                source = 'semantic_rag_model';
-            } catch (err) {
-                console.error('RAG Error:', err.message);
-                answer = 'My Brain is currently offline 🧠. But I can tell you: ' + liveContext;
-                source = 'fallback_live';
+                source = 'ai_rag';
+            } catch (e) {
+                answer = "I'm having trouble connecting to my brain, but I'm here to help!";
             }
         }
 
+        // 5. Add Assistant Message to History
+        BotMemory.addMessage(activeSessionId, 'assistant', answer);
+
         res.status(200).json({
             success: true,
+            sessionId: activeSessionId,
             answer,
             source
         });
 
     } catch (error) {
-        console.error('Bot Error:', error);
-        res.status(500).json({ success: false, answer: 'I\'m having trouble thinking right now.', error: error.message });
+        console.error('Agent Error:', error);
+        res.status(500).json({ success: false, error: 'Agent Malfunction' });
     }
 };
 
-// Helper: Get Live Data (aggregate from all temples via CrowdTracker)
+// Helper: Live Global Stats
 async function getLiveCrowd() {
     try {
         const temples = await Temple.find({ status: 'OPEN' }).select('_id capacity');
         let totalCount = 0;
-        let totalCapacity = 0;
         for (const temple of temples) {
-            const count = await crowdTracker.getCurrentCount(temple._id.toString());
-            totalCount += count;
-            totalCapacity += temple.capacity?.total || 0;
+            totalCount += await crowdTracker.getCurrentCount(temple._id.toString());
         }
-        const percentage = totalCapacity > 0 ? (totalCount / totalCapacity) * 100 : 0;
-        let status = 'Relaxed 🟢';
-        if (percentage >= 95) status = 'CRITICAL 🔴';
-        else if (percentage >= 85) status = 'Busy 🟠';
-        return { count: totalCount, status };
+        return { count: totalCount, status: totalCount > 5000 ? 'BUSY' : 'NORMAL' };
     } catch {
-        return { count: 0, status: 'Relaxed 🟢' };
+        return { count: 0, status: 'UNKNOWN' };
     }
-}
-
-// Helper: Get AI Prediction
-async function getAIPrediction(dateStr) {
-    try {
-        const response = await axios.post(`${AI_SERVICE_URL}/predict`, {
-            temple_name: 'Somnath', // Default
-            date_str: dateStr,
-            temperature: 30, // Default avg
-            rain_flag: 0,
-            moon_phase: 'Normal',
-            is_weekend: 0
-        });
-        return {
-            visitors: response.data.predicted_visitors,
-            status: response.data.crowd_status
-        };
-    } catch (e) {
-        return { visitors: 'Unknown', status: 'Offline' };
-    }
-}
-
-function getTomorrowDate() {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
 }

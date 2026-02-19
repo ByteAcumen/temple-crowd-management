@@ -1,459 +1,536 @@
 'use client';
 
-// Temple Smart E-Pass - Admin Temple Management
-// Manage listings, capacity, and operating hours
-// Premium Redesign (Light Theme)
-
-import Link from 'next/link';
-import { useAuth } from '@/lib/auth-context';
-import { ProtectedRoute } from '@/lib/protected-route';
-import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { templesApi, adminApi, Temple } from '@/lib/api';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { BackendStatusBar } from '@/components/admin/BackendStatusBar';
-import { CardGridSkeleton } from '@/components/admin/LoadingSkeleton';
 import TempleCard from '@/components/admin/temples/TempleCard';
 import TempleFormModal from '@/components/admin/temples/TempleFormModal';
+import { templesApi, adminApi, Temple } from '@/lib/api';
+import {
+    Plus, Search, Building2, Users, RefreshCw, X,
+    Trash2, ToggleRight, SlidersHorizontal, Filter,
+    CheckSquare, Square, AlertCircle
+} from 'lucide-react';
 
-// Helper for safe capacity access
-const getCapacity = (t: Temple | undefined) => {
-    if (!t || !t.capacity) return 1;
-    if (typeof t.capacity === 'number') return t.capacity;
-    return t.capacity.total || 1;
-};
-
-// Animation Variants
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.04 } }
-};
-
-type StatusFilter = 'ALL' | 'OPEN' | 'CLOSED';
-
-// Interfaces
-interface StatCardProps {
-    icon: React.ReactNode;
-    title: string;
-    value: number | string;
-    subtext?: string;
-    color: 'orange' | 'purple' | 'blue' | 'green';
-    trend?: {
-        value: string;
-        positive: boolean;
-    };
-}
-
-function AdminTemplesContent() {
-    const { user, isLoading: authLoading } = useAuth();
-    const [temples, setTemples] = useState<Temple[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
-    const [error, setError] = useState('');
-
-    const [demoMode, setDemoMode] = useState(false);
-    const [apiError, setApiError] = useState<string | null>(null);
-    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
-    // Create/Edit Modal state
-    const [showModal, setShowModal] = useState(false);
-    const [editingTemple, setEditingTemple] = useState<Temple | null>(null);
-    const [saving, setSaving] = useState(false);
-    const [syncing, setSyncing] = useState(false);
-
-    const searchParams = useSearchParams();
-    const router = useRouter();
-
-    // Check for ?action=new
-    useEffect(() => {
-        if (searchParams.get('action') === 'new') {
-            openCreateModal();
-            // Clean up URL without reload
-            router.replace('/admin/temples', { scroll: false });
-        }
-    }, [searchParams, router]);
-
-    useEffect(() => {
-        async function fetchTemples() {
-            try {
-                setLoading(true);
-                setError('');
-                setApiError(null);
-                setDemoMode(false);
-
-                const response = await templesApi.getAll();
-                if (response.success) {
-                    setTemples(response.data || []);
-                    setLastUpdated(new Date());
-                }
-            } catch (err: unknown) {
-                const errorMessage = err instanceof Error ? err.message : String(err);
-                console.error('Failed to fetch temples:', errorMessage);
-
-                // Demo Mode Fallback
-                console.warn('⚠️ Backend unreachable. Switching to Demo Mode.');
-                setApiError(errorMessage || 'Backend unreachable');
-                setDemoMode(true);
-
-                // Mock Temples
-                setTemples([
-                    {
-                        _id: 't1',
-                        name: 'Somnath Temple',
-                        location: { city: 'Veraval', state: 'Gujarat' },
-                        deity: 'Lord Shiva',
-                        status: 'OPEN',
-                        capacity: 5000,
-                        currentOccupancy: 1200,
-                        images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Somnath_Mandir_Veraval_Gujarat_01.jpg/1200px-Somnath_Mandir_Veraval_Gujarat_01.jpg'],
-                        fees: { specialDarshan: 200, general: 0 },
-                        facilities: { parking: true, wheelchairAccess: true, restrooms: true, drinkingWater: true, prasadCounter: true }
-                    },
-                    {
-                        _id: 't2',
-                        name: 'Kashi Vishwanath',
-                        location: { city: 'Varanasi', state: 'UP' },
-                        deity: 'Lord Shiva',
-                        status: 'OPEN',
-                        capacity: 8000,
-                        currentOccupancy: 7500, // High occupancy
-                        images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Kashi_Vishwanath_Temple_Banaras.jpg/1200px-Kashi_Vishwanath_Temple_Banaras.jpg'],
-                        fees: { specialDarshan: 500, general: 0 },
-                        facilities: { parking: false, wheelchairAccess: true, restrooms: true, drinkingWater: true, prasadCounter: true }
-                    },
-                    {
-                        _id: 't3',
-                        name: 'Kedarnath Temple',
-                        location: { city: 'Rudraprayag', state: 'Uttarakhand' },
-                        deity: 'Lord Shiva',
-                        status: 'CLOSED', // Closed
-                        capacity: 3000,
-                        currentOccupancy: 0,
-                        images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Kedarnath_Temple_Uttarakhand_India.jpg/1200px-Kedarnath_Temple_Uttarakhand_India.jpg'],
-                        fees: { specialDarshan: 0, general: 0 },
-                        facilities: { parking: true, wheelchairAccess: false, restrooms: false, drinkingWater: true, prasadCounter: false }
-                    }
-                ] as Temple[]);
-
-            } finally {
-                setLoading(false);
-            }
-        }
-        if (user && !authLoading) fetchTemples();
-    }, [user, authLoading]);
-
-    // Filter temples by search + status
-    const filteredTemples = temples.filter(temple => {
-        const matchSearch = temple.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (typeof temple.location === 'string' ? temple.location : temple.location?.city)?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchStatus = statusFilter === 'ALL' || temple.status === statusFilter;
-        return matchSearch && matchStatus;
-    });
-
-    // Open Create Modal
-    const openCreateModal = () => {
-        setEditingTemple(null);
-        setShowModal(true);
-    };
-
-    // Open Edit Modal
-    const openEditModal = (temple: Temple) => {
-        setEditingTemple(temple);
-        setShowModal(true);
-    };
-
-    // Save Create/Edit
-    const handleSave = async (formData: Partial<Temple>) => {
-        setSaving(true);
-        try {
-            if (editingTemple) {
-                const res = await adminApi.updateTemple(editingTemple._id, formData);
-                if (res.success) {
-                    setTemples(prev => prev.map(t => t._id === editingTemple._id ? { ...t, ...res.data } : t));
-                }
-            } else {
-                const res = await adminApi.createTemple(formData);
-                if (res.success) {
-                    setTemples(prev => [...prev, res.data]);
-                }
-            }
-            setShowModal(false);
-        } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to save temple';
-            setError(errorMessage);
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    // Sync Temple Status
-    const handleSync = async () => {
-        setSyncing(true);
-        try {
-            await templesApi.syncStatus();
-            // Refetch temples to show updated statuses
-            const response = await templesApi.getAll();
-            if (response.success) setTemples(response.data || []);
-        } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : 'Sync failed';
-            setError(errorMessage);
-        } finally {
-            setSyncing(false);
-        }
-    };
-
-    // Initial stats
-    const totalCapacity = temples.reduce((sum, t) => sum + getCapacity(t), 0);
-    const openTemples = temples.filter(t => t.status === 'OPEN').length;
-
-    const handleDeleteWrapper = async (id: string, name: string) => {
-        if (!confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
-
-        if (demoMode) {
-            alert('Demo Mode: Temple deletion simulated.');
-            setTemples(prev => prev.filter(t => t._id !== id));
-            return;
-        }
-
-        try {
-            const res = await adminApi.deleteTemple(id);
-            if (res.success) {
-                setTemples(prev => prev.filter(t => t._id !== id));
-            } else {
-                setError(res.message || 'Failed to delete temple');
-            }
-        } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            setError(errorMessage || 'Failed to delete temple');
-        }
-    };
-
+// ─── Skeleton Card ─────────────────────────────────────────────────────────
+function SkeletonCard() {
     return (
-        <AdminLayout title="Temple Management" subtitle="Manage temple listings, capacity and schedules">
-            <div className="flex justify-end mb-4">
-                <BackendStatusBar status={loading ? 'loading' : 'connected'} lastUpdated={lastUpdated || undefined} dataCount={temples.length} />
+        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden animate-pulse">
+            <div className="h-44 bg-slate-100" />
+            <div className="p-4 space-y-3">
+                <div className="h-3 bg-slate-100 rounded-full w-3/4" />
+                <div className="h-2 bg-slate-100 rounded-full" />
+                <div className="h-2 bg-slate-100 rounded-full w-5/6" />
+                <div className="grid grid-cols-3 gap-2">
+                    {[1, 2, 3].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl" />)}
+                </div>
             </div>
-
-            {(loading || authLoading) ? (
-                <CardGridSkeleton count={6} />
-            ) : (
-                <>
-                    {/* Demo Mode Banner */}
-                    <AnimatePresence>
-                        {demoMode && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -20, height: 0 }}
-                                animate={{ opacity: 1, y: 0, height: 'auto' }}
-                                exit={{ opacity: 0, y: -20, height: 0 }}
-                                className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-4 shadow-sm"
-                            >
-                                <span className="text-2xl">⚠️</span>
-                                <div>
-                                    <h3 className="font-bold text-amber-800">Viewing Demo Data - Backend Unreachable</h3>
-                                    <p className="text-sm text-amber-700 mt-1">
-                                        The system is currently in read-only demo mode because the backend server is unreachable.
-                                        Error: <span className="font-mono bg-amber-100 px-1 rounded">{apiError}</span>
-                                    </p>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <motion.div
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="space-y-8"
-                    >
-                        {/* Stats Row */}
-                        <div className="grid sm:grid-cols-3 gap-6">
-                            <StatCard
-                                icon="🛕"
-                                title="Total Temples"
-                                value={temples.length}
-                                color="orange"
-                                trend={{ value: '+2', positive: true }}
-                            />
-                            <StatCard
-                                icon="👥"
-                                title="Total Capacity"
-                                value={totalCapacity.toLocaleString()}
-                                color="blue"
-                            />
-                            <StatCard
-                                icon="🔓"
-                                title="Open Now"
-                                value={openTemples}
-                                subtext={`${Math.round((openTemples / (temples.length || 1)) * 100)}% active`}
-                                color="green"
-                            />
-                        </div>
-
-                        {/* Actions Bar */}
-                        <div className="flex flex-col gap-4">
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <div className="relative flex-1 group">
-                                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                    <input
-                                        type="text"
-                                        placeholder="Search temples by name or location..."
-                                        value={searchQuery}
-                                        onChange={e => setSearchQuery(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all shadow-sm hover:bg-slate-50"
-                                    />
-                                </div>
-                                <button onClick={handleSync} disabled={syncing}
-                                    className="px-5 py-3 bg-indigo-50 text-indigo-700 font-semibold rounded-xl border border-indigo-200 hover:bg-indigo-100 transition-all disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
-                                    <svg className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                    {syncing ? 'Syncing...' : 'Sync Status'}
-                                </button>
-                                <motion.button onClick={openCreateModal}
-                                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                                    Add Temple
-                                </motion.button>
-                            </div>
-
-                            {/* Status Filter Pills */}
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Filter:</span>
-                                {(['ALL', 'OPEN', 'CLOSED'] as StatusFilter[]).map(s => (
-                                    <button key={s} onClick={() => setStatusFilter(s)}
-                                        className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all ${statusFilter === s
-                                            ? s === 'OPEN' ? 'bg-emerald-500 text-white shadow-sm' :
-                                                s === 'CLOSED' ? 'bg-red-500 text-white shadow-sm' :
-                                                    'bg-slate-900 text-white shadow-sm'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                            }`}>
-                                        {s === 'ALL' ? `All (${temples.length})` : s === 'OPEN' ? `Open (${temples.filter(t => t.status === 'OPEN').length})` : `Closed (${temples.filter(t => t.status === 'CLOSED').length})`}
-                                    </button>
-                                ))}
-                                <span className="ml-auto text-xs text-slate-400">{filteredTemples.length} shown</span>
-                            </div>
-                        </div>
-
-                        {/* Error Messages */}
-                        <AnimatePresence>
-                            {error && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -20 }}
-                                    className="p-4 rounded-xl border bg-red-50 border-red-200 text-red-600 flex items-center gap-3"
-                                >
-                                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span className="font-medium">{error}</span>
-                                    <button onClick={() => setError('')} className="ml-auto hover:text-red-800 transition-colors">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        {/* Temples Grid */}
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <AnimatePresence>
-                                {filteredTemples.length === 0 ? (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200"
-                                    >
-                                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                                            🛕
-                                        </div>
-                                        <h3 className="text-slate-900 font-bold text-lg mb-1">No temples found</h3>
-                                        <p className="text-slate-500 text-sm">Try adjusting your search or add a new temple</p>
-                                    </motion.div>
-                                ) : (
-                                    filteredTemples.map((temple) => (
-                                        <TempleCard
-                                            key={temple._id}
-                                            temple={temple}
-                                            onEdit={openEditModal}
-                                            onDelete={handleDeleteWrapper}
-                                        />
-                                    ))
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </motion.div>
-                </>
-            )}
-
-            {/* Create/Edit Temple Modal */}
-            <TempleFormModal
-                isOpen={showModal}
-                onClose={() => setShowModal(false)}
-                onSave={handleSave}
-                initialData={editingTemple}
-                isSaving={saving}
-            />
-
-        </AdminLayout>
+        </div>
     );
 }
 
-// Sub-components
-// Enhanced Premium Stat Card with Glassmorphism
-function StatCard({ icon, title, value, subtext, color, trend }: StatCardProps) {
-    const itemVariants = {
-        hidden: { opacity: 0, y: 15 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.25 } }
-    };
-
+// ─── Stat Card ─────────────────────────────────────────────────────────────
+function StatCard({ label, value, sub, icon, ring, delay = 0 }:
+    { label: string; value: string | number; sub?: string; icon: React.ReactNode; ring: string; delay?: number }) {
     return (
         <motion.div
-            variants={itemVariants}
-            whileHover={{ y: -5, scale: 1.02 }}
-            className="relative overflow-hidden rounded-2xl bg-white border border-slate-100 shadow-xl shadow-slate-200/50 p-6 group"
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm"
         >
-            <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-10 blur-2xl transition-transform group-hover:scale-150 ${color === 'orange' ? 'bg-orange-500' :
-                color === 'purple' ? 'bg-purple-500' :
-                    color === 'green' ? 'bg-emerald-500' :
-                        'bg-blue-500'
-                }`} />
-
-            <div className="relative z-10">
-                <div className="flex items-start justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm ${color === 'orange' ? 'bg-orange-50 text-orange-600' :
-                        color === 'purple' ? 'bg-purple-50 text-purple-600' :
-                            color === 'green' ? 'bg-emerald-50 text-emerald-600' :
-                                'bg-blue-50 text-blue-600'
-                        }`}>
-                        {icon}
-                    </div>
-                    {trend && (
-                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${trend.positive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                            }`}>
-                            {trend.positive ? '↑' : '↓'} {trend.value}
-                        </div>
-                    )}
+            <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
+                    <p className="text-2xl font-black text-slate-800 tabular-nums">{value}</p>
+                    {sub && <p className="text-[11px] text-slate-400 mt-0.5 font-medium">{sub}</p>}
                 </div>
-
-                <div>
-                    <h3 className="text-slate-500 font-medium text-sm mb-1">{title}</h3>
-                    <div className="flex items-baseline gap-2">
-                        <p className="text-3xl font-black text-slate-900 tracking-tight">{value}</p>
-                        {subtext && <span className="text-xs font-semibold text-slate-400">{subtext}</span>}
-                    </div>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${ring}`}>
+                    {icon}
                 </div>
             </div>
         </motion.div>
     );
 }
 
-export default function AdminTemplesPage() {
+// ─── Delete Confirm ────────────────────────────────────────────────────────
+function DeleteDialog({ name, onConfirm, onCancel, loading }:
+    { name: string; onConfirm: () => void; onCancel: () => void; loading: boolean }) {
     return (
-        <ProtectedRoute allowedRoles={['admin']}>
-            <AdminTemplesContent />
-        </ProtectedRoute>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+            <motion.div
+                initial={{ scale: 0.88, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.88, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+                className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full z-10 text-center"
+            >
+                <motion.div
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    transition={{ delay: 0.1, type: 'spring', stiffness: 300 }}
+                    className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-5"
+                >
+                    <Trash2 className="w-8 h-8 text-red-500" />
+                </motion.div>
+                <h3 className="text-xl font-black text-slate-800 mb-2">Delete Temple?</h3>
+                <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                    Permanently delete <span className="font-bold text-slate-700">"{name}"</span>?
+                    All associated bookings will also be cancelled.
+                </p>
+                <div className="flex gap-3">
+                    <button onClick={onCancel} disabled={loading}
+                        className="flex-1 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors border border-slate-100">
+                        Cancel
+                    </button>
+                    <motion.button whileTap={{ scale: 0.96 }} onClick={onConfirm} disabled={loading}
+                        className="flex-1 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
+                        {loading
+                            ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Deleting...</>
+                            : 'Yes, Delete'}
+                    </motion.button>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
+// ─── Toast ─────────────────────────────────────────────────────────────────
+function Toast({ msg, ok, onDone }: { msg: string; ok: boolean; onDone: () => void }) {
+    useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, [onDone]);
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -40, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className={`fixed top-4 right-4 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold
+                       ${ok ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}
+        >
+            <span className="text-base">{ok ? '✅' : '❌'}</span>
+            {msg}
+        </motion.div>
+    );
+}
+
+// ─── Constants ─────────────────────────────────────────────────────────────
+const STATUS_FILTERS = ['All', 'OPEN', 'CLOSED', 'MAINTENANCE'] as const;
+type SFilter = typeof STATUS_FILTERS[number];
+
+const STATUS_DOT: Record<string, string> = {
+    OPEN: 'bg-emerald-500', CLOSED: 'bg-red-500', MAINTENANCE: 'bg-amber-500'
+};
+
+// ─── Page ──────────────────────────────────────────────────────────────────
+export default function TemplesPage() {
+    const [temples, setTemples] = useState<Temple[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [backendUp, setBackendUp] = useState(true);
+    const [fetchErr, setFetchErr] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
+
+    // filters
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<SFilter>('All');
+
+    // modal
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editTemple, setEditTemple] = useState<Temple | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveErr, setSaveErr] = useState<string | null>(null);
+
+    // delete
+    const [delTarget, setDelTarget] = useState<{ id: string; name: string } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // bulk
+    const [bulkMode, setBulkMode] = useState(false);
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+
+    // toast
+    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+    const showToast = (msg: string, ok = true) => setToast({ msg, ok });
+
+    // ── Fetch ───────────────────────────────────────────────────────────────
+    const fetchTemples = useCallback(async (silent = false) => {
+        if (!silent) setLoading(true);
+        else setRefreshing(true);
+        setFetchErr(null);
+        try {
+            const res = await templesApi.getAll();
+            setTemples(res.data || []);
+            setBackendUp(true);
+        } catch (e: any) {
+            setFetchErr(e.message || 'Failed to load temples');
+            setBackendUp(false);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, []);
+
+    useEffect(() => { fetchTemples(); }, [fetchTemples]);
+
+    // ── Stats ───────────────────────────────────────────────────────────────
+    const openCount = temples.filter(t => t.status === 'OPEN').length;
+    const closedCount = temples.filter(t => t.status === 'CLOSED').length;
+    const maintCount = temples.filter(t => t.status === 'MAINTENANCE').length;
+    const totalLive = temples.reduce((s, t) => s + (t.live_count ?? (t as any).currentOccupancy ?? 0), 0);
+    const totalCap = temples.reduce((s, t) => {
+        const c = typeof t.capacity === 'number' ? t.capacity : (t.capacity?.total || 0);
+        return s + c;
+    }, 0);
+    const globalPct = totalCap > 0 ? Math.round(totalLive / totalCap * 100) : 0;
+
+    // ── Filtered ────────────────────────────────────────────────────────────
+    const filtered = temples.filter(t => {
+        const q = search.toLowerCase().trim();
+        const loc = typeof t.location === 'object' ? `${t.location.city} ${t.location.state}` : t.location || '';
+        const hit = !q || t.name.toLowerCase().includes(q)
+            || loc.toLowerCase().includes(q)
+            || (t.deity || '').toLowerCase().includes(q);
+        const st = statusFilter === 'All' || t.status === statusFilter;
+        return hit && st;
+    });
+
+    // ── Handlers ────────────────────────────────────────────────────────────
+    const openCreate = () => { setEditTemple(null); setSaveErr(null); setModalOpen(true); };
+    const openEdit = (t: Temple) => { setEditTemple(t); setSaveErr(null); setModalOpen(true); };
+    const closeModal = () => { if (!isSaving) { setModalOpen(false); setEditTemple(null); } };
+
+    const handleSave = async (data: Partial<Temple>) => {
+        setSaveErr(null);
+        setIsSaving(true);
+        try {
+            if (editTemple) {
+                const res = await adminApi.updateTemple(editTemple._id, data);
+                setTemples(p => p.map(t => t._id === editTemple._id ? res.data : t));
+                showToast(`"${res.data.name}" updated`);
+            } else {
+                const res = await adminApi.createTemple(data);
+                setTemples(p => [...p, res.data]);
+                showToast(`"${res.data.name}" added`);
+            }
+            setModalOpen(false); setEditTemple(null);
+        } catch (e: any) {
+            setSaveErr(e.message || 'Save failed');
+        } finally { setIsSaving(false); }
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!delTarget) return;
+        setIsDeleting(true);
+        try {
+            await adminApi.deleteTemple(delTarget.id);
+            setTemples(p => p.filter(t => t._id !== delTarget.id));
+            showToast(`"${delTarget.name}" deleted`);
+        } catch (e: any) { showToast(e.message || 'Delete failed', false); }
+        finally { setIsDeleting(false); setDelTarget(null); }
+    };
+
+    const handleStatusChange = (id: string, s: 'OPEN' | 'CLOSED' | 'MAINTENANCE') =>
+        setTemples(p => p.map(t => t._id === id ? { ...t, status: s } : t));
+
+    const toggleSelect = (id: string) =>
+        setSelected(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+    const allSelected = selected.size === filtered.length && filtered.length > 0;
+    const toggleAll = () => setSelected(allSelected ? new Set() : new Set(filtered.map(t => t._id)));
+
+    const bulkSetStatus = async (s: 'OPEN' | 'CLOSED' | 'MAINTENANCE') => {
+        const ids = [...selected];
+        for (const id of ids) {
+            try { await adminApi.updateTemple(id, { status: s }); } catch (_) { }
+        }
+        setTemples(p => p.map(t => selected.has(t._id) ? { ...t, status: s } : t));
+        showToast(`${ids.length} temples set to ${s}`);
+        setSelected(new Set()); setBulkMode(false);
+    };
+
+    const bulkDelete = async () => {
+        if (!window.confirm(`Delete ${selected.size} temples? This cannot be undone.`)) return;
+        const ids = [...selected];
+        for (const id of ids) {
+            try { await adminApi.deleteTemple(id); } catch (_) { }
+        }
+        setTemples(p => p.filter(t => !selected.has(t._id)));
+        showToast(`${ids.length} temples deleted`);
+        setSelected(new Set()); setBulkMode(false);
+    };
+
+    return (
+        <AdminLayout title="Temple Management" subtitle="Manage all registered temples">
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50/30">
+
+                {/* Toasts */}
+                <AnimatePresence>
+                    {toast && <Toast msg={toast.msg} ok={toast.ok} onDone={() => setToast(null)} />}
+                </AnimatePresence>
+
+                {/* Backend error banner */}
+                {!backendUp && (
+                    <BackendStatusBar status="error" label="Backend offline" onRetry={() => fetchTemples()} />
+                )}
+
+                <div className="max-w-[1440px] mx-auto px-6 lg:px-8 py-6 space-y-6">
+
+                    {/* ── Header ── */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-3 mb-0.5">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-200">
+                                    <Building2 className="w-4.5 h-4.5 text-white" />
+                                </div>
+                                <h1 className="text-2xl font-black text-slate-800 tracking-tight">Temple Management</h1>
+                            </div>
+                            <p className="text-xs text-slate-400 font-medium pl-12">
+                                {temples.length} temples · {openCount} open · {totalLive.toLocaleString('en-IN')} visitors live
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                onClick={() => fetchTemples(true)} disabled={loading || refreshing}
+                                className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-500 hover:border-slate-300 shadow-sm transition-all"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                            </motion.button>
+                            <motion.button
+                                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                                onClick={openCreate}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-500
+                                           text-white font-bold rounded-xl shadow-md shadow-orange-200/70
+                                           hover:shadow-orange-300/80 transition-all text-sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Temple
+                            </motion.button>
+                        </div>
+                    </div>
+
+                    {/* ── Stats ── */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <StatCard label="Total Temples" value={temples.length}
+                            sub={`${closedCount} closed, ${maintCount} maintenance`}
+                            icon={<Building2 className="w-4.5 h-4.5 text-orange-600" />}
+                            ring="bg-orange-50" delay={0} />
+                        <StatCard label="Open Now" value={openCount}
+                            sub={`${Math.round(openCount / Math.max(1, temples.length) * 100)}% of total`}
+                            icon={<span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />}
+                            ring="bg-emerald-50" delay={0.04} />
+                        <StatCard label="Live Visitors" value={totalLive.toLocaleString('en-IN')}
+                            sub={`${globalPct}% system capacity`}
+                            icon={<Users className="w-4.5 h-4.5 text-blue-600" />}
+                            ring="bg-blue-50" delay={0.08} />
+                        <StatCard label="System Capacity" value={totalCap >= 1000 ? `${(totalCap / 1000).toFixed(0)}K` : totalCap}
+                            sub="combined maximum"
+                            icon={<Building2 className="w-4.5 h-4.5 text-purple-600" />}
+                            ring="bg-purple-50" delay={0.12} />
+                    </div>
+
+                    {/* ── Filter Bar ── */}
+                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            {/* Search */}
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
+                                <input
+                                    type="text" value={search} onChange={e => setSearch(e.target.value)}
+                                    placeholder="Search by name, city, deity…"
+                                    className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm
+                                               outline-none focus:ring-2 focus:ring-orange-400/25 focus:border-orange-400
+                                               placeholder:text-slate-300 text-slate-700 font-medium transition-all"
+                                />
+                                {search && (
+                                    <button onClick={() => setSearch('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Status pills */}
+                            <div className="flex items-center gap-1.5 overflow-x-auto">
+                                {STATUS_FILTERS.map(s => (
+                                    <button key={s} onClick={() => setStatusFilter(s)}
+                                        className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all
+                                                   ${statusFilter === s
+                                                ? 'bg-orange-500 text-white shadow-md shadow-orange-200'
+                                                : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200'}`}
+                                    >
+                                        {s !== 'All' && (
+                                            <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[s] ?? 'bg-slate-400'}`} />
+                                        )}
+                                        {s === 'All' ? `All (${temples.length})` : s}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Bulk toggle */}
+                            <button onClick={() => { setBulkMode(!bulkMode); setSelected(new Set()); }}
+                                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border
+                                           ${bulkMode ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200'}`}
+                            >
+                                <SlidersHorizontal className="w-3.5 h-3.5" />
+                                Bulk Edit
+                            </button>
+                        </div>
+
+                        {/* Bulk Actions */}
+                        <AnimatePresence>
+                            {bulkMode && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="flex items-center gap-3 flex-wrap pt-3 border-t border-slate-100">
+                                        <button onClick={toggleAll}
+                                            className="flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:underline">
+                                            {allSelected ? <><CheckSquare className="w-3.5 h-3.5" />Deselect All</> : <><Square className="w-3.5 h-3.5" />Select All</>}
+                                        </button>
+                                        <span className="text-xs text-slate-400">{selected.size} / {filtered.length} selected</span>
+                                        {selected.size > 0 && (
+                                            <>
+                                                <button onClick={() => bulkSetStatus('OPEN')}
+                                                    className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold hover:bg-emerald-100 flex items-center gap-1">
+                                                    <ToggleRight className="w-3.5 h-3.5" />Set Open
+                                                </button>
+                                                <button onClick={() => bulkSetStatus('CLOSED')}
+                                                    className="px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg text-xs font-bold hover:bg-red-100 flex items-center gap-1">
+                                                    <ToggleRight className="w-3.5 h-3.5" />Set Closed
+                                                </button>
+                                                <button onClick={bulkDelete}
+                                                    className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 flex items-center gap-1 ml-auto">
+                                                    <Trash2 className="w-3.5 h-3.5" />Delete ({selected.size})
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* ── Result count ── */}
+                    <div className="flex items-center justify-between px-0.5">
+                        <p className="text-xs text-slate-400 font-medium">
+                            Showing <span className="font-bold text-slate-600">{filtered.length}</span> of {temples.length} temples
+                            {statusFilter !== 'All' && <> · <span className="text-orange-500 font-bold">{statusFilter}</span></>}
+                            {search && <> matching "<span className="text-orange-500 font-bold">{search}</span>"</>}
+                        </p>
+                        {(search || statusFilter !== 'All') && (
+                            <button onClick={() => { setSearch(''); setStatusFilter('All'); }}
+                                className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-700 font-bold transition-colors">
+                                <Filter className="w-3 h-3" /> Clear
+                            </button>
+                        )}
+                    </div>
+
+                    {/* ── Grid ── */}
+                    {loading ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {Array(6).fill(0).map((_, i) => <SkeletonCard key={i} />)}
+                        </div>
+                    ) : fetchErr ? (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                            className="bg-white rounded-2xl border border-red-100 p-14 text-center shadow-sm">
+                            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-black text-slate-700 mb-1.5">Failed to Load</h3>
+                            <p className="text-sm text-slate-400 mb-5">{fetchErr}</p>
+                            <button onClick={() => fetchTemples()}
+                                className="px-6 py-2.5 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-colors shadow-md shadow-orange-200">
+                                Retry
+                            </button>
+                        </motion.div>
+                    ) : filtered.length === 0 ? (
+                        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+                            className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
+                            <div className="text-6xl mb-4">🛕</div>
+                            <h3 className="text-lg font-black text-slate-700 mb-1.5">
+                                {search || statusFilter !== 'All' ? 'No Matches Found' : 'No Temples Yet'}
+                            </h3>
+                            <p className="text-sm text-slate-400 mb-6">
+                                {search || statusFilter !== 'All'
+                                    ? 'Try adjusting your search terms or filters.'
+                                    : 'Add your first temple to start managing crowds.'}
+                            </p>
+                            {search || statusFilter !== 'All'
+                                ? <button onClick={() => { setSearch(''); setStatusFilter('All'); }}
+                                    className="px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">
+                                    Clear Filters
+                                </button>
+                                : <button onClick={openCreate}
+                                    className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl shadow-md shadow-orange-200">
+                                    + Add First Temple
+                                </button>
+                            }
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+                            initial="hidden" animate="visible"
+                        >
+                            {filtered.map((temple, i) => (
+                                <div key={temple._id} className="relative">
+                                    {/* Selection checkbox overlay for bulk mode */}
+                                    {bulkMode && (
+                                        <motion.button
+                                            initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                            onClick={() => toggleSelect(temple._id)}
+                                            className={`absolute top-3.5 left-3.5 z-30 w-6 h-6 rounded-lg shadow-lg flex items-center justify-center
+                                                       transition-all border-2
+                                                       ${selected.has(temple._id)
+                                                    ? 'bg-orange-500 border-white shadow-orange-300'
+                                                    : 'bg-white/90 border-slate-300 hover:border-orange-400'}`}
+                                        >
+                                            {selected.has(temple._id) && (
+                                                <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                                                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                            )}
+                                        </motion.button>
+                                    )}
+
+                                    {/* Bulk selection highlight ring */}
+                                    {bulkMode && selected.has(temple._id) && (
+                                        <div className="absolute inset-0 rounded-2xl ring-2 ring-orange-400 ring-offset-2 pointer-events-none z-20" />
+                                    )}
+
+                                    <TempleCard
+                                        temple={temple}
+                                        index={i}
+                                        onEdit={openEdit}
+                                        onDelete={(id, name) => setDelTarget({ id, name })}
+                                        onStatusChange={handleStatusChange}
+                                    />
+                                </div>
+                            ))}
+                        </motion.div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── Modals ── */}
+            <AnimatePresence>
+                {modalOpen && (
+                    <TempleFormModal
+                        isOpen={modalOpen}
+                        onClose={closeModal}
+                        onSave={handleSave}
+                        initialData={editTemple}
+                        isSaving={isSaving}
+                    />
+                )}
+                {delTarget && (
+                    <DeleteDialog
+                        name={delTarget.name}
+                        onConfirm={handleDeleteConfirm}
+                        onCancel={() => setDelTarget(null)}
+                        loading={isDeleting}
+                    />
+                )}
+            </AnimatePresence>
+        </AdminLayout>
     );
 }

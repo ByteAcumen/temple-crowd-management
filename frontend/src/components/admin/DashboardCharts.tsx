@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import {
     AreaChart,
     Area,
@@ -30,19 +30,22 @@ interface RevenueData {
 interface DashboardChartsProps {
     dailyTrends: DailyTrend[];
     revenueByTemple: RevenueData[];
+    dateRange: string;
+    onRangeChange: (range: string) => void;
 }
 
-export default function DashboardCharts({ dailyTrends, revenueByTemple }: DashboardChartsProps) {
+import { GlassCard } from '@/components/ui/GlassCard';
 
+function DashboardChartsBase({ dailyTrends, revenueByTemple, dateRange, onRangeChange }: DashboardChartsProps) {
     const chartData = useMemo(() => {
         if (!dailyTrends) return [];
         return dailyTrends
             .map(d => ({
                 date: new Date(d._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                fullDate: d._id,
                 value: d.count
             }))
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort if needed, though usually date string sort works differently
-            .slice(-7);
+            .sort((a, b) => new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime());
     }, [dailyTrends]);
 
     const revenueData = useMemo(() => {
@@ -53,85 +56,124 @@ export default function DashboardCharts({ dailyTrends, revenueByTemple }: Dashbo
         }));
     }, [revenueByTemple]);
 
+    console.log('📈 DashboardCharts Render:', { dailyTrends, revenueByTemple, chartData, revenueData });
+
     return (
         <div className="grid lg:grid-cols-2 gap-6">
             {/* Trend Chart Card */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 h-80 flex flex-col"
-            >
-                <div className="flex items-center justify-between mb-4">
+            <GlassCard className="p-6 h-[500px] flex flex-col">
+                <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h3 className="text-lg font-bold text-slate-800">Booking Trends</h3>
-                        <p className="text-sm text-slate-500">Last 7 Days</p>
+                        <h3 className="text-lg font-bold text-slate-900">Booking Trends</h3>
+                        <p className="text-sm text-slate-500">Visitor Traffic Analysis</p>
                     </div>
-                    <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
+                    {/* Range Filter */}
+                    <div className="flex bg-slate-100 rounded-lg p-1">
+                        {['7d', '30d', '90d'].map((range) => (
+                            <button
+                                key={range}
+                                onClick={() => onRangeChange(range)}
+                                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${dateRange === range
+                                    ? 'bg-white text-orange-600 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                            >
+                                {range.toUpperCase()}
+                            </button>
+                        ))}
                     </div>
                 </div>
-                <div className="flex-1 w-full min-h-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData}>
-                            <defs>
-                                <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#F97316" stopOpacity={0.2} />
-                                    <stop offset="95%" stopColor="#F97316" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 10 }} />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                cursor={{ stroke: '#F97316', strokeWidth: 1, strokeDasharray: '5 5' }}
-                            />
-                            <Area type="monotone" dataKey="value" stroke="#F97316" strokeWidth={3} fillOpacity={1} fill="url(#colorVisits)" />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                {/* Fixed height container */}
+                <div className="w-full flex-1 min-h-0 relative">
+                    {chartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData}>
+                                <defs>
+                                    <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#EA580C" stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor="#EA580C" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                                <XAxis
+                                    dataKey="date"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#64748B', fontSize: 10 }}
+                                    minTickGap={30}
+                                />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', color: '#1E293B' }}
+                                    itemStyle={{ color: '#EA580C' }}
+                                    cursor={{ stroke: '#EA580C', strokeWidth: 1, strokeDasharray: '5 5' }}
+                                />
+                                <Area type="monotone" dataKey="value" stroke="#EA580C" strokeWidth={2} fillOpacity={1} fill="url(#colorVisits)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center flex-col text-slate-400">
+                            <svg className="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <p className="text-sm font-medium">No booking data yet</p>
+                        </div>
+                    )}
                 </div>
-            </motion.div>
+            </GlassCard>
 
             {/* Revenue Chart Card */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 h-80 flex flex-col"
-            >
+            <GlassCard className="p-6 h-[500px] flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                     <div>
-                        <h3 className="text-lg font-bold text-slate-800">Top Revenue</h3>
+                        <h3 className="text-lg font-bold text-slate-900">Top Revenue</h3>
                         <p className="text-sm text-slate-500">By Temple</p>
                     </div>
-                    <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                    <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg border border-emerald-200">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
                 </div>
-                <div className="flex-1 w-full min-h-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={revenueData} layout="vertical" margin={{ left: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E2E8F0" />
-                            <XAxis type="number" hide />
-                            <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fill: '#334155', fontSize: 11, fontWeight: 500 }} />
-                            <Tooltip
-                                cursor={{ fill: 'transparent' }}
-                                contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                formatter={(value: any) => `₹${value.toLocaleString()}`}
-                            />
-                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
-                                {revenueData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={['#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E'][index % 5]} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
+                {/* Fixed height container */}
+                <div className="w-full h-48 relative">
+                    {revenueData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={revenueData} layout="vertical" margin={{ left: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(0,0,0,0.05)" />
+                                <XAxis type="number" hide />
+                                <YAxis
+                                    dataKey="name"
+                                    type="category"
+                                    width={100}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#64748B', fontSize: 11, fontWeight: 500 }}
+                                />
+                                <Tooltip
+                                    cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                                    contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', color: '#1E293B' }}
+                                    formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                                />
+                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                                    {revenueData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={['#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E'][index % 5]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center flex-col text-slate-400">
+                            <svg className="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="text-sm font-medium">No revenue data yet</p>
+                        </div>
+                    )}
                 </div>
-            </motion.div>
+            </GlassCard>
         </div>
     );
 }
+
+const DashboardCharts = memo(DashboardChartsBase);
+export default DashboardCharts;
