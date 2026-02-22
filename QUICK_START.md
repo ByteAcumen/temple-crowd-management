@@ -1,127 +1,157 @@
-# 🚀 Quick Start Guide
+# 🛕 Temple Crowd Management — Quick Start Guide
 
-**Get the Temple Crowd Management System running in under 2 minutes!**
-
-This guide automates the entire setup using Docker. No manual database installation required.
+> Get the entire system running in **under 3 minutes** with one command.
 
 ---
 
 ## ✅ Prerequisites
 
-1.  **[Docker Desktop](https://www.docker.com/products/docker-desktop)** (Must be installed and running)
-2.  **[Node.js](https://nodejs.org/)** (v18+ for Frontend)
-3.  **Git**
+| Tool | Purpose | Install |
+|------|---------|---------|
+| **Docker Desktop** | Runs everything (DB, Redis, Backend, Frontend) | [Download](https://www.docker.com/products/docker-desktop) |
+| **Node.js v20+** | Frontend local dev (optional) | [Download](https://nodejs.org) |
+| **Git** | Clone the repo | Pre-installed on most systems |
 
-That's it! MongoDB, Redis, and AI Services are handled automatically.
+> MongoDB, Redis, and ML services start automatically inside Docker. No manual installation needed.
 
 ---
 
-## 🏃 One-Click Startup (Windows)
+## 🚀 One-Command Startup
 
-We have automated the entire backend ecosystem (API, Database, AI Models) into a single script.
-
-### Step 1: Clone & Setup
 ```powershell
+# Clone the repo
 git clone <your-repo-url>
 cd temple-crowd-management
-# No .env needed - Docker uses built-in config
-```
 
-### Step 2: One-Click Startup 🚀
-Run the master startup script. This handles **Backend**, **Database**, **AI Services**, and launches the **Frontend** automatically.
-
-```powershell
+# Start everything (Docker must be running)
 .\start.ps1
 ```
 
-**What this does:**
-1.  Starts all Docker containers (Backend, Mongo, Redis, ML Models).
-2.  Waits for services to be healthy.
-3.  Automatically opens a new window for the Frontend.
-
-**Success Output:**
-> ✅ System is fully operational! 🚀
-> 📡 Backend: http://localhost:5001
-> 💻 Frontend: http://localhost:3000
+That's it. The script:
+1. Checks Docker is healthy
+2. Starts MongoDB, Redis, Backend, ML services, Frontend
+3. Waits for each service to become healthy
+4. Runs quick API sanity checks
+5. Prints all URLs when ready
 
 ---
 
-## 🔑 Default Credentials
+## 🔑 Default Login Credentials
 
-Use these accounts to log in:
-
-| Role | Email | Password | Access Level |
-|------|-------|----------|--------------|
-| **Super Admin** 👑 | `admin@temple.com` | `Admin@123456` | Full Control, Dashboard, Analytics |
-| **Gatekeeper** 👮 | `gatekeeper@temple.com` | `Gate@12345` | Scan QR, Track Entry/Exit |
-| **Devotee** 🙏 | `user@temple.com` | `User@12345` | Book Slots, View History |
+| Role | Email | Password |
+|------|-------|----------|
+| **Super Admin** 👑 | `admin@temple.com` | `Admin@123456` |
+| **Gatekeeper** 👮 | `gatekeeper@temple.com` | `Gate@12345` |
+| **Devotee** 🙏 | `user@temple.com` | `User@12345` |
 
 ---
 
-## 🧪 Verify Installation
-
-To check if all 27 system features (Auth, Booking, AI, Crowd Tracking) are working correctly, run the full test suite:
+## ⚙️ Script Options
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\verify-system.ps1
+.\start.ps1                  # Normal dev start (default)
+.\start.ps1 -Production      # Start production containers
+.\start.ps1 -Rebuild         # Force rebuild Docker images (after code changes)
+.\start.ps1 -SkipFrontend    # Backend-only mode (faster)
+.\start.ps1 -Down            # Stop all containers (data is preserved)
+.\start.ps1 -Logs            # Tail live container logs
 ```
-
-**Expected Result:** ~90%+ tests passing (some need specific data).
 
 ---
 
-## 🔧 Backend Testing & Crowd Simulation
+## 🛠️ Manual Start (without Docker)
 
-### Temples Showing as Offline?
-Temple status (OPEN/CLOSED) is based on operating hours. To force all temples OPEN for dev/demo:
+If you prefer running services natively:
 
-```bash
-# Add to .env
-FORCE_TEMPLES_OPEN=true
+### Terminal 1 — Backend
+```powershell
+cd backend
+cp .env.example .env          # Configure environment
+npm install
+npm run dev                   # Starts on http://localhost:5001
 ```
 
-Or run the sync + crowd simulation script:
+### Terminal 2 — Frontend
+```powershell
+cd frontend
+npm install
+npm run dev                   # Starts on http://localhost:3000
+```
+
+> **Note:** You'll need MongoDB and Redis running locally or set `MONGODB_URI` and `REDIS_HOST` in `backend/.env` to point at your Docker containers.
+
+---
+
+## 📊 Seed Dashboard Data
+
+If the Admin Dashboard graphs show no data, run the seeder:
 
 ```powershell
 cd backend
+npm run seed     # Injects 30 days of realistic booking data + live crowd counts
+```
+
+---
+
+## 🎭 Crowd Simulation
+
+Control the simulated live crowd counts for demo/testing:
+
+```powershell
+cd backend
+node scripts/simulate_crowd.js           # Random 10–80% crowd
 node scripts/simulate_crowd.js --open    # Force all temples OPEN
-node scripts/simulate_crowd.js           # Simulate 10-80% crowd
-node scripts/simulate_crowd.js --high    # Simulate 70-95% (triggers ORANGE/RED alerts)
+node scripts/simulate_crowd.js --high    # 70–95% crowd (triggers alerts)
 node scripts/simulate_crowd.js --reset   # Reset all counts to 0
 ```
 
-### No Graphs on Dashboard?
-Analytics graphs show booking trends and revenue. If no bookings exist, the API returns sample data so charts render. Seed bookings:
+---
 
-```powershell
-cd backend
-node scripts/seed_simulation.js --force
-```
+## 🔴 Crowd Status Thresholds
 
-### How Crowd Reacts
-- **GREEN**: < 85% capacity
-- **ORANGE**: 85–95% (warning)
-- **RED**: 95%+ (critical)
-- Live counts come from Redis; entry/exit scans update in real-time.
+| Status | Capacity % | Action |
+|--------|-----------|--------|
+| 🟢 **GREEN** | < 85% | Normal |
+| 🟡 **ORANGE** | 85–94% | Warning — notify admins |
+| 🔴 **RED** | 95%+ | Critical — block new entries |
 
 ---
 
-## 🛠️ Troubleshooting
+## 🧯 Troubleshooting
 
 ### "Docker is not running"
-**Fix:** Open Docker Desktop and wait for the whale icon to stop animating.
+Open **Docker Desktop** and wait for the whale icon to stop animating, then retry.
 
-### "Port 5000 already in use"
-**Fix:** The `start_backend.ps1` script automatically finds and kills rogue processes on port 5000. Just run it again!
+### "Port 5001 already in use"
+`start.ps1` auto-kills non-Docker processes on required ports. Just run it again.
 
 ### "MongoDB connection failed"
-**Fix:** Ensure you are NOT running a local MongoDB instance separately. The system expects to use the Docker container.
+Ensure you're not running a separate local MongoDB instance. The system uses the Docker container.
 
-### Frontend shows "Network Error"
-**Fix:** Ensure the backend is running (Step 2) and healthy before starting the frontend.
+### "Frontend shows Network Error"
+The backend must be fully healthy before the frontend loads. Run `.\start.ps1` (not just the frontend).
+
+### Backend container keeps restarting
+```powershell
+# See what's happening
+docker logs temple-backend-dev --tail 50
+
+# Rebuild from scratch
+.\start.ps1 -Rebuild
+```
+
+### Data looks empty after restart
+Data is stored in Docker named volumes and **persists across restarts**. If data is missing, run:
+```powershell
+cd backend && npm run seed
+```
 
 ---
 
-## 📚 Documentation
-- [Architecture Overview](README.md)
-- [API Documentation](docs/)
+## 📚 More Documentation
+
+| Doc | Purpose |
+|-----|---------|
+| [README.md](README.md) | Architecture overview |
+| [docs/](docs/) | API documentation |
+| [CREDENTIALS.md](CREDENTIALS.md) | Full credentials list |

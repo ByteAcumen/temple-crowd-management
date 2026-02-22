@@ -29,8 +29,13 @@ function getNext7Days() {
     for (let i = 0; i < 7; i++) {
         const date = new Date();
         date.setDate(date.getDate() + i);
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(date.getDate()).padStart(2, '0');
+
         days.push({
-            date: date.toISOString().split('T')[0],
+            date: `${year}-${month}-${dayStr}`,
             day: date.toLocaleDateString('en-US', { weekday: 'short' }),
             dayNum: date.getDate(),
             month: date.toLocaleDateString('en-US', { month: 'short' }),
@@ -72,9 +77,10 @@ function BookingContent() {
     const [checkingAvailability, setCheckingAvailability] = useState(false);
     const [filledSlots, setFilledSlots] = useState<string[]>([]);
 
-    const dates = getNext7Days();
-
-    // Scroll to top on step change
+    const [dates, setDates] = useState(getNext7Days());
+    useEffect(() => {
+        setDates(getNext7Days());
+    }, []);
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [step]);
@@ -88,9 +94,9 @@ function BookingContent() {
                     setTemples(response.data);
 
                     // Pre-select temple from URL param
-                    const templeId = searchParams.get('temple');
-                    if (templeId) {
-                        const temple = response.data.find(t => t._id === templeId);
+                    const templeIdParam = searchParams.get('temple');
+                    if (templeIdParam) {
+                        const temple = response.data.find(t => (t._id || (t as any).id) === templeIdParam);
                         if (temple) {
                             setSelectedTemple(temple);
                             setStep(2); // Go to date selection
@@ -116,9 +122,10 @@ function BookingContent() {
             const filled: string[] = [];
 
             try {
+                const activeTempleId = selectedTemple._id || (selectedTemple as any).id;
                 const checks = TIME_SLOTS.map(async (slot) => {
                     try {
-                        const slotRes = await bookingsApi.checkAvailability(selectedTemple._id, selectedDate + '&slot=' + slot.id);
+                        const slotRes = await bookingsApi.checkAvailability(activeTempleId, selectedDate, slot.id);
                         if (slotRes.success && slotRes.data.status === 'FULL') {
                             return slot.id;
                         }
@@ -152,8 +159,9 @@ function BookingContent() {
         setError(null);
 
         try {
+            const activeTempleId = selectedTemple._id || (selectedTemple as any).id;
             const response = await bookingsApi.create({
-                templeId: selectedTemple._id,
+                templeId: activeTempleId,
                 templeName: selectedTemple.name,
                 date: selectedDate,
                 timeSlot: selectedSlot,
@@ -282,15 +290,15 @@ function BookingContent() {
                                 <div className="grid md:grid-cols-2 gap-4">
                                     {temples.map((temple) => (
                                         <button
-                                            key={temple._id}
+                                            key={temple._id || (temple as any).id}
                                             onClick={() => setSelectedTemple(temple)}
-                                            className={`group relative text-left p-6 rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl ${selectedTemple?._id === temple._id
+                                            className={`group relative text-left p-6 rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl ${(selectedTemple?._id || (selectedTemple as any)?.id) === (temple._id || (temple as any).id)
                                                 ? 'bg-gradient-to-br from-orange-500 to-red-600 text-white border-transparent shadow-lg shadow-orange-500/30'
                                                 : 'glass border-white/40 hover:border-orange-300'
                                                 }`}
                                         >
                                             <div className="flex items-start justify-between mb-4">
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${selectedTemple?._id === temple._id ? 'bg-white/20 text-white' : 'bg-orange-50 text-orange-600'}`}>
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${(selectedTemple?._id || (selectedTemple as any)?.id) === (temple._id || (temple as any).id) ? 'bg-white/20 text-white' : 'bg-orange-50 text-orange-600'}`}>
                                                     🛕
                                                 </div>
                                                 <TrafficLightBadge status={
@@ -299,8 +307,8 @@ function BookingContent() {
                                                             : 'GREEN'
                                                 } />
                                             </div>
-                                            <h3 className={`font-bold text-lg mb-1 ${selectedTemple?._id === temple._id ? 'text-white' : 'text-slate-800'}`}>{temple.name}</h3>
-                                            <p className={`text-sm flex items-center gap-1 ${selectedTemple?._id === temple._id ? 'text-orange-100' : 'text-slate-500'}`}>
+                                            <h3 className={`font-bold text-lg mb-1 ${(selectedTemple?._id || (selectedTemple as any)?.id) === (temple._id || (temple as any).id) ? 'text-white' : 'text-slate-800'}`}>{temple.name}</h3>
+                                            <p className={`text-sm flex items-center gap-1 ${(selectedTemple?._id || (selectedTemple as any)?.id) === (temple._id || (temple as any).id) ? 'text-orange-100' : 'text-slate-500'}`}>
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                                 </svg>
@@ -586,7 +594,7 @@ function BookingContent() {
                                         <div className="bg-slate-50/80 p-4 rounded-xl">
                                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Date</p>
                                             <p className="font-bold text-slate-900 text-lg">
-                                                {new Date(selectedDate).toLocaleDateString('en-US', {
+                                                {new Date(`${selectedDate}T12:00:00`).toLocaleDateString('en-US', {
                                                     weekday: 'short',
                                                     month: 'short',
                                                     day: 'numeric'
@@ -629,7 +637,7 @@ function BookingContent() {
                                             <p className="text-orange-600 text-xs mt-0.5">You must be logged in to book.</p>
                                         </div>
                                         <Link
-                                            href={`/login?from=${encodeURIComponent(`/booking?temple=${selectedTemple?._id}`)}`}
+                                            href={`/login?from=${encodeURIComponent(`/booking?temple=${selectedTemple?._id || (selectedTemple as any)?.id}`)}`}
                                             className="px-4 py-2 bg-white text-orange-600 font-bold rounded-lg text-sm shadow-sm hover:shadow-md transition-all"
                                         >
                                             Login Now

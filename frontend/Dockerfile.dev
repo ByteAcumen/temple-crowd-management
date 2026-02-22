@@ -1,0 +1,23 @@
+# ============================================================
+# DEVELOPMENT Dockerfile — Frontend (Next.js)
+# Lightweight: no build step, uses `npm run dev` with live reload
+# ============================================================
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy app (source will be mounted via volume in dev)
+COPY . .
+
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '@/lib/api';
 
 interface Notification {
     id: string;
@@ -12,47 +13,101 @@ interface Notification {
     read: boolean;
 }
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-    {
-        id: '1',
-        title: 'Crowd Limit Alert',
-        message: 'Somnath Temple is at 85% capacity.',
-        time: '2 mins ago',
-        type: 'warning',
-        read: false,
-    },
-    {
-        id: '2',
-        title: 'New VIP Booking',
-        message: 'A VIP booking was confirmed for Kashi Vishwanath.',
-        time: '15 mins ago',
-        type: 'success',
-        read: false,
-    },
-    {
-        id: '3',
-        title: 'System Update',
-        message: 'Backend services successfully deployed.',
-        time: '1 hour ago',
-        type: 'info',
-        read: true,
-    },
-    {
-        id: '4',
-        title: 'Payment Failed',
-        message: 'Booking #BK-9821 payment failed.',
-        time: '2 hours ago',
-        type: 'error',
-        read: true,
-    },
-];
-
 export default function NotificationCenter() {
     const [isOpen, setIsOpen] = useState(false);
-    const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const unreadCount = notifications.filter(n => !n.read).length;
+
+    // Fetch live notifications
+    useEffect(() => {
+        let mounted = true;
+
+        const fetchAlerts = async () => {
+            try {
+                const newNotifications: Notification[] = [];
+
+                // 1. Check System Health
+                try {
+                    const health = await api.admin.getSystemHealth();
+                    if (!health.success || health.data?.status === 'down') {
+                        newNotifications.push({
+                            id: `health-err-${Date.now()}`,
+                            title: 'System Offline',
+                            message: 'Backend services or DB unreachable.',
+                            time: 'Just now',
+                            type: 'error',
+                            read: false
+                        });
+                    }
+                } catch (e) {
+                    newNotifications.push({
+                        id: `health-err-${Date.now()}`,
+                        title: 'Connection Lost',
+                        message: 'Unable to reach the backend server.',
+                        time: 'Just now',
+                        type: 'error',
+                        read: false
+                    });
+                }
+
+                // 2. Check Crowd Alerts
+                try {
+                    const live = await api.live.getCrowdData();
+                    if (live.success && live.data?.temples) {
+                        live.data.temples.forEach((t: any) => {
+                            if (t.traffic_status === 'RED' || t.capacity_percentage >= 95) {
+                                newNotifications.push({
+                                    id: `crowd-red-${t.temple_id}-${Date.now()}`,
+                                    title: 'Critical Crowd Alert',
+                                    message: `${t.temple_name} is at ${t.capacity_percentage}% capacity.`,
+                                    time: 'Just now',
+                                    type: 'error',
+                                    read: false
+                                });
+                            } else if (t.traffic_status === 'ORANGE' || t.capacity_percentage >= 80) {
+                                newNotifications.push({
+                                    id: `crowd-org-${t.temple_id}-${Date.now()}`,
+                                    title: 'High Traffic Warning',
+                                    message: `${t.temple_name} is nearing capacity (${t.capacity_percentage}%).`,
+                                    time: 'Just now',
+                                    type: 'warning',
+                                    read: false
+                                });
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error("Failed to load live footprint", e);
+                }
+
+                if (mounted) {
+                    // Prepend new alerts, keeping unread ones
+                    setNotifications(prev => {
+                        const existingUnread = prev.filter(n => !n.read);
+                        const merged = [...newNotifications, ...existingUnread].slice(0, 10); // Keep top 10
+                        // Deduplicate by title to avoid spam during polling
+                        const unique = merged.filter((v, i, a) => a.findIndex(t => (t.title === v.title && t.message === v.message)) === i);
+                        return unique;
+                    });
+                    setLoading(false);
+                }
+            } catch (err) {
+                if (mounted) setLoading(false);
+            }
+        };
+
+        fetchAlerts();
+
+        // Poll every 60 seconds
+        const interval = setInterval(fetchAlerts, 60000);
+        return () => {
+            mounted = false;
+            clearInterval(interval);
+        };
+    }, []);
 
     // Close on click outside
     useEffect(() => {
@@ -69,7 +124,8 @@ export default function NotificationCenter() {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     };
 
-    const markRead = (id: string) => {
+    const markRead = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation(); // Keep dropdown open when clicking a notification
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     };
 
@@ -103,11 +159,11 @@ export default function NotificationCenter() {
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
+                        initial={{ opacity: 0, y: 15, scale: 0.95, filter: 'blur(10px)' }}
+                        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, y: 15, scale: 0.95, filter: 'blur(10px)' }}
+                        transition={{ type: 'spring', duration: 0.4, bounce: 0.15 }}
+                        className="absolute right-0 mt-3 w-80 sm:w-96 bg-white/95 backdrop-blur-3xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-slate-200/80 overflow-hidden ring-1 ring-slate-100/50"
                     >
                         {/* Header */}
                         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
@@ -124,33 +180,40 @@ export default function NotificationCenter() {
 
                         {/* List */}
                         <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
-                            {notifications.length > 0 ? (
-                                notifications.map((n) => (
-                                    <div
+                            {loading && notifications.length === 0 ? (
+                                <div className="py-8 text-center text-slate-400 text-sm animate-pulse">
+                                    Checking systems...
+                                </div>
+                            ) : notifications.length > 0 ? (
+                                notifications.map((n, i) => (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.1 + (i * 0.05) }}
                                         key={n.id}
-                                        onClick={() => markRead(n.id)}
-                                        className={`px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer flex gap-3 ${!n.read ? 'bg-orange-50/50' : ''}`}
+                                        onClick={(e) => markRead(e, n.id)}
+                                        className={`px-4 py-3.5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer flex gap-3 group ${!n.read ? 'bg-orange-50/30 hover:bg-orange-50/60' : ''}`}
                                     >
-                                        <div className="text-xl mt-1">{getIcon(n.type)}</div>
+                                        <div className="text-xl mt-1 group-hover:scale-110 transition-transform">{getIcon(n.type)}</div>
                                         <div className="flex-1">
-                                            <p className={`text-sm ${!n.read ? 'font-bold text-slate-800' : 'text-slate-600'}`}>
+                                            <p className={`text-sm ${!n.read ? 'font-bold text-slate-900' : 'text-slate-600'}`}>
                                                 {n.title}
                                             </p>
                                             <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                                                 {n.message}
                                             </p>
-                                            <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                                            <p className="text-[10px] text-slate-400 mt-1.5 font-bold uppercase tracking-wider">
                                                 {n.time}
                                             </p>
                                         </div>
                                         {!n.read && (
-                                            <div className="w-2 h-2 rounded-full bg-orange-500 mt-2 shrink-0" />
+                                            <div className="w-2 h-2 rounded-full bg-orange-500 mt-2 shrink-0 shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
                                         )}
-                                    </div>
+                                    </motion.div>
                                 ))
                             ) : (
                                 <div className="py-8 text-center text-slate-400 text-sm">
-                                    No notifications
+                                    System is fully operational.
                                 </div>
                             )}
                         </div>
@@ -158,7 +221,7 @@ export default function NotificationCenter() {
                         {/* Footer */}
                         <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 text-center">
                             <button className="text-xs font-medium text-slate-500 hover:text-slate-800">
-                                View Activity Log
+                                View Activity Log (Coming Soon)
                             </button>
                         </div>
                     </motion.div>

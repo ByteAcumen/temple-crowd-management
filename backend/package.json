@@ -15,8 +15,9 @@
     "format": "prettier --write \"src/**/*.js\"",
     "audit": "npm audit --audit-level=high",
     "build": "echo 'Build complete'",
+    "seed": "node scripts/seed-dashboard-data.js",
     "docker:build": "docker build -t temple-backend .",
-    "docker:run": "docker run -p 5000:5000 temple-backend"
+    "docker:run": "docker run -p 5001:5001 temple-backend"
   },
   "keywords": [
     "temple",

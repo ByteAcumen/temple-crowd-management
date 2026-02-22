@@ -172,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 router.push('/admin/dashboard');
                 break;
             case 'gatekeeper':
-                router.push('/gatekeeper/scan');
+                router.push('/gatekeeper');
                 break;
             default:
                 router.push('/dashboard');

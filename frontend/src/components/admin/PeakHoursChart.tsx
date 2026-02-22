@@ -26,36 +26,37 @@ export default function PeakHoursChart({ data }: PeakHoursProps) {
                 </div>
             </div>
 
-            <div className="flex-1 w-full min-h-0 relative">
+            <div className="w-full h-[260px] mt-4">
                 {data && data.length > 0 ? (
-                    <div className="absolute inset-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                                <XAxis
-                                    dataKey="_id"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#64748B', fontSize: 10 }}
-                                    interval={0}
-                                />
-                                <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#64748B', fontSize: 10 }}
-                                />
-                                <Tooltip
-                                    cursor={{ fill: 'rgba(0,0,0,0.02)' }}
-                                    contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', color: '#1E293B' }}
-                                />
-                                <Bar dataKey="total_visitors" radius={[4, 4, 0, 0]} barSize={40}>
-                                    {data.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={['#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE'][index % 5]} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                            <XAxis
+                                dataKey="_id"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#64748B', fontSize: 10 }}
+                                angle={-45}
+                                textAnchor="end"
+                                height={50}
+                                interval={0}
+                            />
+                            <YAxis
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#64748B', fontSize: 10 }}
+                            />
+                            <Tooltip
+                                cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                                contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', color: '#1E293B' }}
+                            />
+                            <Bar dataKey="total_visitors" radius={[4, 4, 0, 0]} barSize={40}>
+                                {data.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={['#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE'][index % 5]} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3 opacity-60">
                         <span className="text-4xl">🕰️</span>

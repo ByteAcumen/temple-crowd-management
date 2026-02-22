@@ -21,8 +21,26 @@ const getNavItems = (isSuperAdmin: boolean) => [
 
 // Sidebar Animation Variants
 const sidebarVariants: Variants = {
-    expanded: { width: 280, transition: { type: "spring", stiffness: 300, damping: 30 } },
-    collapsed: { width: 88, transition: { type: "spring", stiffness: 300, damping: 30 } }
+    expanded: {
+        width: 280,
+        x: 0,
+        transition: { type: "spring", stiffness: 400, damping: 40, mass: 0.8 }
+    },
+    collapsed: {
+        width: 88,
+        x: 0,
+        transition: { type: "spring", stiffness: 400, damping: 40, mass: 0.8 }
+    },
+    mobileOpen: {
+        x: 0,
+        width: 288,
+        transition: { type: "spring", stiffness: 400, damping: 40, mass: 0.8 }
+    },
+    mobileClosed: {
+        x: -288,
+        width: 288,
+        transition: { type: "spring", stiffness: 400, damping: 40, mass: 0.8 }
+    }
 };
 
 const navItemVariants = {
@@ -50,13 +68,31 @@ export default function AdminLayout({
     const { user, logout } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
     const [isCommandOpen, setIsCommandOpen] = useState(false);
     const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+    // Click outside refs
+    const profileRef = useRef<HTMLDivElement>(null);
+    const quickAddRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+                setIsProfileOpen(false);
+            }
+            if (quickAddRef.current && !quickAddRef.current.contains(event.target as Node)) {
+                setIsQuickAddOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Smooth Scroll Progress
     const scrollRef = useRef(null);
@@ -113,26 +149,25 @@ export default function AdminLayout({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
                         onClick={() => setIsSidebarOpen(false)}
-                        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
                     />
                 )}
             </AnimatePresence>
 
-            {/* Sidebar - Desktop */}
+            {/* Sidebar - Desktop & Mobile */}
             <motion.aside
-                initial="expanded"
-                animate={isMobile ? (isSidebarOpen ? "expanded" : "collapsed") : (isDesktopCollapsed ? "collapsed" : "expanded")}
-                variants={isMobile ? {} : sidebarVariants} // Only animate width on desktop
+                initial={isMobile ? "mobileClosed" : "expanded"}
+                animate={isMobile ? (isSidebarOpen ? "mobileOpen" : "mobileClosed") : (isDesktopCollapsed ? "collapsed" : "expanded")}
+                variants={sidebarVariants}
                 className={`
                 fixed lg:relative z-50 h-screen flex flex-col 
                 glass-sidebar border-r border-slate-200/60 shadow-xl shadow-slate-200/50 
-                transition-transform duration-300 bg-white/80 backdrop-blur-xl
-                ${isMobile ? (isSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72') : ''}
+                bg-white/80 backdrop-blur-xl will-change-transform
             `}>
-                <div className={`p-6 flex items-center gap-3 border-b border-slate-100/80 ${isDesktopCollapsed ? 'justify-center' : ''}`}>
-                    <Link href="/" className="relative group cursor-pointer flex items-center gap-3">
+                <div className={`p-6 flex items-center gap-3 border-b border-slate-100/80 ${isDesktopCollapsed && !isMobile ? 'justify-center' : ''}`}>
+                    <Link href="/" className="relative group cursor-pointer flex items-center gap-3" onClick={() => isMobile && setIsSidebarOpen(false)}>
                         <div className="relative shrink-0">
                             <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
                             <img
@@ -241,17 +276,58 @@ export default function AdminLayout({
             </motion.aside>
 
             {/* Mobile Header */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/60 z-40 flex items-center justify-between px-4">
-                <div className="flex items-center gap-2">
-                    <img src="/temple-logo.png" alt="Logo" className="w-8 h-8 rounded-lg bg-slate-50 object-contain p-1 border border-slate-100" />
-                    <span className="font-bold text-slate-900 tracking-tight">TempleSmart</span>
+            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-3xl border-b border-slate-200/60 z-40 flex items-center justify-between px-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
+                <div className="flex items-center gap-3">
+                    <button
+                        className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-colors"
+                        onClick={() => setIsSidebarOpen(true)}
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <img src="/temple-logo.png" alt="Logo" className="w-8 h-8 rounded-lg bg-orange-50 object-contain p-1 border border-orange-100" />
+                        <span className="font-bold text-slate-900 tracking-tight text-lg">Temple<span className="text-orange-600">Smart</span></span>
+                    </div>
                 </div>
-                <button
-                    className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                    onClick={() => setIsSidebarOpen(true)}
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-                </button>
+
+                <div className="flex items-center gap-2">
+                    {/* Mobile Search Action */}
+                    <button onClick={() => setIsCommandOpen(true)} className="p-2 text-slate-400 hover:text-orange-600 bg-slate-50 hover:bg-orange-50 rounded-xl transition-colors ring-1 ring-slate-100">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                    {/* Mobile Notification */}
+                    <NotificationCenter />
+                    {/* Mobile Profile Dropdown */}
+                    <div className="relative" ref={profileRef}>
+                        <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="p-1.5 focus:outline-none">
+                            <div className="w-8 h-8 rounded-xl bg-orange-100/80 border border-orange-200 flex items-center justify-center text-orange-700 font-bold text-xs ring-2 ring-transparent focus:ring-orange-300 transition-all">
+                                {(user?.name || 'AD').substring(0, 2).toUpperCase()}
+                            </div>
+                        </button>
+
+                        <AnimatePresence>
+                            {isProfileOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className="absolute right-0 mt-2 w-48 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden ring-1 ring-black/5 z-50 p-1"
+                                >
+                                    <div className="px-4 py-3 border-b border-slate-100/80 mb-1">
+                                        <p className="text-sm font-bold text-slate-800">{user?.name || 'Admin User'}</p>
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest">{user?.role || 'Super Admin'}</p>
+                                    </div>
+                                    <button onClick={() => { setIsProfileOpen(false); router.push('/admin/dashboard'); }} className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors font-medium">Dashboard</button>
+                                    <button onClick={() => { setIsProfileOpen(false); logout(); }} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors font-medium flex items-center gap-2 mt-1">
+                                        <span>Sign out</span>
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
             </div>
 
             {/* Main Content Area */}
@@ -285,13 +361,12 @@ export default function AdminLayout({
                         </div>
 
                         {/* Quick Actions Dropdown */}
-                        <div className="relative z-50">
+                        <div className="relative z-50" ref={quickAddRef}>
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => setIsQuickAddOpen(!isQuickAddOpen)}
-                                onBlur={() => setTimeout(() => setIsQuickAddOpen(false), 200)}
-                                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg shadow-sm shadow-orange-200 transition-all"
+                                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-sm font-semibold rounded-xl shadow-[0_4px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_6px_16px_rgba(249,115,22,0.35)] transition-all"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -333,14 +408,52 @@ export default function AdminLayout({
 
                         <div className="h-8 w-px bg-slate-200 mx-2"></div>
 
-                        <div className="flex items-center gap-3 pl-2 cursor-pointer group">
-                            <div className="text-right hidden xl:block">
-                                <p className="text-sm font-bold text-slate-900 leading-none group-hover:text-orange-600 transition-colors">{user?.name || 'Admin User'}</p>
-                                <p className="text-xs text-slate-500 mt-1 font-medium">{user?.role || 'Super Admin'}</p>
+                        {/* Desktop Profile Dropdown */}
+                        <div className="relative" ref={profileRef}>
+                            <div
+                                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                className="flex items-center gap-3 pl-2 pr-1 py-1 cursor-pointer group rounded-xl hover:bg-slate-50 transition-colors"
+                            >
+                                <div className="text-right hidden xl:block">
+                                    <p className="text-sm font-bold text-slate-900 leading-none group-hover:text-orange-600 transition-colors">{user?.name || 'Admin User'}</p>
+                                    <p className="text-xs text-slate-500 mt-1 font-medium">{user?.role || 'Super Admin'}</p>
+                                </div>
+                                <div className="w-10 h-10 rounded-xl bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-700 font-bold text-sm ring-2 ring-transparent group-hover:ring-orange-300 transition-all">
+                                    {(user?.name || 'AD').substring(0, 2).toUpperCase()}
+                                </div>
+                                <svg className={`w-4 h-4 text-slate-400 group-hover:text-orange-500 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
                             </div>
-                            <div className="w-9 h-9 rounded-full bg-orange-100/50 border border-orange-100 flex items-center justify-center text-orange-700 font-bold text-xs ring-1 ring-transparent group-hover:ring-orange-200 transition-all">
-                                {(user?.name || 'AD').substring(0, 2).toUpperCase()}
-                            </div>
+
+                            <AnimatePresence>
+                                {isProfileOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className="absolute right-0 mt-3 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 overflow-hidden ring-1 ring-black/5 p-1.5 z-50"
+                                    >
+                                        <div className="px-4 py-3 mb-1 border-b border-slate-100/80 bg-slate-50/50 rounded-xl">
+                                            <p className="text-sm font-bold text-slate-800">{user?.name || 'Admin User'}</p>
+                                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">{user?.email || 'admin@templesmart.com'}</p>
+                                        </div>
+                                        <button onClick={() => { setIsProfileOpen(false); router.push('/admin/dashboard'); }} className="w-full text-left px-3 py-2.5 text-sm text-slate-600 hover:text-orange-700 hover:bg-orange-50 rounded-xl transition-colors font-medium flex items-center gap-2">
+                                            <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                                            Dashboard
+                                        </button>
+                                        <button onClick={() => { setIsProfileOpen(false); router.push('/admin/users'); }} className="w-full text-left px-3 py-2.5 text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors font-medium flex items-center gap-2 mt-1">
+                                            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                                            Settings
+                                        </button>
+                                        <div className="h-px bg-slate-100 my-1.5 mx-2"></div>
+                                        <button onClick={() => { setIsProfileOpen(false); logout(); }} className="w-full text-left px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl transition-colors font-semibold flex items-center gap-2">
+                                            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                                            Sign out
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
                 </header>

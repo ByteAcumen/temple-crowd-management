@@ -316,6 +316,7 @@ export const authApi = {
 
 export interface Temple {
     _id: string;
+    id?: string;
     name: string;
     description?: string;
     deity?: string;
@@ -493,8 +494,13 @@ export const bookingsApi = {
 
     // Check slot availability
     checkAvailability: async (templeId: string, date: string, slot?: string): Promise<any> => {
-        const params: Record<string, string> = { templeId, date };
+        const params: Record<string, string> = {};
+        if (templeId) params.templeId = templeId;
+        if (date) params.date = date;
         if (slot) params.slot = slot;
+
+        console.log("🔍 Checking Availability Payload:", params);
+
         const query = new URLSearchParams(params).toString();
         return apiRequest(`/bookings/availability?${query}`);
     },

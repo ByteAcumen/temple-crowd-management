@@ -17,7 +17,8 @@ function getDashboardByRole(role: string): string {
         case 'admin':
             return '/admin/dashboard';
         case 'gatekeeper':
-            return '/gatekeeper/scan';
+            return '/gatekeeper';
+        case 'user':
         default:
             return '/dashboard';
     }

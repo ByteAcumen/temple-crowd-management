@@ -1,4 +1,4 @@
-# Temple Crowd Management - Backend Automation Master Script
+﻿# Temple Crowd Management - Backend Automation Master Script
 # 
 # FEATURES:
 # - Automated testing of all endpoints
@@ -268,3 +268,4 @@ Write-Host "Redis:          redis://localhost:6379" -ForegroundColor Cyan
 Write-Host ""
 Write-Pass "System is fully operational! 🚀"
 Write-Host "Completed at: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
+

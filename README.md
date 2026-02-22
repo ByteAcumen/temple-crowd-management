@@ -1,185 +1,323 @@
-<div align="center">
-  <!-- Replace with actual logo URL if available -->
-  <h1>🏛️ Temple Crowd Management System</h1>
-  
-  <p><strong>Smart, AI-powered crowd management system for religious sites and temples.</strong></p>
+# Temple Crowd Management System
 
-  <!-- Badges -->
-  <p>
-    <img src="https://img.shields.io/badge/Next.js-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
-    <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
-    <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
-    <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
-    <img src="https://img.shields.io/badge/YOLOv8-FF7F00?style=for-the-badge&logo=yolo&logoColor=white" alt="YOLOv8" />
-    <img src="https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
-  </p>
-  
-  <p>
-    <a href="#-architecture">Architecture</a> •
-    <a href="#-key-features">Key Features</a> •
-    <a href="#-quick-start">Quick Start</a> •
-    <a href="#-api-documentation">API Docs</a>
-  </p>
-</div>
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-<br/>
+**Smart, AI-powered crowd management system for religious sites and temples.**
 
-Prevents dangerous overcrowding through real-time tracking, intelligent bookings, YOLOv8 computer vision detection, and automated alerts. Designed for massive scalability and real-world deployment.
+Prevents dangerous overcrowding through real-time tracking, intelligent bookings, and automated alerts.
 
 ---
 
-## 🏗️ Architecture Stack
+## 🚀 Quick Start (Automated)
 
-This repository is structured as a full-stack monorepo featuring a highly scalable microservice design.
+The system now includes **self-healing automation scripts** for Windows.
 
-```mermaid
-graph TD
-    subgraph "Frontend Layer"
-    UI[Next.js Dashboard UI]
-    GL[Gatekeeper Scanner App]
-    end
-
-    subgraph "Backend API Layer (Node.js)"
-    API[Express REST APIs]
-    WS[Socket.IO Server]
-    RB[Role Based Access Control]
-    end
-
-    subgraph "Database Layer"
-    Mongo[(MongoDB)]
-    Redis[(Redis Cluster)]
-    end
-
-    subgraph "AI / ML Services"
-    YOLO[Roboflow YOLOv8 API<br>Crowd Detection]
-    Prophet[Facebook Prophet<br>Demand Forecasting]
-    end
-
-    %% Connections
-    UI <--> API
-    UI <--> WS
-    GL <--> API
-    
-    API <--> Mongo
-    API <--> Redis
-    WS <--> Redis
-    
-    API <--> YOLO
-    API <--> Prophet
-
-    classDef fEnd fill:#000,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef bEnd fill:#339933,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef db fill:#4EA94B,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef ai fill:#FF7F00,stroke:#fff,stroke-width:2px,color:#fff;
-
-    class UI,GL fEnd;
-    class API,WS,RB bEnd;
-    class Mongo,Redis db;
-    class YOLO,Prophet ai;
-```
-
----
-
-## 🌟 Key Features
-
-### 🤖 1. AI Crowd Detection (YOLOv8)
-Integrated with the **Roboflow Serverless API** to run state-of-the-art **YOLOv8** Object Detection. The system instantly counts people in surveillance feeds and triggers Red/Orange/Green traffic light alerts on the dashboard based purely on visual density.
-
-### 📈 2. Demand Forecasting
-Utilises the **Facebook Prophet** time-series algorithm to predict future visitor surges based on historical trends, weekends, and Indian holidays, allowing temple administration to prepare staff and resources proactively.
-
-### ⚡ 3. Real-time Live Tracking
-**Redis-backed atomic counters (INCR/DECR)** provide sub-10ms response times for Gatekeeper entry/exit scans. Coupled with **Socket.IO WebSockets**, the entire Admin Dashboard updates strictly in real-time.
-
-### 🛡️ 4. Five-Tier Security & Hardening
-- **Authentication**: JWT validation with refresh token mechanics and bcrypt hashing.
-- **Strict RBAC**: Admin, Temple Admin, Gatekeeper, User isolation.
-- **Layered Rate Limiting**: Independent throttling ratios for Auth (30 req), Live Tracking (200 req), and Gen-API (1000 req).
-- **Hardening**: Helmet.js headers, NoSQL injection defence, and Non-root Docker execution.
-
-### 🎟️ 5. Overbooking Prevention
-Atomic MongoDB operations ensure that slot capacities (e.g., 500 people per hour) are strictly enforced, completely eliminating race conditions common in high-traffic ticketing.
-
----
-
-## 🚀 Quick Start
-
-The repository ships with multiple automated deployment scripts for Windows `Powershell` and seamless containerisation setups.
-
-### 1-Click Startup (Local Development)
-The fastest way to spin up the local Backend, Frontend, Redis, and MongoDB databases.
-
+### 1-Click Startup
 ```powershell
 .\start.ps1
 ```
-**Features of the startup script:**
-- 🧹 **Port Cleaning**: Silently kills orphaned processes holding ports `5000` (Node), `27017` (Mongo), or `6379` (Redis).
-- 🐳 **Docker Automation**: Leverages named Docker volumes (`temple-mongo-data`) to ensure persistent database storage across restarts.
-- 🧪 **API Verification**: Wait loops until health-check endpoints report a `200 OK` status.
+**What this does:**
+- 🧹 **Cleans Ports**: Kills rogue Node/Mongo processes freeing ports 5000/27017/6379
+- 🐳 **Starts Docker**: Launches MongoDB, Redis, and Backend with named volumes
+- 🧪 **Auto-Testing**: Runs `load_test.js` to verify 18/18 endpoints are healthy
+- 🔄 **Auto-Recovery**: Restarts backend automatically if health checks fail
 
-### Production Execution & Verification
-For rigorous production testing including E2E simulation.
+### Graceful Shutdown
 ```powershell
-.\start-and-verify.ps1
+.\stop.ps1
 ```
+**Why use this?**
+- Ensures **No Data Loss** (triggers SIGTERM for meaningful shutdown)
+- Preserves MongoDB/Redis data in named volumes (`temple-mongo-data`)
 
-### Run Full Test Suite
-Executes the comprehensive Jest testing suite across the Authentication, Booking, and Live Tracking modules.
+### Data Backup
 ```powershell
-.\test_all.ps1
+.\backup.ps1
 ```
+- Creates timestamped snapshots of your database in `.\backups`
 
 ---
 
-## 🐳 Docker Compose Definitions
+## 🏗️ Architecture Updates
 
-Multiple configurations exist in the root depending on your deployment target:
+#### Default Credentials
 
-| Compose File | Purpose |
-|--------------|---------|
-| `docker-compose.local.yml` | Full local development stack (Frontend + Backend + 2 DBs) with mapped ports. |
-| `docker-compose.dev.yml` | Developer stack featuring hot-reloading volume mounts. |
-| `docker-compose.yml` | Standard production stack with Restart Policies. |
-| `docker-compose.minimal.yml` | Lightweight stack (No Frontend, just DBs + Backend API). |
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | `admin@temple.com` | `Admin@123456` |
+| **Gatekeeper** | `gatekeeper@temple.com` | `Gatekeeper@123` |
+| **User** | `user@temple.com` | `User@123456` |
 
-**To launch manually:**
+*Note: If these accounts don't exist, the first registered user becomes an Admin.*
+
+### Data Persistence
+- **MongoDB**: Stores Users, Temples, Bookings (Volume: `temple-mongo-data`)
+- **Redis**: Stores Live Counts, Active Sessions (Volume: `temple-redis-data`)
+  - *Persistence Enabled*: AOF + RDB ensures live counts survive restarts
+
+### Security Layer
+- **Rate Limiting**: 5-Tier System
+  - `Auth`: 30 req/15min (Brute force protection)
+  - `Live`: 200 req/min (Real-time updates)
+  - `Temples`: 500 req/15min (Public data)
+  - `Admin`: 1000 req/15min (Dashboard)
+  - `General`: 1000 req/15min
+- **Hardening**:
+  - Non-root container user (`nodejs:1001`)
+  - Helmet.js Security Headers
+  - Input Sanitization (XSS, NoSQL Injection)
+
+---
+
+## 🧪 Testing
+
+We provide a **comprehensive test suite** that verifies all 27 features:
+
+```powershell
+.\verify-system.ps1
+```
+
+**What it tests**:
+- ✅ API Health & Connectivity
+- ✅ Authentication (JWT)
+- ✅ Authorization (RBAC with 3 roles)
+- ✅ Temple Management (CRUD)
+- ✅ Booking System (with overbooking prevention)
+- ✅ Live Crowd Tracking (Redis)
+- ✅ Admin Dashboard & Analytics
+- ✅ System Health Monitoring
+
+See [TESTING.md](TESTING.md) for details.
+
+---
+
+## 📚 API Documentation
+
+All API documentation is in the `docs/` folder:
+
+- [Temple API](docs/TEMPLE_API.md) - Temple CRUD operations
+- [Live Tracking API](docs/LIVE_TRACKING_API.md) - Entry/Exit tracking
+- [Booking API](docs/BOOKING_API.md) - Booking management
+- [Admin API](docs/ADMIN_API.md) - Dashboard & analytics
+- [WebSocket Events](docs/WEBSOCKET_EVENTS.md) - Real-time events
+
+---
+
+## 🔐 Security
+
+### Authentication
+- JWT-based authentication
+- Token expiration and validation
+- Secure password hashing (bcrypt)
+
+### Authorization (RBAC)
+| Role | Access Level |
+|------|-------------|
+| **Super Admin** | Full system access, manage all temples and admins |
+| **Temple Admin** | Manage only assigned temples |
+| **Gatekeeper** | Entry/Exit management at assigned temples |
+| **User** | Book passes and view own bookings |
+
+### First-Time Super Admin Setup
 ```bash
-docker-compose -f docker-compose.local.yml up -d
+cd backend
+node scripts/promote-superadmin.js
+```
+
+### Protection
+- Rate limiting (100 req/15min)
+- Security headers (Helmet.js)
+- Input validation
+- Protected routes
+
+See [Security Audit Report](https://github.com/yourusername/temple-crowd-management/blob/main/docs/SECURITY.md) for details.
+
+---
+
+## 🐳 Docker
+
+### Development Mode (with hot reload)
+```powershell
+.\scripts\start.ps1
+```
+
+Uses `docker-compose.dev.yml` with:
+- Health checks for all services
+- Automatic dependency management
+- Hot reload for backend
+- Volume mounting for development
+
+### Production Mode
+```bash
+docker-compose up -d
+```
+
+Uses `docker-compose.yml` optimized for production.
+
+### Stop Services
+```powershell
+.\scripts\stop.ps1
 ```
 
 ---
 
-## 📚 General Documentation
+## 🎯 Use Cases
 
-All comprehensive architectural documentation is stored in the `docs/` folder:
+### Case 1: Temple Administrator
+- Manage multiple temples
+- View real-time crowd dashboards
+- Access analytics and reports
+- Manage bookings and users
 
-- 📖 [Temple API Guide](docs/TEMPLE_API.md) - Site & Metadata CRUD
-- 🛰️ [Live Tracking API](docs/LIVE_TRACKING_API.md) - Entry/Exit Atomic Tracking
-- 🎟️ [Booking API](docs/BOOKING_API.md) - E-Pass Generation
-- 👑 [Admin API](docs/ADMIN_API.md) - Analytics & Aggregation
-- 🔌 [WebSocket Events](docs/WEBSOCKET_EVENTS.md) - Full Socket.IO Namespace details
+### Case 2: Devotee (User)
+- Browse available temples
+- Book time slots online
+- Receive QR code passes
+- Get email confirmations
 
----
-
-## 🔐 Default Credentials
-
-*If the database is booted fresh, the first registered user is automatically elevated to Super Admin.*
-
-| Role | Email | Password | Access Level |
-|------|-------|----------|--------------|
-| **Admin** | `admin@temple.com` | `Admin@123456` | Manage Temples, Gatekeepers, Analytics |
-| **Gatekeeper**| `gatekeeper@temple.com` | `Gatekeeper@123` | Scan QR codes, Trigger Entry/Exit |
-| **User** | `user@temple.com` | `User@123456` | Build E-Passes, Manage Bookings |
+### Case 3: Gatekeeper
+- Scan QR codes for entry/exit
+- Track live crowd count
+- Prevent duplicate entries
+- Monitor capacity alerts
 
 ---
 
-## 🤝 Contributing & License
+## 🌟 Key Features Explained
 
-We welcome contributions! Please fork the repository, branch out from `main`, and submit a Pull Request.  
+### 1. Overbooking Prevention
+The booking system **strictly enforces slot capacity**:
+- Checks available slots in real-time
+- Atomic booking operations
+- Prevents race conditions
+- Returns clear error messages
 
-This project is licensed under the **MIT License** - see the `LICENSE` file for details.
+### 2. Live Crowd Tracking
+Redis-based atomic counters provide:
+- Thread-safe operations (INCR/DECR)
+- Duplicate entry prevention (SET operations)
+- Sub-10ms response times
+- Threshold alerts (85%, 95%)
 
-<br/>
-<div align="center">
-  <b>Made with ❤️ for safer temple experiences and intelligent crowd control.</b>
-</div>
+### 3. Admin Dashboard
+MongoDB aggregation pipelines deliver:
+- Parallel queries (9x faster)
+- Peak hour analytics
+- Revenue breakdowns
+- Temple utilization metrics
+
+### 4. Real-time Updates
+Socket.IO WebSocket provides:
+- Room-based isolation
+- Live crowd updates
+- Booking notifications
+- Capacity alerts
+
+---
+
+## 🛠️ Development
+
+### Run Locally (without Docker)
+```bash
+# Start MongoDB
+mongod
+
+# Start Redis
+redis-server
+
+# Start Backend
+cd backend
+npm install
+npm run dev
+```
+
+### Project Scripts
+```bash
+npm run dev      # Development with nodemon
+npm start        # Production
+npm test         # Run tests
+```
+
+---
+
+## 📊 Architecture
+
+### Backend Stack
+- **Node.js** + Express.js
+- **MongoDB** (Mongoose ODM)
+- **Redis** (ioredis)
+- **Socket.IO** (WebSocket)
+- **JWT** (Authentication)
+
+### Database Design
+- **MongoDB**: Bookings, Users, Temples (persistence)
+- **Redis**: Live counts, Active entries (real-time)
+
+### API Design
+- RESTful API with clear resource paths
+- JWT authentication on protected routes
+- Role-based authorization middleware
+- Standardized error responses
+
+---
+
+## 🚀 Deployment
+
+### Recommended Platforms
+1. **Railway** - Easiest (built-in Redis)
+2. **Render** - Simple (free tier)
+3. **DigitalOcean** - More control ($5/month)
+
+### Environment Variables
+```env
+NODE_ENV=production
+PORT=5000
+MONGO_URI=your_mongodb_uri
+REDIS_HOST=your_redis_host
+REDIS_PORT=6379
+JWT_SECRET=your_super_secret_key_change_this
+JWT_EXPIRE=30d
+SMTP_HOST=your_smtp_host (optional)
+SMTP_PORT=587 (optional)
+SMTP_USER=your_email (optional)
+SMTP_PASS=your_password (optional)
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) first.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Built for solving real-world overcrowding problems at religious sites
+- Inspired by the need for better crowd safety management
+- Focused on simplicity and reliability
+
+---
+
+## 📞 Support
+
+Issues? Questions?
+- Open an [issue](https://github.com/yourusername/temple-crowd-management/issues)
+- Check our [documentation](docs/)
+- Read our [FAQ](docs/FAQ.md)
+
+---
+
+**Made with ❤️ for safer temple experiences**

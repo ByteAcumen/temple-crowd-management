@@ -84,14 +84,14 @@ function DashboardChartsBase({ dailyTrends, revenueByTemple, dateRange, onRangeC
                     </div>
                 </div>
                 {/* Fixed height container */}
-                <div className="w-full flex-1 min-h-0 relative">
+                <div className="w-full h-[360px] mt-4">
                     {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData}>
+                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#EA580C" stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor="#EA580C" stopOpacity={0} />
+                                        <stop offset="0%" stopColor="#f97316" stopOpacity={0.4} />
+                                        <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
@@ -102,16 +102,21 @@ function DashboardChartsBase({ dailyTrends, revenueByTemple, dateRange, onRangeC
                                     tick={{ fill: '#64748B', fontSize: 10 }}
                                     minTickGap={30}
                                 />
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', color: '#1E293B' }}
-                                    itemStyle={{ color: '#EA580C' }}
-                                    cursor={{ stroke: '#EA580C', strokeWidth: 1, strokeDasharray: '5 5' }}
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#64748B', fontSize: 10 }}
                                 />
-                                <Area type="monotone" dataKey="value" stroke="#EA580C" strokeWidth={2} fillOpacity={1} fill="url(#colorVisits)" />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)', color: '#1E293B', fontWeight: 600 }}
+                                    itemStyle={{ color: '#ea580c' }}
+                                    cursor={{ stroke: '#f97316', strokeWidth: 1.5, strokeDasharray: '4 4' }}
+                                />
+                                <Area type="monotone" dataKey="value" stroke="#f97316" strokeWidth={3} fillOpacity={1} fill="url(#colorVisits)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="absolute inset-0 flex items-center justify-center flex-col text-slate-400">
+                        <div className="flex h-full items-center justify-center flex-col text-slate-400">
                             <svg className="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
@@ -135,7 +140,7 @@ function DashboardChartsBase({ dailyTrends, revenueByTemple, dateRange, onRangeC
                     </div>
                 </div>
                 {/* Fixed height container */}
-                <div className="w-full h-48 relative">
+                <div className="w-full h-[360px] mt-4">
                     {revenueData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={revenueData} layout="vertical" margin={{ left: 20 }}>
@@ -154,7 +159,7 @@ function DashboardChartsBase({ dailyTrends, revenueByTemple, dateRange, onRangeC
                                     contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', color: '#1E293B' }}
                                     formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Revenue']}
                                 />
-                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                                <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={24}>
                                     {revenueData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={['#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E'][index % 5]} />
                                     ))}
@@ -162,7 +167,7 @@ function DashboardChartsBase({ dailyTrends, revenueByTemple, dateRange, onRangeC
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="absolute inset-0 flex items-center justify-center flex-col text-slate-400">
+                        <div className="flex h-full items-center justify-center flex-col text-slate-400">
                             <svg className="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>

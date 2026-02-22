@@ -13,7 +13,7 @@ export default function LiveRedirect() {
             if (user && (user.role === 'admin')) {
                 router.replace('/admin/live');
             } else if (user && user.role === 'gatekeeper') {
-                router.replace('/gatekeeper/scan');
+                router.replace('/gatekeeper');
             } else {
                 router.replace('/login');
             }

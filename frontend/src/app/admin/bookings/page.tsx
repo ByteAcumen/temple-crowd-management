@@ -2,7 +2,7 @@
 
 import { ProtectedRoute } from '@/lib/protected-route';
 import { useAuth } from '@/lib/auth-context';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { adminApi, templesApi, bookingsApi, Booking, Temple } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,7 +25,13 @@ function getSlot(b: Booking) { return b.slot || b.timeSlot || '—'; }
 function fmtDate(d: string) {
     return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
-function today() { return new Date().toISOString().split('T')[0]; }
+function today() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
 /* ─────────────── status config ─────────────── */
 const STATUS: Record<string, { label: string; dot: string; bg: string; text: string; border: string }> = {
@@ -244,6 +250,16 @@ function AdminBookingsContent() {
     const [sortBy, setSortBy] = useState<'date' | 'created'>('date');
     const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
 
+    // pagination
+    const [page, setPage] = useState(1);
+    const PAGE_SIZE = 25;
+
+    // auto-refresh countdown
+    const REFRESH_EVERY = 15;
+    const [countdown, setCountdown] = useState(REFRESH_EVERY);
+    const pollRef = useRef<NodeJS.Timeout | null>(null);
+    const cntRef = useRef<NodeJS.Timeout | null>(null);
+
     // actions
     const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
     const [cancelling, setCancelling] = useState(false);
@@ -269,7 +285,21 @@ function AdminBookingsContent() {
         } finally { setLoading(false); setRefreshing(false); }
     }, []);
 
-    useEffect(() => { if (user && !authLoading) fetchData(); }, [user, authLoading, fetchData]);
+    useEffect(() => {
+        if (!user || authLoading) return;
+        fetchData();
+        // auto-refresh
+        pollRef.current = setInterval(() => { fetchData(true); setCountdown(REFRESH_EVERY); }, REFRESH_EVERY * 1000);
+        // countdown ticker
+        cntRef.current = setInterval(() => setCountdown(c => (c <= 1 ? REFRESH_EVERY : c - 1)), 1000);
+        return () => {
+            if (pollRef.current) clearInterval(pollRef.current);
+            if (cntRef.current) clearInterval(cntRef.current);
+        };
+    }, [user, authLoading, fetchData]);
+
+    /* ── Quick today filter ── */
+    const setTodayFilter = () => { setFrom(today()); setTo(today()); setStatusF('all'); setPage(1); };
 
     /* ── Stats ── */
     const total = bookings.length;
@@ -298,6 +328,11 @@ function AdminBookingsContent() {
             const bV = sortBy === 'date' ? b.date : (b.createdAt || b.date);
             return sortDir === 'desc' ? bV.localeCompare(aV) : aV.localeCompare(bV);
         });
+
+    /* ── Pagination ── */
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const safePage = Math.min(page, totalPages);
+    const paginatedBookings = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
     /* ── Cancel ── */
     const doCancel = async () => {
@@ -332,8 +367,11 @@ function AdminBookingsContent() {
         else { setSortBy(col); setSortDir('desc'); }
     };
 
-    const clearFilters = () => { setSearch(''); setTempleF('all'); setStatusF('all'); setFrom(''); setTo(''); };
+    const clearFilters = () => { setSearch(''); setTempleF('all'); setStatusF('all'); setFrom(''); setTo(''); setPage(1); };
     const hasFilters = search || temple !== 'all' || status !== 'all' || dateFrom || dateTo;
+
+    // reset page on filter change
+    useEffect(() => setPage(1), [search, temple, status, dateFrom, dateTo, sortBy, sortDir]);
 
     /* ── Render ── */
     return (
@@ -356,7 +394,8 @@ function AdminBookingsContent() {
                             </div>
                             <p className="text-xs text-slate-400 font-medium pl-12 mt-0.5">
                                 {total} total · {confirmed} active
-                                {lastUpd && <> · Updated {lastUpd.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</>}
+                                {lastUpd && <> · <span className="text-emerald-600 font-bold">{lastUpd.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span></>}
+                                {!loading && <> · <span className="text-blue-500 font-bold tabular-nums">↻ {countdown}s</span></>}
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -401,6 +440,11 @@ function AdminBookingsContent() {
                     {/* ── Filter Bar ── */}
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3">
                         <div className="flex flex-wrap gap-2">
+                            {/* Quick today */}
+                            <button onClick={setTodayFilter}
+                                className="flex items-center gap-1.5 px-3 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs rounded-xl hover:bg-blue-100 transition-all shrink-0 whitespace-nowrap">
+                                📅 Today
+                            </button>
                             {/* Search */}
                             <div className="relative flex-1 min-w-[200px]">
                                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
@@ -516,7 +560,7 @@ function AdminBookingsContent() {
                                 <tbody className="divide-y divide-slate-50">
                                     {loading ? (
                                         Array(7).fill(0).map((_, i) => <SkeletonRow key={i} />)
-                                    ) : filtered.length === 0 ? (
+                                    ) : paginatedBookings.length === 0 ? (
                                         <tr>
                                             <td colSpan={7} className="px-6 py-20 text-center">
                                                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
@@ -537,7 +581,7 @@ function AdminBookingsContent() {
                                             </td>
                                         </tr>
                                     ) : (
-                                        filtered.map((b, i) => {
+                                        paginatedBookings.map((b, i) => {
                                             const st = STATUS[b.status] ?? STATUS.EXPIRED;
                                             const canCancel = ['CONFIRMED', 'PENDING'].includes(b.status);
                                             return (
@@ -627,16 +671,27 @@ function AdminBookingsContent() {
                             </table>
                         </div>
 
-                        {/* Table footer */}
+                        {/* Pagination */}
                         {!loading && filtered.length > 0 && (
-                            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/40 flex items-center justify-between">
+                            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/40 flex items-center justify-between gap-3 flex-wrap">
                                 <p className="text-xs text-slate-400 font-medium">
-                                    {filtered.length} record{filtered.length !== 1 ? 's' : ''}
+                                    Showing <span className="font-black text-slate-600">{(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)}</span> of {filtered.length} records
                                 </p>
-                                <button onClick={exportCSV}
-                                    className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
-                                    <ArrowUpRight className="w-3 h-3" />Export {filtered.length} records
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+                                        className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-lg disabled:opacity-40 hover:border-slate-300 transition-all">
+                                        ← Prev
+                                    </button>
+                                    <span className="text-xs font-bold text-slate-500 tabular-nums">{safePage} / {totalPages}</span>
+                                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+                                        className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-lg disabled:opacity-40 hover:border-slate-300 transition-all">
+                                        Next →
+                                    </button>
+                                    <button onClick={exportCSV}
+                                        className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors ml-2">
+                                        <ArrowUpRight className="w-3 h-3" />Export {filtered.length}
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>

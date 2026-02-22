@@ -7,8 +7,6 @@ const crowdTracker = require('./services/CrowdTracker');
 const PORT = process.env.PORT || 5001;
 
 console.log('🚀 Server starting...');
-console.log('📂 __filename:', __filename);
-console.log('📂 CWD:', process.cwd());
 
 // MongoDB Connection
 const connectDB = async () => {

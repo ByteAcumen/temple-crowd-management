@@ -1,81 +1,102 @@
-version: '3.8'
+# ============================================================
+# DEVELOPMENT Docker Compose — Temple Crowd Management System
+# Usage: .\start.ps1  (auto-selected in dev mode)
+# ============================================================
 
 services:
+
+  # ── MongoDB ─────────────────────────────────────────────────
   mongo:
     image: mongo:latest
     container_name: temple-mongo-dev
+    restart: unless-stopped
     ports:
       - "27017:27017"
-    volumes:
-      - temple-mongo-data-dev:/data/db
     environment:
       - MONGO_INITDB_DATABASE=temple_db
+    volumes:
+      - temple-mongo-data-dev:/data/db
+    networks:
+      - temple-network
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 40s
-    networks:
-      - temple-network
+      start_period: 30s
 
+  # ── Redis ────────────────────────────────────────────────────
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: temple-redis-dev
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    # AOF + RDB persistence — live crowd counts survive restart
+    command: >
+      redis-server --appendonly yes --appendfsync everysec --save 60 100 --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - temple-redis-data-dev:/data
+    networks:
+      - temple-network
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
-    networks:
-      - temple-network
+      start_period: 15s
 
+  # ── ML Crowd Detection (optional, soft dependency) ─────────
   ml-detection:
     build:
       context: ./ml-services/crowd-detection
       dockerfile: Dockerfile
     container_name: temple-ml-detection-dev
+    restart: unless-stopped
     ports:
       - "8001:8000"
     volumes:
       - ./ml-services/crowd-detection/models:/app/models
     environment:
       - MODEL_PATH=/app/models
+    networks:
+      - temple-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
-    networks:
-      - temple-network
+      start_period: 90s
 
+  # ── ML Demand Forecasting (optional, soft dependency) ──────
   ml-forecasting:
     build:
       context: ./ml-services/demand-forecasting
       dockerfile: Dockerfile
     container_name: temple-ml-forecasting-dev
+    restart: unless-stopped
     ports:
       - "8002:8000"
     volumes:
       - ./ml-services/demand-forecasting/models:/app/models
     environment:
       - MODEL_PATH=/app/models
+    networks:
+      - temple-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
-    networks:
-      - temple-network
+      start_period: 90s
 
+  # ── Backend API ──────────────────────────────────────────────
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: temple-backend-dev
+    restart: unless-stopped
     ports:
       - "5001:5001"
     environment:
@@ -89,58 +110,55 @@ services:
       - ML_DETECTION_URL=http://ml-detection:8000
       - ML_FORECASTING_URL=http://ml-forecasting:8000
       - AI_SERVICE_URL=${AI_SERVICE_URL:-http://ml-forecasting:8000}
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
       - JWT_EXPIRE=${JWT_EXPIRE:-30d}
     depends_on:
       mongo:
         condition: service_healthy
       redis:
         condition: service_healthy
-      ml-detection:
-        condition: service_healthy
-      ml-forecasting:
-        condition: service_healthy
     volumes:
-      - ./backend:/app
-      - /app/node_modules
-    command: node src/server.js
-    restart: unless-stopped
+      - ./backend/src:/app/src:ro # Hot-reload source (read-only for safety)
+      - backend-logs:/app/logs
     networks:
       - temple-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/api/v1/health" ]
-      interval: 30s
+      interval: 20s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 45s
 
+  # ── Frontend (Next.js dev server) ───────────────────────────
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-      target: deps
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:5001/api/v1
+      dockerfile: Dockerfile.dev
     container_name: temple-frontend-dev
+    restart: unless-stopped
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:5001/api/v1
+      - NEXT_TELEMETRY_DISABLED=1
     depends_on:
       backend:
         condition: service_healthy
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
     networks:
       - temple-network
-    command: npm run dev
 
+# ── Named Volumes (DATA PERSISTENCE — DO NOT DELETE) ─────────
 volumes:
   temple-mongo-data-dev:
-
+    name: temple-crowd-management_mongo_data # MAP TO THE ORIGINAL VOLUME TO RESTORE USER DATA
+  temple-redis-data-dev:
+    name: temple-redis-data-dev
+  backend-logs:
+    name: temple-backend-logs-dev
 
 networks:
   temple-network:

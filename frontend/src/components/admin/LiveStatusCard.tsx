@@ -12,8 +12,8 @@ export default function LiveStatusCard({ topTemples }: LiveStatusCardProps) {
     return (
         <GlassCard className="h-full flex flex-col relative overflow-hidden p-6">
             {/* Background Effects */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-200/30 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-200/30 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-orange-400/20 to-rose-400/20 rounded-full blur-3xl -mr-24 -mt-24 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-56 h-56 bg-gradient-to-tr from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl -ml-16 -mb-16 pointer-events-none" />
 
             <div className="flex items-center justify-between mb-6 relative z-10">
                 <div className="flex items-center gap-3">
@@ -31,7 +31,7 @@ export default function LiveStatusCard({ topTemples }: LiveStatusCardProps) {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.5 + (i * 0.1) }}
                         whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.9)' }}
-                        className="bg-white/60 rounded-xl p-4 flex items-center justify-between border border-slate-200/60 backdrop-blur-sm transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                        className="bg-white/70 rounded-2xl p-4 flex items-center justify-between border border-white/60 backdrop-blur-md transition-all cursor-pointer group shadow-[0_4px_12px_rgb(0,0,0,0.03)] hover:shadow-lg hover:shadow-orange-500/5 ring-1 ring-slate-100/50 hover:ring-orange-200"
                     >
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500/10 to-amber-600/10 flex items-center justify-center font-bold text-orange-600 border border-orange-500/20">

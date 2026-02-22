@@ -224,6 +224,7 @@ function AdminLiveMonitorContent() {
     const [mounted, setMounted] = useState(false);
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
     const showToast = (msg: string, ok = true) => setToast({ msg, ok });
+    const [liveCountdown, setLiveCountdown] = useState(8);
 
     useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
 
@@ -278,8 +279,9 @@ function AdminLiveMonitorContent() {
     useEffect(() => {
         if (!user) return;
         fetchLive();
-        const iv = setInterval(() => fetchLive(true), 8000);
-        return () => clearInterval(iv);
+        const iv = setInterval(() => { fetchLive(true); setLiveCountdown(8); }, 8000);
+        const tick = setInterval(() => setLiveCountdown(c => (c <= 1 ? 8 : c - 1)), 1000);
+        return () => { clearInterval(iv); clearInterval(tick); };
     }, [user, fetchLive]);
 
     /* ── fetch daily stats when temple changes ── */
@@ -370,7 +372,9 @@ function AdminLiveMonitorContent() {
                             <div>
                                 <h1 className="text-2xl font-black text-slate-800 tracking-tight">Live Monitor</h1>
                                 <p className="text-xs text-slate-400 font-medium">
-                                    {summary.total_temples} temples · {lastUpd ? `Updated ${lastUpd.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : 'Loading…'}
+                                    {summary.total_temples} temples
+                                    {lastUpd ? ` · Updated ${lastUpd.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : ' · Loading…'}
+                                    {!loading && <> · <span className="text-blue-500 font-bold tabular-nums">↻ {liveCountdown}s</span></>}
                                 </p>
                             </div>
                         </div>

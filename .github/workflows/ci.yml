@@ -2,67 +2,78 @@ name: Temple E-Pass CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, feature/*]
+    branches: [main, develop, "feature/**"]
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment Environment'
+        description: "Deployment Environment"
         required: true
-        default: 'staging'
+        default: staging
         type: choice
-        options:
-          - staging
-          - production
+        options: [staging, production]
 
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: "20.x"
   DOCKER_REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+# ─────────────────────────────────────────────────────────────
 jobs:
-  # ==========================================
-  # JOB 1: Lint & Code Quality
-  # ==========================================
+
+  # ── JOB 1: Lint ───────────────────────────────────────────
   lint:
     name: 🔍 Lint & Code Quality
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: backend/package-lock.json
 
-      - name: Install Dependencies
-        run: |
-          cd backend
-          npm ci
+      - name: Install backend deps
+        run: cd backend && npm ci
 
       - name: Run ESLint
-        run: |
-          cd backend
-          npm run lint --if-present || echo "No lint script configured"
+        run: cd backend && npm run lint --if-present || echo "No lint script"
 
-      - name: Check for Security Vulnerabilities
-        run: |
-          cd backend
-          npm audit --audit-level=high || true
+      - name: Security audit
+        run: cd backend && npm audit --audit-level=high || true
 
-  # ==========================================
-  # JOB 2: Unit Tests
-  # ==========================================
+  # ── JOB 2: Frontend Build Check ───────────────────────────
+  frontend-check:
+    name: 🖥️ Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        run: cd frontend && npm ci
+
+      - name: Build frontend
+        run: cd frontend && npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:5001/api/v1
+          NEXT_TELEMETRY_DISABLED: "1"
+
+  # ── JOB 3: Unit & Integration Tests ───────────────────────
   test:
     name: 🧪 Unit & Integration Tests
     runs-on: ubuntu-latest
     needs: lint
-    
+
     services:
       mongodb:
         image: mongo:7
@@ -85,67 +96,59 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: backend/package-lock.json
 
-      - name: Install Dependencies
-        run: |
-          cd backend
-          npm ci
+      - name: Install deps
+        run: cd backend && npm ci
 
-      - name: Run Unit Tests
+      - name: Run tests
         env:
           MONGO_URI: mongodb://localhost:27017/temple_test
           MONGODB_URI: mongodb://localhost:27017/temple_test
           REDIS_HOST: localhost
-          REDIS_PORT: 6379
+          REDIS_PORT: "6379"
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-secret-key-12345' }}
           NODE_ENV: test
-        run: |
-          cd backend
-          npm test --if-present || npm run test:unit --if-present || echo "Tests passed (no test script)"
+        run: cd backend && npm test
 
-      - name: Upload Test Coverage
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
         if: always()
         continue-on-error: true
         with:
           directory: ./backend/coverage
           fail_ci_if_error: false
 
-  # ==========================================
-  # JOB 3: Build Docker Image
-  # ==========================================
+  # ── JOB 4: Docker Build & Push ────────────────────────────
   build:
     name: 🏗️ Build Docker Image
     runs-on: ubuntu-latest
     needs: [lint, test]
-    
+
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
-      
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker Metadata
+      - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -156,7 +159,7 @@ jobs:
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and Push Docker Image
+      - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
@@ -166,74 +169,100 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ==========================================
-  # JOB 4: E2E Tests with Docker Compose
-  # ==========================================
+  # ── JOB 5: E2E Tests ──────────────────────────────────────
   e2e-tests:
     name: 🎭 End-to-End Tests
     runs-on: ubuntu-latest
     needs: build
     if: github.event_name != 'pull_request'
-    
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
 
-      - name: Create .env file
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create backend .env
         run: |
-          cat > backend/.env << EOF
+          cat > backend/.env << 'EOF'
           NODE_ENV=test
-          PORT=5000
-          MONGO_URI=mongodb://mongodb:27017/temple_e2e_test
-          MONGODB_URI=mongodb://mongodb:27017/temple_e2e_test
+          PORT=5001
+          MONGO_URI=mongodb://mongo:27017/temple_e2e_test
+          MONGODB_URI=mongodb://mongo:27017/temple_e2e_test
           REDIS_HOST=redis
           REDIS_PORT=6379
           JWT_SECRET=e2e-test-secret-key-12345
           JWT_EXPIRE=7d
           EOF
 
-      - name: Start Services with Docker Compose
-        run: |
-          docker-compose -f docker-compose.dev.yml up -d --build
-          sleep 30  # Wait for services to be healthy
+      - name: Start services
+        run: docker compose -f docker-compose.dev.yml up -d --build
 
-      - name: Check Service Health
+      - name: Wait for services (90s)
         run: |
-          echo "Checking MongoDB..."
-          docker exec temple-mongodb-dev mongosh --eval "db.runCommand({ping:1})"
-          echo "Checking Redis..."
+          echo "Waiting for containers to be healthy..."
+          sleep 30
+          for i in $(seq 1 12); do
+            curl -sf http://localhost:5001/api/v1/health && echo "Backend ready!" && break
+            echo "Attempt $i — waiting 5s..."
+            sleep 5
+          done
+
+      - name: Check service health
+        run: |
+          echo "── MongoDB ──"
+          docker exec temple-mongo-dev mongosh --eval "db.adminCommand({ping:1})" --quiet
+          echo "── Redis ──"
           docker exec temple-redis-dev redis-cli ping
-          echo "Checking Backend..."
-          curl -f http://localhost:5000 || exit 1
+          echo "── Backend ──"
+          curl -f http://localhost:5001/api/v1/health
 
-      - name: Run E2E API Tests
+      - name: Run E2E API tests
         run: |
-          # Install test dependencies
-          npm install -g newman || true
-          
-          # Run API tests using curl (simplified)
-          chmod +x ./scripts/run-e2e-tests.sh 2>/dev/null || true
-          ./scripts/run-e2e-tests.sh || echo "E2E tests completed"
+          # Temples endpoint
+          curl -sf http://localhost:5001/api/v1/temples | grep -q '"success":true' && echo "✅ Temples OK" || echo "❌ Temples FAIL"
+          # Live endpoint
+          curl -sf http://localhost:5001/api/v1/live   | grep -q '"success":true' && echo "✅ Live OK"    || echo "❌ Live FAIL"
 
-      - name: Collect Logs on Failure
+      - name: Collect logs on failure
         if: failure()
-        run: |
-          docker-compose -f docker-compose.dev.yml logs > docker-logs.txt
-          
-      - name: Upload Logs
+        run: docker compose -f docker-compose.dev.yml logs > docker-logs.txt
+
+      - name: Upload logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docker-logs
           path: docker-logs.txt
 
-      - name: Stop Services
+      - name: Stop services
         if: always()
-        run: docker-compose -f docker-compose.dev.yml down -v
+        run: docker compose -f docker-compose.dev.yml down -v
 
-  # ==========================================
-  # JOB 5: Deploy to Staging
-  # ==========================================
+  # ── JOB 6: Security Scan ──────────────────────────────────
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: ./backend
+          format: sarif
+          output: trivy-results.sarif
+          severity: "CRITICAL,HIGH"
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: trivy-results.sarif
+
+  # ── JOB 7: Deploy Staging ─────────────────────────────────
   deploy-staging:
     name: 🚀 Deploy to Staging
     runs-on: ubuntu-latest
@@ -242,26 +271,16 @@ jobs:
     environment:
       name: staging
       url: https://staging.temple-epass.example.com
-    
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Staging
+      - uses: actions/checkout@v4
+      - name: Deploy
         run: |
-          echo "🚀 Deploying to Staging Environment..."
+          echo "🚀 Deploying to Staging..."
           echo "Image: ${{ needs.build.outputs.image_tag }}"
-          # Add your staging deployment commands here
-          # Example: SSH to server, pull new image, restart containers
-          
-      - name: Verify Deployment
-        run: |
-          echo "✅ Staging deployment verification..."
-          # Add health check for staging environment
+          # Add SSH deployment or container registry pull here
 
-  # ==========================================
-  # JOB 6: Deploy to Production
-  # ==========================================
+  # ── JOB 8: Deploy Production ──────────────────────────────
   deploy-production:
     name: 🏭 Deploy to Production
     runs-on: ubuntu-latest
@@ -270,59 +289,18 @@ jobs:
     environment:
       name: production
       url: https://temple-epass.example.com
-    
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
 
-      - name: Deploy to Production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
         run: |
-          echo "🏭 Deploying to Production Environment..."
+          echo "🏭 Deploying to Production..."
           echo "Image: ${{ needs.build.outputs.image_tag }}"
-          # Add your production deployment commands here
-          
-      - name: Verify Deployment
-        run: |
-          echo "✅ Production deployment verification..."
-          # Add health check for production environment
-          
-      - name: Notify on Success
+
+      - name: Notify on success
         if: success()
-        run: |
-          echo "🎉 Production deployment successful!"
-          # Add Slack/Discord/Email notification here
+        run: echo "🎉 Production deployment successful!"
 
-      - name: Rollback on Failure
+      - name: Rollback on failure
         if: failure()
-        run: |
-          echo "⚠️ Deployment failed! Rolling back..."
-          # Add rollback commands here
-
-  # ==========================================
-  # JOB 7: Security Scan
-  # ==========================================
-  security-scan:
-    name: 🔒 Security Scan
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name != 'pull_request'
-    
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: './backend'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Upload Trivy Scan Results
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        continue-on-error: true
-        with:
-          sarif_file: 'trivy-results.sarif'
+        run: echo "⚠️ Deployment failed — rolling back..."

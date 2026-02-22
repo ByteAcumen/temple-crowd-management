@@ -127,7 +127,13 @@ function AdminAnalyticsContent() {
         const end = new Date(), start = new Date();
         if (dateRange === '7d') start.setDate(end.getDate() - 7);
         else start.setDate(end.getDate() - 30);
-        return { startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] };
+        const fmt = (d: Date) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        return { startDate: fmt(start), endDate: fmt(end) };
     }, [dateRange, customStart, customEnd]);
 
     /* ── fetch ── */
@@ -150,7 +156,8 @@ function AdminAnalyticsContent() {
                 const totalRevenue = revTemples.reduce((s, x) => s + x.revenue, 0);
                 const days = dailyTrends.length || 1;
                 const avgPerDay = Math.round(totalBookings / days);
-                const todayStr = new Date().toISOString().split('T')[0];
+                const now = new Date();
+                const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                 const todayVisits = dailyTrends.find(d => d._id === todayStr)?.count ?? 0;
                 const growthPct = avgPerDay > 0 ? ((todayVisits - avgPerDay) / avgPerDay) * 100 : 0;
                 const peakHour = peakHours[0]?._id || '—';

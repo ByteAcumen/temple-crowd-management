@@ -50,15 +50,17 @@ export default function RecentActivity({ bookings }: RecentActivityProps) {
                         className="p-3 rounded-xl hover:bg-slate-50 transition-colors flex gap-4 items-center group/item cursor-default border border-transparent hover:border-slate-100"
                     >
                         {/* Status Icon */}
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover/item:scale-110 ${booking.status === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                            booking.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border border-red-100' :
-                                booking.status === 'COMPLETED' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
-                                    'bg-amber-50 text-amber-600 border border-amber-100'
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover/item:scale-110 ${booking.status === 'CONFIRMED' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
+                            booking.status === 'USED' ? 'bg-blue-500/10 text-blue-600 border border-blue-500/20' :
+                                booking.status === 'CANCELLED' ? 'bg-red-500/10 text-red-600 border border-red-500/20' :
+                                    booking.status === 'COMPLETED' ? 'bg-indigo-500/10 text-indigo-600 border border-indigo-500/20' :
+                                        'bg-slate-100 text-slate-400 border border-slate-200'
                             }`}>
                             {booking.status === 'CONFIRMED' ? <span className="text-xl">✅</span> :
-                                booking.status === 'CANCELLED' ? <span className="text-xl">❌</span> :
-                                    booking.status === 'COMPLETED' ? <span className="text-xl">🏁</span> :
-                                        <span className="text-xl">⏳</span>}
+                                booking.status === 'USED' ? <span className="text-xl">✅</span> :
+                                    booking.status === 'CANCELLED' ? <span className="text-xl">❌</span> :
+                                        booking.status === 'COMPLETED' ? <span className="text-xl">🏁</span> :
+                                            <span className="text-xl">📋</span>}
                         </div>
 
                         {/* Content */}
@@ -74,10 +76,15 @@ export default function RecentActivity({ bookings }: RecentActivityProps) {
 
                             <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 truncate">
                                 <span className={`font-bold ${booking.status === 'CONFIRMED' ? 'text-emerald-600' :
-                                    booking.status === 'CANCELLED' ? 'text-red-600' :
-                                        'text-slate-500'
+                                        booking.status === 'USED' ? 'text-blue-600' :
+                                            booking.status === 'COMPLETED' ? 'text-indigo-600' :
+                                                booking.status === 'CANCELLED' ? 'text-red-600' :
+                                                    'text-slate-500'
                                     }`}>
-                                    {booking.status === 'CONFIRMED' ? 'Booked' : booking.status}
+                                    {booking.status === 'CONFIRMED' ? 'Booked' :
+                                        booking.status === 'USED' ? 'Visited' :
+                                            booking.status === 'COMPLETED' ? 'Completed' :
+                                                booking.status === 'CANCELLED' ? 'Cancelled' : booking.status}
                                 </span>
                                 <span className="w-1 h-1 rounded-full bg-slate-300" />
                                 <span>{booking.visitors} visitors</span>

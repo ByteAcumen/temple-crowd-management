@@ -23,10 +23,10 @@ export const GlassCard = ({ children, className = '', hoverEffect = true, delay 
             } : {}}
             className={`
                 relative overflow-hidden
-                bg-white/90 backdrop-blur-2xl
-                border border-white/50
+                bg-white/80 backdrop-blur-3xl
+                border border-white/60
                 rounded-2xl
-                shadow-xl shadow-slate-200/50
+                shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-100/50
                 ${className}
             `}
         >
