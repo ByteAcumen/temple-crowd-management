@@ -432,12 +432,41 @@ function AdminDashboardContent() {
                     </div>
                 </motion.div>
 
+                {/* ── Crowd Status + Booking Breakdown ── */}
+                <div className="grid lg:grid-cols-3 gap-4">
+                    {/* System occupancy */}
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                        className={`bg-gradient-to-br ${crowd.status === 'HIGH' ? 'from-red-50 to-rose-50' : crowd.status === 'MODERATE' ? 'from-amber-50 to-yellow-50' : 'from-slate-50 to-white'} rounded-3xl border ${crowd.status === 'HIGH' ? 'border-red-200' : crowd.status === 'MODERATE' ? 'border-amber-200' : 'border-slate-100'} p-5`}>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">System Occupancy</p>
+                        <div className="flex items-center gap-4">
+                            <OccupancyRing pct={crowd.pct} status={crowd.status} />
+                            <div className="flex-1">
+                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black mb-2 ${crowdCfg.bg} ${crowdCfg.text} ${crowdCfg.border}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${crowdCfg.color} animate-pulse`} />
+                                    {crowdCfg.label} Crowd
+                                </div>
+                                <p className="text-2xl font-black tabular-nums text-slate-800">
+                                    {loading ? '—' : <AnimatedNumber value={crowd.live} />}
+                                </p>
+                                <p className="text-xs text-slate-400 font-medium">
+                                    of <AnimatedNumber value={crowd.capacity} /> cap.
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* All Temples Live Status (Now Top Right) */}
+                    <div className="lg:col-span-2">
+                        <AllTemplesSection temples={allTemples} loading={loading} />
+                    </div>
+                </div>
+
                 {/* ── 6 KPI cards ── */}
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                     {kpis.map((k, i) => (
                         <motion.div key={k.label}
                             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.05 }}
+                            transition={{ delay: 0.2 + (i * 0.05) }}
                             className={`bg-gradient-to-br ${k.bg} rounded-2xl border ${k.border} p-4 flex flex-col gap-3 hover:shadow-md transition-shadow cursor-default`}>
                             <div className="flex items-center justify-between">
                                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${k.icon_bg}`}>
@@ -461,86 +490,59 @@ function AdminDashboardContent() {
                     ))}
                 </div>
 
-                {/* ── Crowd Status + Booking Breakdown ── */}
-                <div className="grid lg:grid-cols-3 gap-4">
-                    {/* System occupancy */}
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}
-                        className={`bg-gradient-to-br ${crowd.status === 'HIGH' ? 'from-red-50 to-rose-50' : crowd.status === 'MODERATE' ? 'from-amber-50 to-yellow-50' : 'from-slate-50 to-white'} rounded-3xl border ${crowd.status === 'HIGH' ? 'border-red-200' : crowd.status === 'MODERATE' ? 'border-amber-200' : 'border-slate-100'} p-5`}>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">System Occupancy</p>
-                        <div className="flex items-center gap-4">
-                            <OccupancyRing pct={crowd.pct} status={crowd.status} />
-                            <div className="flex-1">
-                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black mb-2 ${crowdCfg.bg} ${crowdCfg.text} ${crowdCfg.border}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${crowdCfg.color} animate-pulse`} />
-                                    {crowdCfg.label} Crowd
+                {/* Booking breakdown */}
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
+                    className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Booking Breakdown</p>
+                            <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                {bookingBreakdown.active} active · {bookingBreakdown.completed} completed · {bookingBreakdown.cancelled} cancelled
+                            </p>
+                        </div>
+                        <Link href="/admin/bookings"
+                            className="text-[11px] font-black text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5">
+                            View all <ChevronRight className="w-3 h-3" />
+                        </Link>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {[
+                            { label: 'Today', value: bookingBreakdown.today, icon: <Clock className="w-4 h-4" />, color: 'bg-blue-50 text-blue-600', val: 'text-blue-700' },
+                            { label: 'This Month', value: bookingBreakdown.this_month, icon: <BarChart2 className="w-4 h-4" />, color: 'bg-indigo-50 text-indigo-600', val: 'text-indigo-700' },
+                            { label: 'Active', value: bookingBreakdown.active, icon: <CheckCircle2 className="w-4 h-4" />, color: 'bg-emerald-50 text-emerald-600', val: 'text-emerald-700' },
+                            { label: 'Cancelled', value: bookingBreakdown.cancelled, icon: <XCircle className="w-4 h-4" />, color: 'bg-red-50 text-red-600', val: 'text-red-700' },
+                        ].map(b => (
+                            <div key={b.label} className="bg-slate-50 rounded-2xl border border-slate-100 p-3">
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 ${b.color}`}>
+                                    {b.icon}
                                 </div>
-                                <p className="text-2xl font-black tabular-nums text-slate-800">
-                                    {loading ? '—' : <AnimatedNumber value={crowd.live} />}
+                                <p className={`text-xl font-black tabular-nums ${b.val}`}>
+                                    {loading ? '—' : b.value.toLocaleString('en-IN')}
                                 </p>
-                                <p className="text-xs text-slate-400 font-medium">
-                                    of <AnimatedNumber value={crowd.capacity} /> cap.
-                                </p>
+                                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{b.label}</p>
+                            </div>
+                        ))}
+                    </div>
+                    {/* Active vs cancelled bar */}
+                    {bookingBreakdown.active + bookingBreakdown.cancelled > 0 && (
+                        <div className="mt-4">
+                            <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
+                                <span>Active {Math.round((bookingBreakdown.active / (bookingBreakdown.active + bookingBreakdown.cancelled)) * 100)}%</span>
+                                <span>Cancelled {Math.round((bookingBreakdown.cancelled / (bookingBreakdown.active + bookingBreakdown.cancelled)) * 100)}%</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-slate-100 overflow-hidden flex">
+                                <motion.div className="h-full bg-emerald-400 rounded-l-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(bookingBreakdown.active / (bookingBreakdown.active + bookingBreakdown.cancelled || 1)) * 100}%` }}
+                                    transition={{ duration: 0.8, delay: 0.4 }} />
+                                <motion.div className="h-full bg-red-400 rounded-r-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(bookingBreakdown.cancelled / (bookingBreakdown.active + bookingBreakdown.cancelled || 1)) * 100}%` }}
+                                    transition={{ duration: 0.8, delay: 0.5 }} />
                             </div>
                         </div>
-                    </motion.div>
-
-                    {/* Booking breakdown */}
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
-                        className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Booking Breakdown</p>
-                                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                                    {bookingBreakdown.active} active · {bookingBreakdown.completed} completed · {bookingBreakdown.cancelled} cancelled
-                                </p>
-                            </div>
-                            <Link href="/admin/bookings"
-                                className="text-[11px] font-black text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5">
-                                View all <ChevronRight className="w-3 h-3" />
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            {[
-                                { label: 'Today', value: bookingBreakdown.today, icon: <Clock className="w-4 h-4" />, color: 'bg-blue-50 text-blue-600', val: 'text-blue-700' },
-                                { label: 'This Month', value: bookingBreakdown.this_month, icon: <BarChart2 className="w-4 h-4" />, color: 'bg-indigo-50 text-indigo-600', val: 'text-indigo-700' },
-                                { label: 'Active', value: bookingBreakdown.active, icon: <CheckCircle2 className="w-4 h-4" />, color: 'bg-emerald-50 text-emerald-600', val: 'text-emerald-700' },
-                                { label: 'Cancelled', value: bookingBreakdown.cancelled, icon: <XCircle className="w-4 h-4" />, color: 'bg-red-50 text-red-600', val: 'text-red-700' },
-                            ].map(b => (
-                                <div key={b.label} className="bg-slate-50 rounded-2xl border border-slate-100 p-3">
-                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 ${b.color}`}>
-                                        {b.icon}
-                                    </div>
-                                    <p className={`text-xl font-black tabular-nums ${b.val}`}>
-                                        {loading ? '—' : b.value.toLocaleString('en-IN')}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{b.label}</p>
-                                </div>
-                            ))}
-                        </div>
-                        {/* Active vs cancelled bar */}
-                        {bookingBreakdown.active + bookingBreakdown.cancelled > 0 && (
-                            <div className="mt-4">
-                                <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                                    <span>Active {Math.round((bookingBreakdown.active / (bookingBreakdown.active + bookingBreakdown.cancelled)) * 100)}%</span>
-                                    <span>Cancelled {Math.round((bookingBreakdown.cancelled / (bookingBreakdown.active + bookingBreakdown.cancelled)) * 100)}%</span>
-                                </div>
-                                <div className="h-2 rounded-full bg-slate-100 overflow-hidden flex">
-                                    <motion.div className="h-full bg-emerald-400 rounded-l-full"
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${(bookingBreakdown.active / (bookingBreakdown.active + bookingBreakdown.cancelled || 1)) * 100}%` }}
-                                        transition={{ duration: 0.8, delay: 0.4 }} />
-                                    <motion.div className="h-full bg-red-400 rounded-r-full"
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${(bookingBreakdown.cancelled / (bookingBreakdown.active + bookingBreakdown.cancelled || 1)) * 100}%` }}
-                                        transition={{ duration: 0.8, delay: 0.5 }} />
-                                </div>
-                            </div>
-                        )}
-                    </motion.div>
-                </div>
-
-                {/* ── All Temples Live Status ── */}
-                <AllTemplesSection temples={allTemples} loading={loading} />
+                    )}
+                </motion.div>
 
                 {/* ── Peak Hours chart ── */}
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.40 }}

@@ -1,40 +1,29 @@
-// Temple Images Utility
-// Curated South Indian temple images from Unsplash CDN
+// Temple Images — Generic placeholders for when actual images are missing
+// All images are free for commercial use (Unsplash license)
 
-export const TEMPLE_IMAGES: Record<string, string> = {
-    // Default fallback
-    default: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=800&q=80&auto=format&fit=crop", // Meenakshi Amman Temple
-
-    // Specific temples
-    meenakshi: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=800&q=80&auto=format&fit=crop",
-    tirupati: "https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=800&q=80&auto=format&fit=crop",
-    rameshwaram: "https://images.unsplash.com/photo-1589699001059-70c71f471022?w=800&q=80&auto=format&fit=crop",
-    kanchipuram: "https://images.unsplash.com/photo-1588416936097-41850ab3d86d?w=800&q=80&auto=format&fit=crop",
-    madurai: "https://images.unsplash.com/photo-1548013146-72479768bada?w=800&q=80&auto=format&fit=crop",
-    thanjavur: "https://images.unsplash.com/photo-1633022376457-4a9e2e8e3c86?w=800&q=80&auto=format&fit=crop",
-    chidambaram: "https://images.unsplash.com/photo-1609920658906-8223bd289001?w=800&q=80&auto=format&fit=crop",
-};
+const GENERIC_TEMPLES = [
+    'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=800&q=80', // South Indian template
+    'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&q=80', // Architecture
+    'https://images.unsplash.com/photo-1564804955013-e02ad9516982?w=800&q=80', // Archway abstract
+    'https://images.unsplash.com/photo-1600100397608-e2d47b05be59?w=800&q=80', // Ritual interior
+    'https://images.unsplash.com/photo-1514222134-b57cabb8d6a4?w=800&q=80', // Golden light evening
+];
 
 /**
- * Get temple image URL based on temple name
- * Falls back to default if no match found
+ * Returns a consistent generic dummy image based on the temple's name.
+ * This ensures the UI remains beautiful without displaying factually incorrect
+ * specific photos for temples.
  */
 export function getTempleImage(templeName?: string): string {
-    if (!templeName) return TEMPLE_IMAGES.default;
+    if (!templeName) return GENERIC_TEMPLES[0];
 
-    // Normalize temple name for matching
-    const normalized = templeName.toLowerCase().trim();
-
-    // Check for exact or partial matches
-    for (const [key, url] of Object.entries(TEMPLE_IMAGES)) {
-        if (key === 'default') continue;
-        if (normalized.includes(key) || key.includes(normalized)) {
-            return url;
-        }
+    // Hash the name to consistently pick the same image for the same temple
+    let hash = 0;
+    for (let i = 0; i < templeName.length; i++) {
+        hash = templeName.charCodeAt(i) + ((hash << 5) - hash);
     }
 
-    // Return default if no match
-    return TEMPLE_IMAGES.default;
+    return GENERIC_TEMPLES[Math.abs(hash) % GENERIC_TEMPLES.length];
 }
 
 /**
@@ -42,5 +31,5 @@ export function getTempleImage(templeName?: string): string {
  */
 export function getTempleImageUrl(templeName?: string, width = 800, height = 600): string {
     const baseUrl = getTempleImage(templeName);
-    return `${baseUrl}&w=${width}&h=${height}`;
+    return baseUrl.replace(/w=\d+/, `w=${width}`);
 }

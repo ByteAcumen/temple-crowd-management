@@ -9,42 +9,6 @@ import {
     Edit2, Trash2, ChevronRight, Wifi, Lock, Star
 } from 'lucide-react';
 
-// ─── Temple Image Map ────────────────────────────────────────────────────────
-// High-quality Unsplash images keyed by keywords in temple name/city/deity
-const TEMPLE_IMAGES: Record<string, string> = {
-    // By name keywords
-    'badrinath': 'https://images.unsplash.com/photo-1570458436416-b8fcccfe883f?w=800&q=80',
-    'kedarnath': 'https://images.unsplash.com/photo-1588598198321-9735fd6a04e2?w=800&q=80',
-    'tirupati': 'https://images.unsplash.com/photo-1561361058-c24e70869dba?w=800&q=80',
-    'jagannath': 'https://images.unsplash.com/photo-1588001400947-6385aef4ab0e?w=800&q=80',
-    'vaishno': 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&q=80',
-    'somnath': 'https://images.unsplash.com/photo-1592549585866-486f9a6d5571?w=800&q=80',
-    'dwarka': 'https://images.unsplash.com/photo-1592549585866-486f9a6d5571?w=800&q=80',
-    'golden': 'https://images.unsplash.com/photo-1514222134-b57cabb8d6a4?w=800&q=80',
-    'amritsar': 'https://images.unsplash.com/photo-1514222134-b57cabb8d6a4?w=800&q=80',
-    'kashi': 'https://images.unsplash.com/photo-1561631819-f63b8b8c4310?w=800&q=80',
-    'vishwanath': 'https://images.unsplash.com/photo-1561631819-f63b8b8c4310?w=800&q=80',
-    'varanasi': 'https://images.unsplash.com/photo-1561631819-f63b8b8c4310?w=800&q=80',
-    'puri': 'https://images.unsplash.com/photo-1588001400947-6385aef4ab0e?w=800&q=80',
-    'mathura': 'https://images.unsplash.com/photo-1574110406820-96a9b9e2e832?w=800&q=80',
-    'vrindavan': 'https://images.unsplash.com/photo-1574110406820-96a9b9e2e832?w=800&q=80',
-    'shirdi': 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=800&q=80',
-    'siddhivinayak': 'https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=800&q=80',
-    'mumbai': 'https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=800&q=80',
-    'madurai': 'https://images.unsplash.com/photo-1565731572813-c15ec3f43e63?w=800&q=80',
-    'meenakshi': 'https://images.unsplash.com/photo-1565731572813-c15ec3f43e63?w=800&q=80',
-    'brihadeeswara': 'https://images.unsplash.com/photo-1544640408-ef71c77d0e4e?w=800&q=80',
-    'thanjavur': 'https://images.unsplash.com/photo-1544640408-ef71c77d0e4e?w=800&q=80',
-    'rameshwaram': 'https://images.unsplash.com/photo-1591618063652-43b2f7dc1b7b?w=800&q=80',
-    'sabrimala': 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&q=80',
-    'sabarimala': 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&q=80',
-    'tirupathi': 'https://images.unsplash.com/photo-1561361058-c24e70869dba?w=800&q=80',
-    'haridwar': 'https://images.unsplash.com/photo-1561631819-f63b8b8c4310?w=800&q=80',
-    'rishikesh': 'https://images.unsplash.com/photo-1588598198321-9735fd6a04e2?w=800&q=80',
-    'ujjain': 'https://images.unsplash.com/photo-1592549585866-486f9a6d5571?w=800&q=80',
-    'mahakaleshwar': 'https://images.unsplash.com/photo-1592549585866-486f9a6d5571?w=800&q=80',
-};
-
 // Fallback gradient map for temples without matching images
 const GRADIENT_COLORS = [
     'from-orange-400 via-amber-500 to-red-500',
@@ -56,17 +20,9 @@ const GRADIENT_COLORS = [
 ];
 
 function getTempleImage(temple: Temple): string | null {
-    // 1. Use stored image/imageUrl first
     if (temple.images?.[0]) return temple.images[0];
     if ((temple as any).imageUrl) return (temple as any).imageUrl;
-
-    // 2. Match by temple name keywords
-    const searchKey = `${temple.name} ${temple.deity || ''} ${typeof temple.location === 'object' ? `${temple.location.city} ${temple.location.state}` : temple.location || ''}`.toLowerCase();
-
-    for (const [key, url] of Object.entries(TEMPLE_IMAGES)) {
-        if (searchKey.includes(key)) return url;
-    }
-    return null;
+    return null; // Force fallback to gradients if no DB image
 }
 
 function getGradient(name: string): string {

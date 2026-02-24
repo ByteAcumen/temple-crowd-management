@@ -1,322 +1,235 @@
-# Temple Crowd Management System
+# 🛕 Temple Crowd Management System
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com)
 
-**Smart, AI-powered crowd management system for religious sites and temples.**
-
-Prevents dangerous overcrowding through real-time tracking, intelligent bookings, and automated alerts.
+> **Smart, AI-powered crowd management for religious sites.**  
+> Prevents dangerous overcrowding through real-time tracking, intelligent bookings, and automated alerts.
 
 ---
 
-## 🚀 Quick Start (Automated)
+## 🚀 Quick Start (One Command)
 
-The system now includes **self-healing automation scripts** for Windows.
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop) must be running.
 
-### 1-Click Startup
 ```powershell
+git clone <your-repo-url>
+cd temple-crowd-management
 .\start.ps1
 ```
-**What this does:**
-- 🧹 **Cleans Ports**: Kills rogue Node/Mongo processes freeing ports 5000/27017/6379
-- 🐳 **Starts Docker**: Launches MongoDB, Redis, and Backend with named volumes
-- 🧪 **Auto-Testing**: Runs `load_test.js` to verify 18/18 endpoints are healthy
-- 🔄 **Auto-Recovery**: Restarts backend automatically if health checks fail
 
-### Graceful Shutdown
-```powershell
-.\stop.ps1
-```
-**Why use this?**
-- Ensures **No Data Loss** (triggers SIGTERM for meaningful shutdown)
-- Preserves MongoDB/Redis data in named volumes (`temple-mongo-data`)
+MongoDB, Redis, Backend, ML services, and Frontend all start automatically. Ready in ~60 seconds.
 
-### Data Backup
+**Stop everything:**
 ```powershell
-.\backup.ps1
+.\start.ps1 -Down
 ```
-- Creates timestamped snapshots of your database in `.\backups`
+
+See [QUICK_START.md](QUICK_START.md) for all options, flags, and troubleshooting.
 
 ---
 
-## 🏗️ Architecture Updates
-
-#### Default Credentials
+## 🔑 Default Credentials
 
 | Role | Email | Password |
 |------|-------|----------|
-| **Admin** | `admin@temple.com` | `Admin@123456` |
-| **Gatekeeper** | `gatekeeper@temple.com` | `Gatekeeper@123` |
-| **User** | `user@temple.com` | `User@123456` |
+| **Super Admin** 👑 | `admin@temple.com` | `Admin@123456` |
+| **Gatekeeper** 👮 | `gatekeeper@temple.com` | `Gate@12345` |
+| **Devotee** 🙏 | `user@temple.com` | `User@12345` |
 
-*Note: If these accounts don't exist, the first registered user becomes an Admin.*
-
-### Data Persistence
-- **MongoDB**: Stores Users, Temples, Bookings (Volume: `temple-mongo-data`)
-- **Redis**: Stores Live Counts, Active Sessions (Volume: `temple-redis-data`)
-  - *Persistence Enabled*: AOF + RDB ensures live counts survive restarts
-
-### Security Layer
-- **Rate Limiting**: 5-Tier System
-  - `Auth`: 30 req/15min (Brute force protection)
-  - `Live`: 200 req/min (Real-time updates)
-  - `Temples`: 500 req/15min (Public data)
-  - `Admin`: 1000 req/15min (Dashboard)
-  - `General`: 1000 req/15min
-- **Hardening**:
-  - Non-root container user (`nodejs:1001`)
-  - Helmet.js Security Headers
-  - Input Sanitization (XSS, NoSQL Injection)
+> The first registered user is automatically promoted to Super Admin if no admin exists.
 
 ---
 
-## 🧪 Testing
+## 🏗️ Architecture
 
-We provide a **comprehensive test suite** that verifies all 27 features:
-
-```powershell
-.\verify-system.ps1
+```
+┌─────────────────────────────────────────────────────┐
+│  Frontend (Next.js 16)      →  http://localhost:3000 │
+│  Backend API (Express)      →  http://localhost:5001 │
+│  MongoDB                    →  localhost:27017        │
+│  Redis                      →  localhost:6379         │
+│  ML Crowd Detection         →  localhost:8001         │
+│  ML Demand Forecasting      →  localhost:8002         │
+└─────────────────────────────────────────────────────┘
 ```
 
-**What it tests**:
-- ✅ API Health & Connectivity
-- ✅ Authentication (JWT)
-- ✅ Authorization (RBAC with 3 roles)
-- ✅ Temple Management (CRUD)
-- ✅ Booking System (with overbooking prevention)
-- ✅ Live Crowd Tracking (Redis)
-- ✅ Admin Dashboard & Analytics
-- ✅ System Health Monitoring
+### Tech Stack
 
-See [TESTING.md](TESTING.md) for details.
-
----
-
-## 📚 API Documentation
-
-All API documentation is in the `docs/` folder:
-
-- [Temple API](docs/TEMPLE_API.md) - Temple CRUD operations
-- [Live Tracking API](docs/LIVE_TRACKING_API.md) - Entry/Exit tracking
-- [Booking API](docs/BOOKING_API.md) - Booking management
-- [Admin API](docs/ADMIN_API.md) - Dashboard & analytics
-- [WebSocket Events](docs/WEBSOCKET_EVENTS.md) - Real-time events
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS v4 |
+| **Backend** | Node.js 18+, Express.js, Socket.IO |
+| **Database** | MongoDB (Mongoose ODM) |
+| **Cache / Real-time** | Redis (ioredis) with AOF + RDB persistence |
+| **Auth** | JWT with bcrypt password hashing |
+| **ML Services** | Python (crowd detection + demand forecasting) |
+| **Infrastructure** | Docker + Docker Compose |
 
 ---
 
 ## 🔐 Security
 
-### Authentication
-- JWT-based authentication
-- Token expiration and validation
-- Secure password hashing (bcrypt)
+| Layer | What's Protected |
+|-------|-----------------|
+| **Auth Rate Limit** | 30 req / 15 min (brute force protection) |
+| **Temple API** | 500 req / 15 min |
+| **Admin Dashboard** | 1000 req / 15 min |
+| **Headers** | Helmet.js — CSP, HSTS, XSS protection |
+| **Input** | NoSQL injection sanitization, XSS-clean, HPP |
+| **Containers** | Non-root user (`node:1001`), read-only src mounts |
 
-### Authorization (RBAC)
-| Role | Access Level |
-|------|-------------|
-| **Super Admin** | Full system access, manage all temples and admins |
-| **Temple Admin** | Manage only assigned temples |
-| **Gatekeeper** | Entry/Exit management at assigned temples |
-| **User** | Book passes and view own bookings |
+### RBAC Roles
 
-### First-Time Super Admin Setup
-```bash
+| Role | Access |
+|------|--------|
+| **Super Admin** | Full system: all temples, users, settings |
+| **Temple Admin** | Manage only their assigned temples |
+| **Gatekeeper** | QR scan, entry/exit, live crowd at assigned temple |
+| **Devotee** | Book passes, view own bookings |
+
+---
+
+## 🧪 Testing
+
+```powershell
+# Quick API sanity check (runs on startup automatically)
+.\start.ps1
+
+# Full scripted test suite
+.\test-all.ps1
+
+# Backend unit tests only
 cd backend
-node scripts/promote-superadmin.js
+npm test
 ```
 
-### Protection
-- Rate limiting (100 req/15min)
-- Security headers (Helmet.js)
-- Input validation
-- Protected routes
+All unit tests are in `backend/tests/unit/`. Coverage report is generated in `backend/coverage/`.
 
-See [Security Audit Report](https://github.com/yourusername/temple-crowd-management/blob/main/docs/SECURITY.md) for details.
+See [TESTING_GUIDE.md](TESTING_GUIDE.md) for the full testing guide.
 
 ---
 
-## 🐳 Docker
+## 📚 API Documentation
 
-### Development Mode (with hot reload)
-```powershell
-.\scripts\start.ps1
+| Doc | Endpoints |
+|-----|-----------|
+| [Temple API](docs/TEMPLE_API.md) | Temple CRUD, search, capacity |
+| [Live Tracking API](docs/LIVE_TRACKING_API.md) | Entry/Exit tracking, live counts |
+| [Booking API](docs/BOOKING_API.md) | Book passes, QR codes |
+| [Admin API](docs/ADMIN_API.md) | Dashboard, analytics, user management |
+| [WebSocket Events](docs/WEBSOCKET_EVENTS.md) | Real-time events via Socket.IO |
+
+### Health Check
 ```
-
-Uses `docker-compose.dev.yml` with:
-- Health checks for all services
-- Automatic dependency management
-- Hot reload for backend
-- Volume mounting for development
-
-### Production Mode
-```bash
-docker-compose up -d
+GET http://localhost:5001/api/v1/health
 ```
-
-Uses `docker-compose.yml` optimized for production.
-
-### Stop Services
-```powershell
-.\scripts\stop.ps1
-```
+Returns: `db`, `redis`, and `ai` service status + server uptime.
 
 ---
 
-## 🎯 Use Cases
-
-### Case 1: Temple Administrator
-- Manage multiple temples
-- View real-time crowd dashboards
-- Access analytics and reports
-- Manage bookings and users
-
-### Case 2: Devotee (User)
-- Browse available temples
-- Book time slots online
-- Receive QR code passes
-- Get email confirmations
-
-### Case 3: Gatekeeper
-- Scan QR codes for entry/exit
-- Track live crowd count
-- Prevent duplicate entries
-- Monitor capacity alerts
-
----
-
-## 🌟 Key Features Explained
+## 🌟 Key Features
 
 ### 1. Overbooking Prevention
-The booking system **strictly enforces slot capacity**:
-- Checks available slots in real-time
-- Atomic booking operations
-- Prevents race conditions
-- Returns clear error messages
+Atomic booking operations check + reserve slots in a single transaction, preventing race conditions even under concurrent load.
 
 ### 2. Live Crowd Tracking
-Redis-based atomic counters provide:
-- Thread-safe operations (INCR/DECR)
-- Duplicate entry prevention (SET operations)
-- Sub-10ms response times
-- Threshold alerts (85%, 95%)
+Redis atomic counters (INCR/DECR) with duplicate-entry prevention. Sub-10ms response. Threshold alerts at 85% (warning) and 95% (critical — blocks new entries).
 
 ### 3. Admin Dashboard
-MongoDB aggregation pipelines deliver:
-- Parallel queries (9x faster)
-- Peak hour analytics
-- Revenue breakdowns
-- Temple utilization metrics
+MongoDB aggregation pipelines run in parallel, delivering peak-hour analytics, revenue breakdowns, and temple utilization metrics.
 
-### 4. Real-time Updates
-Socket.IO WebSocket provides:
-- Room-based isolation
-- Live crowd updates
-- Booking notifications
-- Capacity alerts
+### 4. Real-time WebSocket Events
+Socket.IO provides room-based isolation. Admins receive push updates; devotees see live crowd status without polling.
 
 ---
 
-## 🛠️ Development
+## 🛠️ Manual Development (without Docker)
 
-### Run Locally (without Docker)
-```bash
-# Start MongoDB
-mongod
-
-# Start Redis
-redis-server
-
-# Start Backend
+### Backend
+```powershell
 cd backend
+cp .env.example .env   # Configure environment variables
 npm install
-npm run dev
+npm run dev            # http://localhost:5001 with hot reload
 ```
 
-### Project Scripts
-```bash
-npm run dev      # Development with nodemon
-npm start        # Production
-npm test         # Run tests
+### Frontend
+```powershell
+cd frontend
+npm install
+npm run dev            # http://localhost:3000 with hot reload
+```
+
+> You'll need MongoDB and Redis running locally, or point `MONGODB_URI` and `REDIS_HOST` in `backend/.env` at your Docker containers.
+
+### Seed Dashboard Data
+```powershell
+cd backend
+npm run seed           # Injects 30 days of realistic booking data
 ```
 
 ---
 
-## 📊 Architecture
+## 🐳 Docker Reference
 
-### Backend Stack
-- **Node.js** + Express.js
-- **MongoDB** (Mongoose ODM)
-- **Redis** (ioredis)
-- **Socket.IO** (WebSocket)
-- **JWT** (Authentication)
+| Command | Description |
+|---------|-------------|
+| `.\start.ps1` | Start all services (dev mode) |
+| `.\start.ps1 -Production` | Start production containers |
+| `.\start.ps1 -Rebuild` | Force rebuild all images |
+| `.\start.ps1 -SkipFrontend` | Backend only (faster) |
+| `.\start.ps1 -Down` | Stop all containers |
+| `.\start.ps1 -Logs` | Tail live logs |
+| `.\scripts\backup.ps1` | Snapshot MongoDB to `./backups/` |
 
-### Database Design
-- **MongoDB**: Bookings, Users, Temples (persistence)
-- **Redis**: Live counts, Active entries (real-time)
-
-### API Design
-- RESTful API with clear resource paths
-- JWT authentication on protected routes
-- Role-based authorization middleware
-- Standardized error responses
+### Data Persistence
+- **MongoDB**: Volume `temple-crowd-management_mongo_data`
+- **Redis**: Volume `temple-redis-data-dev` (AOF + RDB — survives restarts)
 
 ---
 
 ## 🚀 Deployment
 
 ### Recommended Platforms
-1. **Railway** - Easiest (built-in Redis)
-2. **Render** - Simple (free tier)
-3. **DigitalOcean** - More control ($5/month)
+1. **Railway** — Easiest (built-in Redis + MongoDB add-ons)
+2. **Render** — Simple (free tier available)
+3. **DigitalOcean App Platform** — More control
 
-### Environment Variables
+### Required Environment Variables (production)
 ```env
 NODE_ENV=production
-PORT=5000
+PORT=5001
 MONGO_URI=your_mongodb_uri
 REDIS_HOST=your_redis_host
 REDIS_PORT=6379
-JWT_SECRET=your_super_secret_key_change_this
+JWT_SECRET=your_super_secret_key_minimum_32_chars
 JWT_EXPIRE=30d
-SMTP_HOST=your_smtp_host (optional)
-SMTP_PORT=587 (optional)
-SMTP_USER=your_email (optional)
-SMTP_PASS=your_password (optional)
+FRONTEND_URL=https://your-frontend-domain.com
+# Optional email notifications:
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your@email.com
+SMTP_PASS=your_password
 ```
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) first.
-
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'feat: add amazing feature'`
+4. Push: `git push origin feature/your-feature`
 5. Open a Pull Request
 
 ---
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- Built for solving real-world overcrowding problems at religious sites
-- Inspired by the need for better crowd safety management
-- Focused on simplicity and reliability
-
----
-
-## 📞 Support
-
-Issues? Questions?
-- Open an [issue](https://github.com/yourusername/temple-crowd-management/issues)
-- Check our [documentation](docs/)
-- Read our [FAQ](docs/FAQ.md)
+MIT — see [LICENSE](LICENSE) for details.
 
 ---
 

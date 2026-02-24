@@ -557,46 +557,80 @@ const famousTemples = [
     }
 ];
 
-// Seed function
+// Seed function — safe upsert mode by default, use --force to reset all
 async function seedFamousTemples() {
+    const forceReset = process.argv.includes('--force');
+
     try {
-        // Use same DB as backend: temple_db
         await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/temple_db');
         console.log('✅ Connected to MongoDB');
 
-        // Delete existing temples for fresh seed
-        const deleteResult = await Temple.deleteMany({});
-        console.log(`🗑️  Deleted ${deleteResult.deletedCount} existing temples`);
+        if (forceReset) {
+            const del = await Temple.deleteMany({});
+            console.log(`🗑️  [FORCE] Deleted ${del.deletedCount} existing temples — full reset`);
+        }
 
-        // Insert all temples
-        const inserted = await Temple.insertMany(famousTemples);
-        console.log(`\n🛕 Successfully added ${inserted.length} famous temples:\n`);
+        let added = 0, updated = 0, skipped = 0;
 
-        // Group by state for display
-        const byState = {};
-        inserted.forEach(t => {
-            const state = t.location.state;
-            if (!byState[state]) byState[state] = [];
-            byState[state].push(t.name);
-        });
+        for (const temple of famousTemples) {
+            const existing = await Temple.findOne({ name: temple.name });
 
-        Object.keys(byState).sort().forEach(state => {
-            console.log(`📍 ${state}:`);
-            byState[state].forEach(name => console.log(`   - ${name}`));
-        });
+            if (existing) {
+                // Update only metadata fields — DO NOT touch live_count or booking data
+                await Temple.updateOne(
+                    { name: temple.name },
+                    {
+                        $set: {
+                            description: temple.description,
+                            deity: temple.deity,
+                            significance: temple.significance,
+                            location: temple.location,
+                            operatingHours: temple.operatingHours,
+                            fees: temple.fees,
+                            facilities: temple.facilities,
+                            prasadMenu: temple.prasadMenu,
+                            donations: temple.donations,
+                            specialServices: temple.specialServices,
+                            annualEvents: temple.annualEvents,
+                            history: temple.history,
+                            rules: temple.rules,
+                            howToReach: temple.howToReach,
+                            liveDarshan: temple.liveDarshan,
+                            contact: temple.contact,
+                            'capacity.per_slot': temple.capacity.per_slot,
+                            'capacity.total': temple.capacity.total,
+                            'capacity.threshold_warning': temple.capacity.threshold_warning || 85,
+                            'capacity.threshold_critical': temple.capacity.threshold_critical || 95,
+                        }
+                    }
+                );
+                updated++;
+            } else {
+                // New temple — insert with default slots generated
+                const slotStart = parseInt((temple.operatingHours?.regular?.opens || '06:00').split(':')[0]);
+                const slotEnd = parseInt((temple.operatingHours?.regular?.closes || '21:00').split(':')[0]);
+                const slots = [];
+                for (let h = slotStart; h < Math.min(slotEnd, slotStart + 8); h++) {
+                    const fmt = (n) => String(n).padStart(2, '0');
+                    slots.push({ time: `${fmt(h)}:00 - ${fmt(h + 1)}:00`, max_capacity: temple.capacity.per_slot || 500 });
+                }
+                await Temple.create({ ...temple, slots });
+                added++;
+            }
+        }
 
-        console.log('\n✨ Seed completed successfully!');
-        console.log(`\n📊 Total temples: ${inserted.length}`);
+        console.log(`\n🛕 Seed complete:`);
+        console.log(`   ✅ ${added} new temples added`);
+        console.log(`   🔄 ${updated} existing temples updated (data preserved)`);
+        console.log(`   ⏭️  ${skipped} skipped`);
+        console.log(`\n📊 Total in DB: ${await Temple.countDocuments()} temples`);
 
     } catch (error) {
         console.error('❌ Seed failed:', error.message);
-        if (error.code === 11000) {
-            console.error('Duplicate key error - some temples may already exist');
-        }
         process.exit(1);
     } finally {
         await mongoose.disconnect();
-        console.log('\n🔌 Disconnected from MongoDB');
+        console.log('🔌 Disconnected from MongoDB');
     }
 }
 

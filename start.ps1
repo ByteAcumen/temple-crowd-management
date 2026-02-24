@@ -16,6 +16,10 @@ param(
     [switch]$SkipTests,
     [switch]$Production,
     [switch]$RebuildAll,
+    [switch]$Rebuild,        # Alias for -RebuildAll
+    [switch]$SkipFrontend,  # Skip frontend container (backend-only mode)
+    [switch]$Down,          # Stop all containers and exit
+    [switch]$Logs,          # Tail live container logs
     [int]$MaxRetries = 3
 )
 
@@ -76,6 +80,33 @@ if (-not $dockerRunning) {
     exit 1
 }
 
+# Treat -Rebuild as an alias for -RebuildAll
+if ($Rebuild) { $RebuildAll = $true }
+
+# -Down: stop all containers and exit immediately
+if ($Down) {
+    Write-Header "STOPPING ALL CONTAINERS"
+    Set-Location $PROJECT_ROOT
+    docker compose down --remove-orphans 2>&1
+    if (Test-Path "docker-compose.dev.yml") {
+        docker compose -f docker-compose.dev.yml down --remove-orphans 2>&1
+    }
+    Write-Pass "All containers stopped. Data volumes preserved."
+    exit 0
+}
+
+# -Logs: tail live logs of running containers
+if ($Logs) {
+    Write-Header "TAILING LIVE CONTAINER LOGS (Ctrl+C to exit)"
+    Set-Location $PROJECT_ROOT
+    if ($Production) {
+        docker compose logs -f
+    }
+    else {
+        docker compose -f docker-compose.dev.yml logs -f
+    }
+    exit 0
+}
 # Check Docker Compose (v2)
 try {
     $composeVersion = docker compose version 2>&1
@@ -195,7 +226,7 @@ function Wait-ForService {
     
     while (-not $healthy -and ((Get-Date) - $startTime).TotalSeconds -lt $TimeoutSeconds) {
         try {
-            $response = Invoke-WebRequest -Uri $Url -Method GET -TimeoutSec 5 -ErrorAction Stop
+            $response = Invoke-WebRequest -Uri $Url -Method GET -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
             if ($response.StatusCode -eq 200) {
                 $healthy = $true
                 Write-Pass "$Name is healthy"
@@ -220,8 +251,38 @@ $backendHealthy = Wait-ForService -Name "Backend API" -Url "http://localhost:$BA
 
 if (-not $backendHealthy) {
     Write-Fail "Backend failed to start. Checking logs..."
-    docker logs temple-backend --tail 50
+    docker logs temple-backend-dev --tail 50
     exit 1
+}
+
+# ============================================
+# AUTO-SEED (First-run or empty database)
+# ============================================
+
+Write-Step "Checking database state..."
+try {
+    $templeRes = Invoke-RestMethod -Uri "http://localhost:$BACKEND_PORT/api/v1/temples" -Method GET -TimeoutSec 10 -ErrorAction SilentlyContinue
+    $templeCount = if ($templeRes.count) { $templeRes.count } else { 0 }
+
+    if ($templeCount -eq 0) {
+        Write-Host ""
+        Write-Host "  🆕 Fresh installation detected — seeding database..." -ForegroundColor Yellow
+        Write-Host "     This only runs once on first setup." -ForegroundColor DarkYellow
+        Write-Host ""
+
+        # Run init-db.js inside the backend container (has correct env vars + node_modules)
+        docker exec temple-backend-dev node scripts/init-db.js 2>&1 | ForEach-Object {
+            Write-Host "  $_" -ForegroundColor DarkCyan
+        }
+        Write-Pass "Database seeded successfully!"
+        Write-Host ""
+    }
+    else {
+        Write-Pass "Database OK — $templeCount temples loaded"
+    }
+}
+catch {
+    Write-Info "Database check skipped (API not responding to temples query)"
 }
 
 # ============================================
@@ -245,14 +306,19 @@ if (-not $SkipTests) {
     }
 }
 
-# Wait for Frontend
-Write-Step "Waiting for Frontend ($FRONTEND_PORT)..."
-$frontendHealthy = Wait-ForService -Name "Frontend" -Url "http://localhost:$FRONTEND_PORT" -TimeoutSeconds 120
+# Wait for Frontend (unless -SkipFrontend is specified)
+if (-not $SkipFrontend) {
+    Write-Step "Waiting for Frontend ($FRONTEND_PORT)..."
+    $frontendHealthy = Wait-ForService -Name "Frontend" -Url "http://localhost:$FRONTEND_PORT" -TimeoutSeconds 120
 
-if (-not $frontendHealthy) {
-    Write-Fail "Frontend failed to start. Checking logs..."
-    docker logs temple-frontend --tail 50
-    # We don't exit here, as the backend might still be usable
+    if (-not $frontendHealthy) {
+        Write-Fail "Frontend failed to start. Checking logs..."
+        docker logs temple-frontend-dev --tail 50
+        # Don't exit — backend is still usable
+    }
+}
+else {
+    Write-Info "Skipping frontend (backend-only mode)"
 }
 
 # ============================================
@@ -261,11 +327,16 @@ if (-not $frontendHealthy) {
 
 Write-Header "SYSTEM STATUS"
 
-Write-Host "Backend API:    http://localhost:$BACKEND_PORT" -ForegroundColor Cyan
-Write-Host "Frontend:       http://localhost:$FRONTEND_PORT" -ForegroundColor Cyan
-Write-Host "MongoDB:        mongodb://localhost:27017/temple_db" -ForegroundColor Cyan
-Write-Host "Redis:          redis://localhost:6379" -ForegroundColor Cyan
 Write-Host ""
-Write-Pass "System is fully operational! 🚀"
+Write-Host "  Backend API  →  http://localhost:$BACKEND_PORT/api/v1" -ForegroundColor Cyan
+if (-not $SkipFrontend) {
+    Write-Host "  Frontend     →  http://localhost:$FRONTEND_PORT" -ForegroundColor Cyan
+}
+Write-Host "  MongoDB      →  mongodb://localhost:27017/temple_db" -ForegroundColor DarkCyan
+Write-Host "  Redis        →  redis://localhost:6379" -ForegroundColor DarkCyan
+Write-Host ""
+Write-Pass "System is fully operational!"
 Write-Host "Completed at: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
+Write-Host ""
+
 

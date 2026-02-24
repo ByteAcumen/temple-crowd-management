@@ -132,15 +132,8 @@ export default function AdminLayout({
 
     return (
         <div className="min-h-screen bg-slate-50 flex overflow-hidden font-sans text-slate-900 relative selection:bg-orange-500/30">
-            {/* Background Pattern - Light Mode */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-100/40 rounded-full blur-[120px] animate-pulse-soft"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-100/40 rounded-full blur-[120px] animate-pulse-soft delay-1000"></div>
-                <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-amber-50/40 rounded-full blur-[80px] animate-float"></div>
-
-                {/* Grid Pattern Overlay - Lighter */}
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]"></div>
-            </div>
+            {/* Solid fast background */}
+            <div className="absolute inset-0 z-0 bg-slate-50/80 pointer-events-none"></div>
 
             {/* Mobile Overlay */}
             <AnimatePresence>
@@ -163,8 +156,8 @@ export default function AdminLayout({
                 variants={sidebarVariants}
                 className={`
                 fixed lg:relative z-50 h-screen flex flex-col 
-                glass-sidebar border-r border-slate-200/60 shadow-xl shadow-slate-200/50 
-                bg-white/80 backdrop-blur-xl will-change-transform
+                border-r border-slate-200/60 shadow-[4px_0_24px_rgba(0,0,0,0.02)] 
+                bg-white will-change-transform
             `}>
                 <div className={`p-6 flex items-center gap-3 border-b border-slate-100/80 ${isDesktopCollapsed && !isMobile ? 'justify-center' : ''}`}>
                     <Link href="/" className="relative group cursor-pointer flex items-center gap-3" onClick={() => isMobile && setIsSidebarOpen(false)}>
@@ -351,12 +344,12 @@ export default function AdminLayout({
                     <div className="flex items-center gap-4">
                         {/* Search Trigger */}
                         <div className="relative group cursor-pointer" onClick={() => setIsCommandOpen(true)}>
-                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 hover:bg-white border border-slate-200/60 hover:border-orange-200 hover:shadow-sm hover:shadow-orange-100 rounded-xl transition-all w-64 text-slate-500 group-hover:text-slate-800">
-                                <svg className="w-4 h-4 text-slate-400 group-hover:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="flex items-center gap-2.5 px-3 py-2 bg-slate-100/40 hover:bg-slate-100/80 border border-slate-200/60 hover:border-slate-300 rounded-xl transition-all w-[320px] text-slate-500">
+                                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
-                                <span className="text-sm font-medium">Search...</span>
-                                <div className="ml-auto text-xs bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-400 font-mono shadow-sm">Ctrl K</div>
+                                <span className="text-[13px] font-medium text-slate-400 group-hover:text-slate-600 transition-colors">Search temples, bookings, settings...</span>
+                                <div className="ml-auto text-[10px] uppercase font-bold tracking-widest text-slate-400 bg-white px-2 py-1 rounded shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-slate-200">⌘K</div>
                             </div>
                         </div>
 

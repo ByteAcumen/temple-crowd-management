@@ -26,7 +26,6 @@ const adminRoutes = require('./routes/adminRoutes');
 const visionRoutes = require('./routes/visionRoutes');
 
 // Config
-const PORT = process.env.PORT || 5000;
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://ai-service:8000';
 
 // Initialize
@@ -102,58 +101,58 @@ app.use(morgan('combined', { stream: logger.stream })); // HTTP request logging
 // TIERED RATE LIMITING (Performance Optimized)
 // ============================================
 
-// Skip rate limiting in development mode when TEST_MODE is enabled
-const skipInTestMode = (req) => {
+// Skip rate limiting entirely in development — limits are only meaningful in production
+const skipInDevelopment = (req) => {
     return process.env.NODE_ENV === 'development';
 };
 
 // General Rate Limiter (relaxed for dashboard operations)
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // Increased to 1000 requests per 15 min for heavy dashboard use
+    max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, error: 'Too many requests. Please try again later.' },
-    skip: skipInTestMode
+    skip: skipInDevelopment
 });
 app.use(generalLimiter);
 
 // Auth Rate Limiting (Strict - Brute Force Protection)
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // RELAXED for testing (was 30)
+    max: 30, // Strict limit — protects against brute force attacks
     message: { success: false, error: 'Too many login attempts, please try again after 15 minutes' },
     standardHeaders: true,
     legacyHeaders: false,
-    skip: skipInTestMode
+    skip: skipInDevelopment
 });
 
 // Live/Simulation Rate Limiter (high frequency for real-time ops)
 const liveLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute window
-    max: 200, // 200 requests per minute for simulations
+    max: 200,
     message: { success: false, error: 'Rate limit exceeded. Please slow down simulation.' },
     standardHeaders: true,
     legacyHeaders: false,
-    skip: skipInTestMode
+    skip: skipInDevelopment
 });
 
 // Temple Read Rate Limiter (public data, high traffic)
 const templeLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 500, // Higher for public reads
+    max: 500,
     standardHeaders: true,
     legacyHeaders: false,
-    skip: skipInTestMode
+    skip: skipInDevelopment
 });
 
-// Admin Rate Limiter (authenticated admins need more requests)
+// Admin Rate Limiter (authenticated admins need more requests for dashboard ops)
 const adminLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 1000, // Admins need more for dashboard operations
+    max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
-    skip: skipInTestMode
+    skip: skipInDevelopment
 });
 
 // Apply route-specific limiters BEFORE mounting routes
@@ -172,13 +171,26 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/vision', visionRoutes); // New Vision API
 
 // Health Check
-app.get('/api/v1/health', (req, res) => {
+app.get('/api/v1/health', async (req, res) => {
+    const redis = require('./config/redis');
+    let redisStatus = 'disconnected';
+    try {
+        await redis.ping();
+        redisStatus = 'connected';
+    } catch {
+        redisStatus = 'disconnected';
+    }
+
+    const dbStateMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+
     res.json({
         success: true,
         message: 'System Operational',
         timestamp: new Date(),
+        uptime: Math.floor(process.uptime()),
         services: {
-            db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+            db: dbStateMap[mongoose.connection.readyState] || 'unknown',
+            redis: redisStatus,
             ai: AI_SERVICE_URL
         }
     });
